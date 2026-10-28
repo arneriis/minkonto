@@ -249,6 +249,8 @@
       color: var(--navy-dark);
       font-weight: 700;
       font-size: 18px;
+      object-fit: cover;
+      border: 2px solid var(--accent);
     }
 
     .chat-title { flex: 1; min-width: 0; }
@@ -542,7 +544,7 @@
 
   <section class="chat" id="chat" role="dialog" aria-modal="true" aria-labelledby="chat-title" hidden>
     <div class="chat-head">
-      <span class="avatar" aria-hidden="true">A</span>
+      <img class="avatar" src="arne.jpg" alt="" width="40" height="40">
       <div class="chat-title">
         <strong id="chat-title" data-i18n="askBtn">Spør Arne</strong>
         <small data-i18n="chatSub">AI-assistent for IT-spørsmål</small>
