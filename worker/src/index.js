@@ -262,7 +262,7 @@ const ORDER_WORDS = /\b(bestill\w*|kjøp\w*|beställ\w*|bestil\w*|order\w*|buy|t
 const DEVICE_WORDS = /\b(mobil\w*|telefon\w*|phone|iphone\w*|ipad\w*|nettbrett\w*|surfplatta|tablet\w*|samsung|galaxy|pixel|tilbehør|tillbehör|accessor\w*|deksel|skjermbeskytter|lader|smartklokke|watch|airpods|headset|multisim|sim-kort|simkort|esim)\b/i;
 
 // Questions about setting up or fixing a device are not orders.
-const NOT_ORDER_WORDS = /\b(sette opp|setter opp|satt opp|oppsett\w*|konfigur\w*|installer\w*|set up|setup|authenticator|mfa|firmaportal|company portal|intune|overføre|overfør\w*|flytte nummer\w*|virker ikke|fungerer ikke|feil)\b/i;
+const NOT_ORDER_WORDS = /\b(sett\w*\s+(?:\w+\s+)?opp|oppsett\w*|konfigur\w*|installer\w*|set up|setup|authenticator|mfa|firmaportal|company portal|intune|overføre|overfør\w*|flytte nummer\w*|virker ikke|fungerer ikke|feil)\b/i;
 
 function wantsDeviceOrder(messages) {
   const last = messages[messages.length - 1];
