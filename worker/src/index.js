@@ -337,6 +337,35 @@ async function mobilityCallback(env, body) {
   return true;
 }
 
+// ---- Menu cards hidden per job title (Entra jobTitle): the admin sets the rules, every page reads them ----
+const MENU_CARDS = ["password", "field", "equipment", "company-portal", "printer", "skade", "mobile"];
+const MAX_TITLES = 300;
+
+function cleanTitle(title) {
+  return String(title || "").trim().replace(/\s+/g, " ").slice(0, 120);
+}
+
+async function readMenu(env) {
+  return (await env.STATS.get("menu", "json")) || { hidden: {} };
+}
+
+function cleanMenu(body) {
+  const hidden = {};
+  for (const id of MENU_CARDS) {
+    const list = body?.hidden?.[id];
+    if (Array.isArray(list) && list.length) hidden[id] = [...new Set(list.map(cleanTitle))].slice(0, MAX_TITLES);
+  }
+  return { hidden };
+}
+
+// Job titles seen at sign-in, so the admin can pick from real ones. Only new titles cost a KV write.
+async function noteTitle(env, title) {
+  const titles = (await env.STATS.get("titles", "json")) || {};
+  if (title in titles || Object.keys(titles).length >= MAX_TITLES) return;
+  titles[title] = Date.now();
+  await env.STATS.put("titles", JSON.stringify(titles));
+}
+
 // ---- AI log (every question to Arne), readable only by the admin(s) in ADMIN_EMAILS ----
 const LOG_TTL_SECONDS = 90 * 24 * 3600;
 const LOG_PAGE = 50;
@@ -476,6 +505,11 @@ export default {
       const cursor = new URL(request.url).searchParams.get("cursor");
       return json(await readLogs(env, cursor), 200, { ...cors, "Cache-Control": "private, no-store" });
     }
+    if (request.method === "GET" && path === "/admin/menu") {
+      if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
+      const titles = (await env.STATS.get("titles", "json")) || {};
+      return json({ menu: await readMenu(env), titles: Object.keys(titles) }, 200, { ...cors, "Cache-Control": "private, no-store" });
+    }
     if (request.method !== "POST") return json({ error: "Method not allowed" }, 405, cors);
 
     let body;
@@ -483,6 +517,17 @@ export default {
       body = await request.json();
     } catch {
       return json({ error: "Invalid JSON" }, 400, cors);
+    }
+
+    if (path === "/menu") {
+      if (typeof body.title === "string") ctx.waitUntil(noteTitle(env, cleanTitle(body.title)).catch(() => {}));
+      return json(await readMenu(env), 200, cors);
+    }
+    if (path === "/admin/menu") {
+      if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
+      const menu = cleanMenu(body);
+      await env.STATS.put("menu", JSON.stringify(menu));
+      return json(menu, 200, cors);
     }
 
     if (path === "/stats/chip") {
