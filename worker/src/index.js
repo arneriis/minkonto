@@ -7,7 +7,8 @@ import FAQ from "../knowledge/faq.md";
 
 const LANG_NAMES = { nb: "norsk (bokmål)", sv: "svenska", da: "dansk", en: "English" };
 const MAX_MESSAGES = 12;
-const MAX_CHARS = 2000;
+const MAX_CHARS = 4000;
+const MAX_TOOL_ROUNDS = 5;
 
 let jwks = null;
 
@@ -48,6 +49,14 @@ Regler:
 Reise og utlegg (Expense fra SD Worx – Norge):
 - Veiledningene for Expense (Daily- og Manager-appen) gjelder ansatte i Norge. Er det uklart hvilket land brukeren jobber i, spør. Gjelder det ikke Norge, si at veiledning for andre land kommer senere, og henvis til Iver support.
 - Svar med de konkrete stegene for det brukeren spør om (utlegg, reise på regning, diett innland/utland, kontering, godkjenning, innlogging/passord).
+
+Bestille mobil, nettbrett og tilbehør (Mobility):
+- Når brukeren vil bestille mobil, nettbrett eller tilbehør, bruk mobility_order. Ledere som vil se eller godkjenne bestillinger bruker mobility_approve. Følg verktøyenes instruksjoner for rekkefølgen på spørsmålene.
+- Når Mobility-svaret har «choice», vises valgene automatisk som knapper under svaret ditt. Still spørsmålet kort og ikke list opp alternativene selv.
+- Brukerens knappetrykk kommer som tekst med «[valgt nøkkel=verdi]». Bruk verdien (for eksempel sku) i neste kall.
+- Tidligere Mobility-steg står i «[Mobility: …]» i dine egne meldinger. Send alle verdier som allerede er valgt med på nytt i hvert kall.
+- Send confirmation YES, eller decision approve/reject, BARE når brukerens siste melding er et trykk på bekreftelsesknappen. Systemet blokkerer det ellers.
+- Bestillingen går til godkjenneren (som regel lederen) før Mobility behandler den. Spør om godkjenner når Mobility ber om det.
 
 Tjenestebil, bilforsikring og bilordninger (Norge):
 - Vil noen låne tjenestebilen privat (tilfeldig transport), forklar kort reglene og tilby skjemaet: ta med markøren [[form:laan-bil]] alene på egen linje. Skjemaet fyller de ut og signerer med fingeren; PDF-en åpnes i Outlook-appen som vedlegg (før turen til leder, etter turen til bil og lønn).
@@ -187,6 +196,91 @@ function cleanMessages(input) {
   return messages;
 }
 
+
+// ---- Mobility (portal.mobility.no) – ordering with the user's own Mobility login ----
+// The page holds each user's Mobility token; the Worker calls Mobility's MCP server itself so it can
+// block sending/approving until the user has pressed the confirm button in the chat.
+const MOBILITY_BASE = "https://portal.mobility.no";
+let mobilityTools = null;
+
+async function mobilityRpc(token, message, sessionId) {
+  const headers = {
+    "Content-Type": "application/json",
+    Accept: "application/json, text/event-stream",
+    Authorization: `Bearer ${token}`,
+    "MCP-Protocol-Version": "2025-06-18",
+  };
+  if (sessionId) headers["Mcp-Session-Id"] = sessionId;
+  const res = await fetch(`${MOBILITY_BASE}/mcp`, { method: "POST", headers, body: JSON.stringify(message) });
+  if (res.status === 401) throw Object.assign(new Error("mobility unauthorized"), { mobilityAuth: true });
+  const text = await res.text();
+  const payload = text.includes("data:")
+    ? text.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("\n")
+    : text;
+  return { sessionId: res.headers.get("Mcp-Session-Id") || sessionId, body: payload ? JSON.parse(payload) : null };
+}
+
+async function mobilitySession(token) {
+  const init = await mobilityRpc(token, {
+    jsonrpc: "2.0", id: 1, method: "initialize",
+    params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "spor-arne", version: "1.0" } },
+  });
+  await mobilityRpc(token, { jsonrpc: "2.0", method: "notifications/initialized", params: {} }, init.sessionId);
+  return init.sessionId;
+}
+
+async function loadMobilityTools(token) {
+  if (mobilityTools) return mobilityTools;
+  const sid = await mobilitySession(token);
+  const { body } = await mobilityRpc(token, { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }, sid);
+  mobilityTools = (body?.result?.tools || []).map((t) => ({
+    name: t.name,
+    description: t.description || t.title || t.name,
+    input_schema: t.inputSchema || { type: "object", properties: {} },
+  }));
+  return mobilityTools;
+}
+
+// Sending an order or approving/rejecting one needs a real button press from the user.
+function blockedMobilityCall(name, args, confirmed) {
+  const sends = name === "mobility_order" && String(args.confirmation || "").toUpperCase() === "YES";
+  const decides = name === "mobility_approve" && ["approve", "reject"].includes(String(args.decision || "").toLowerCase());
+  if ((sends || decides) && !confirmed) {
+    return "Blokkert: brukeren har ikke trykket på bekreftelsesknappen i chatten ennå. Vis bestillingen/ordren og la brukeren velge med knappene.";
+  }
+  return null;
+}
+
+async function callMobilityTool(token, name, args) {
+  const sid = await mobilitySession(token);
+  const { body } = await mobilityRpc(token, { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name, arguments: args } }, sid);
+  if (body?.error) return { isError: true, text: body.error.message || "Mobility-feil", structured: null };
+  const result = body?.result || {};
+  const text = (result.content || []).filter((c) => c.type === "text").map((c) => c.text).join("\n");
+  return { isError: Boolean(result.isError), text, structured: result.structuredContent || null };
+}
+
+async function exchangeMobilityToken(env, body) {
+  const form = new URLSearchParams({ client_id: env.MOBILITY_CLIENT_ID, resource: MOBILITY_BASE });
+  if (body.refresh_token) {
+    form.set("grant_type", "refresh_token");
+    form.set("refresh_token", body.refresh_token);
+  } else {
+    form.set("grant_type", "authorization_code");
+    form.set("code", body.code || "");
+    form.set("code_verifier", body.code_verifier || "");
+    form.set("redirect_uri", body.redirect_uri || "");
+  }
+  const res = await fetch(`${MOBILITY_BASE}/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+    body: form,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.access_token) return null;
+  return { access_token: data.access_token, refresh_token: data.refresh_token || null, expires_in: data.expires_in || 0 };
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -217,23 +311,78 @@ export default {
       return json({ error: "Invalid JSON" }, 400, cors);
     }
 
+    // Mobility login: exchange the code (or refresh) for the user's own Mobility token.
+    if (path === "/mobility/token") {
+      const token = await exchangeMobilityToken(env, body);
+      return token ? json(token, 200, cors) : json({ error: "mobility_token_failed" }, 400, cors);
+    }
+
     const messages = cleanMessages(body.messages);
     if (!messages) return json({ error: "Invalid messages" }, 400, cors);
     const lang = LANG_NAMES[body.lang] ? body.lang : "nb";
 
+    const mobilityToken = typeof body.mobilityToken === "string" && body.mobilityToken ? body.mobilityToken : null;
+    const confirmed = body.confirmed === true;
+
     try {
       const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-      const response = await client.beta.messages.create({
-        model: "claude-opus-5-5",
-        // Short chat answers on a public endpoint – cap output to keep cost bounded.
-        max_tokens: 2000,
-        output_config: { effort: "low" },
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-        system: systemPrompt(FAQ, lang),
-        tools: [PRINTER_ORDER_TOOL, NUMBER_TRANSFER_TOOL],
-        messages,
-      });
+      let tools = [PRINTER_ORDER_TOOL, NUMBER_TRANSFER_TOOL];
+      let mobilityNote = "Mobility er IKKE koblet til for denne brukeren. Vil brukeren bestille mobil, nettbrett eller tilbehør, forklar kort at de må koble til Mobility først, og ta med markøren [[action:mobility-connect]] alene på egen linje.";
+      if (mobilityToken) {
+        try {
+          tools = tools.concat(await loadMobilityTools(mobilityToken));
+          mobilityNote = "Mobility er koblet til for denne brukeren (verktøyene mobility_order og mobility_approve).";
+        } catch (err) {
+          if (err.mobilityAuth) return json({ error: "mobility_unauthorized" }, 401, cors);
+          console.error("Mobility tools unavailable", err);
+          mobilityNote = "Mobility svarer ikke akkurat nå. Be brukeren prøve igjen senere.";
+        }
+      }
+
+      const convo = messages.slice();
+      convo.push({ role: "system", content: mobilityNote + (confirmed ? " Brukerens siste melding er et trykk på bekreftelsesknappen." : "") });
+
+      let response;
+      let lastMobility = null;
+      for (let round = 0; ; round++) {
+        response = await client.beta.messages.create({
+          model: "claude-opus-5-5",
+          // Short chat answers on a public endpoint – cap output to keep cost bounded.
+          max_tokens: 2000,
+          output_config: { effort: "low" },
+          betas: ["server-side-fallback-2026-07-01"],
+          fallbacks: "default",
+          system: systemPrompt(FAQ, lang),
+          tools,
+          messages: convo,
+        });
+        const mobilityCalls = response.content.filter((b) => b.type === "tool_use" && b.name.startsWith("mobility_"));
+        if (response.stop_reason !== "tool_use" || !mobilityCalls.length || round >= MAX_TOOL_ROUNDS) break;
+
+        // Run Mobility tools ourselves, then let Arne continue with the results.
+        convo.push({ role: "assistant", content: response.content });
+        const results = [];
+        for (const call of response.content.filter((b) => b.type === "tool_use")) {
+          if (!call.name.startsWith("mobility_")) {
+            results.push({ type: "tool_result", tool_use_id: call.id, content: "OK" });
+            continue;
+          }
+          const blocked = blockedMobilityCall(call.name, call.input || {}, confirmed);
+          if (blocked) {
+            results.push({ type: "tool_result", tool_use_id: call.id, content: blocked, is_error: true });
+            continue;
+          }
+          try {
+            const r = await callMobilityTool(mobilityToken, call.name, call.input || {});
+            lastMobility = { tool: call.name, args: call.input || {}, result: r.structured };
+            results.push({ type: "tool_result", tool_use_id: call.id, content: r.structured ? JSON.stringify(r.structured) : r.text, is_error: r.isError });
+          } catch (err) {
+            if (err.mobilityAuth) return json({ error: "mobility_unauthorized" }, 401, cors);
+            results.push({ type: "tool_result", tool_use_id: call.id, content: "Mobility svarte ikke. Prøv igjen.", is_error: true });
+          }
+        }
+        convo.push({ role: "user", content: results });
+      }
 
       if (response.stop_reason === "refusal") {
         return json({ reply: null, error: "refusal" }, 200, cors);
@@ -245,16 +394,25 @@ export default {
         .join("\n")
         .trim();
 
-      // The page turns the order into a ready-to-send e-mail; no tool_result round trip is needed.
+      // The page turns these orders into a ready-to-send e-mail; no tool_result round trip is needed.
       const toolInput = (name) => {
         const block = response.content.find((b) => b.type === "tool_use" && b.name === name);
         return block ? block.input : null;
       };
 
+      // Mobility choices become buttons in the chat; the memo keeps the order state for the next turn.
+      const res = lastMobility?.result || null;
+      const choice = res?.choice && Array.isArray(res.choice.options) ? res.choice : null;
+      const memo = lastMobility
+        ? JSON.stringify({ tool: lastMobility.tool, args: lastMobility.args, message: res?.message, submitted: res?.submitted, decided: res?.decided })
+        : null;
+
       return json({
         reply,
         order: toolInput(PRINTER_ORDER_TOOL.name),
         transfer: toolInput(NUMBER_TRANSFER_TOOL.name),
+        choice,
+        memo,
       }, 200, cors);
     } catch (err) {
       if (err instanceof Anthropic.RateLimitError) {

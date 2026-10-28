@@ -10,6 +10,8 @@ globs = ["**/*.md"]
 fallthrough = true
 
 [vars]
+# Arne er registrert som offentlig OAuth-klient hos Mobility (portal.mobility.no)
+MOBILITY_CLIENT_ID = "01a18250-bf79-7305-828d-bcab0415df41"
 ALLOWED_ORIGINS = "https://minkonto.riis.cc,http://minkonto.riis.cc"
 
 # API-nøkkelen settes som hemmelighet, ikke her:

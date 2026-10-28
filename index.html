@@ -445,6 +445,10 @@
     .status.err { color: #a12a2a; }
 
     .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 8px; }
+    .choices { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; max-width: 100%; }
+    .chip-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .chip-chosen { outline: 2px solid var(--focus); }
+    .chip:disabled { opacity: .55; cursor: default; }
     .chips[hidden] { display: none; }
 
     .chip {
@@ -651,6 +655,7 @@
     <span class="auth-status" id="auth-status" hidden>
       <span id="auth-name"></span>
       · <button type="button" class="link-btn" id="logout" data-i18n="logout">Logg ut</button>
+      <span id="mobility-status" hidden> · <button type="button" class="link-btn" id="mobility-disconnect" data-i18n="mobilityDisconnect">Koble fra Mobility</button></span>
     </span>
     minkonto.riis.cc
   </footer>
@@ -786,6 +791,11 @@
         askBtn: "Spør Arne",
         chatSub: "AI-assistent for IT-spørsmål",
         close: "Lukk",
+        mobilityConnect: "Koble til Mobility",
+        mobilityConnected: "Mobility er koblet til ✓ Hva vil du bestille?",
+        mobilityFailed: "Kunne ikke koble til Mobility. Prøv igjen.",
+        mobilityExpired: "Mobility-innloggingen din har gått ut. Koble til på nytt:",
+        mobilityDisconnect: "Koble fra Mobility",
         videoInFolder: "Åpner videomappen – velg",
         watchVideo: "Se video",
         newChat: "Ny chat",
@@ -794,7 +804,7 @@
         loginAgain: "Innloggingen din har gått ut. Lukk chatten og trykk «Spør Arne» for å logge inn igjen.",
         send: "Send",
         placeholder: "Skriv spørsmålet ditt …",
-        greeting: "Hei! Jeg er Arne 👋 Jeg kan hjelpe deg med passord, ferie, reiseregning og utlegg, oppsett av mobil, IFS, MFA, Meps, nettverk og bestilling av skriver. Hva lurer du på?",
+        greeting: "Hei! Jeg er Arne 👋 Jeg kan hjelpe deg med passord, ferie, reiseregning og utlegg, bestilling av mobil og skriver, oppsett av mobil, IFS, MFA, Meps, nettverk og tjenestebil. Hva lurer du på?",
         printerTitle: "Bestille skriver",
         printerText: "Arne hjelper deg å fylle ut og sende bestillingen",
         printerAsk: "Jeg vil bestille en skriver",
@@ -814,7 +824,7 @@
         transferNote: "E-posten åpnes med ordre@mobility.no som mottaker. Fyll inn fødselsdato der det står ________, se over og trykk Send.",
         transferPdf: "Husk å legge ved signert overdragelsesskjema (PDF) fra tidligere eier.",
         transferDone: "Overdragelsen er klar. Trykk på knappen for å åpne e-posten, fyll inn fødselsdato og send den.",
-        chips: ["Låne bil privat", "Skade på tjenestebil", "Reiseregning og utlegg", "Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
+        chips: ["Bestille mobil eller nettbrett", "Låne bil privat", "Skade på tjenestebil", "Reiseregning og utlegg", "Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
         fromFaq: "Dette fant jeg i FAQ-en:",
         notFound: "Jeg fant dessverre ikke noe om det i FAQ-en. Prøv å spørre på en annen måte, eller kontakt Iver support.",
         error: "Noe gikk galt. Prøv igjen om litt, eller kontakt Iver support."
@@ -834,6 +844,11 @@
         askBtn: "Fråga Arne",
         chatSub: "AI-assistent för IT-frågor",
         close: "Stäng",
+        mobilityConnect: "Anslut Mobility",
+        mobilityConnected: "Mobility är anslutet ✓ Vad vill du beställa?",
+        mobilityFailed: "Kunde inte ansluta Mobility. Försök igen.",
+        mobilityExpired: "Din Mobility-inloggning har gått ut. Anslut igen:",
+        mobilityDisconnect: "Koppla från Mobility",
         videoInFolder: "Öppnar videomappen – välj",
         watchVideo: "Se video",
         newChat: "Ny chatt",
@@ -882,6 +897,11 @@
         askBtn: "Spørg Arne",
         chatSub: "AI-assistent til IT-spørgsmål",
         close: "Luk",
+        mobilityConnect: "Forbind Mobility",
+        mobilityConnected: "Mobility er forbundet ✓ Hvad vil du bestille?",
+        mobilityFailed: "Kunne ikke forbinde Mobility. Prøv igen.",
+        mobilityExpired: "Dit Mobility-login er udløbet. Forbind igen:",
+        mobilityDisconnect: "Afbryd Mobility",
         videoInFolder: "Åbner videomappen – vælg",
         watchVideo: "Se video",
         newChat: "Ny chat",
@@ -930,6 +950,11 @@
         askBtn: "Ask Arne",
         chatSub: "AI assistant for IT questions",
         close: "Close",
+        mobilityConnect: "Connect Mobility",
+        mobilityConnected: "Mobility is connected ✓ What would you like to order?",
+        mobilityFailed: "Could not connect Mobility. Please try again.",
+        mobilityExpired: "Your Mobility sign-in has expired. Connect again:",
+        mobilityDisconnect: "Disconnect Mobility",
         videoInFolder: "Opens the video folder – choose",
         watchVideo: "Watch video",
         newChat: "New chat",
@@ -1100,6 +1125,12 @@
     // Forms Arne can open from a [[form:id]] marker (Norway only).
     var FORMS = { "laan-bil": "Fyll ut og signer: Lån av bil" };
 
+    function mobilityConnectCard() {
+      return '<button type="button" class="video-link form-link" data-action="mobility-connect">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></svg>' +
+        "<span>" + escapeHtml(t("mobilityConnect")) + "</span></button>";
+    }
+
     function formCard(id) {
       if (!FORMS[id]) return "";
       return '<button type="button" class="video-link form-link" data-form="' + id + '">' +
@@ -1131,6 +1162,7 @@
         flushTable();
         if ((m = line.match(/^\[\[video:([a-z-]+)\]\]$/))) { flushPara(); flushList(); html += videoCard(m[1]); return; }
         if ((m = line.match(/^\[\[form:([a-z-]+)\]\]$/))) { flushPara(); flushList(); html += formCard(m[1]); return; }
+        if (line === "[[action:mobility-connect]]") { flushPara(); flushList(); html += mobilityConnectCard(); return; }
         if (!line) { flushPara(); flushList(); return; }
         if ((m = line.match(/^#{1,4}\s+(.*)$/))) { flushPara(); flushList(); html += "<p><strong>" + inline(m[1]) + "</strong></p>"; return; }
         if ((m = line.match(/^\d+[.)]\s+(.*)$/))) { flushPara(); if (list !== "ol") { flushList(); html += "<ol>"; list = "ol"; } html += "<li>" + inline(m[1]) + "</li>"; return; }
@@ -1555,6 +1587,8 @@
       document.body.classList.toggle("locked", isLocked());
       var status = document.getElementById("auth-status");
       status.hidden = !(authEnabled() && account);
+      var ms = document.getElementById("mobility-status");
+      if (ms) ms.hidden = !readMobility();
       if (account) {
         document.getElementById("auth-name").textContent = t("loggedInAs") + " " + (account.name || account.username);
       }
@@ -1569,26 +1603,36 @@
       if (intent === "printer") send(t("printerAsk"));
     }
 
-    function askAi() {
-      return getIdToken().then(function (token) {
+    function askAi(confirmed) {
+      return Promise.all([getIdToken(), getMobilityToken()]).then(function (tokens) {
         var headers = { "Content-Type": "application/json" };
-        if (token) headers.Authorization = "Bearer " + token;
+        if (tokens[0]) headers.Authorization = "Bearer " + tokens[0];
         return fetch(CHAT_API_URL, {
           method: "POST",
           headers: headers,
-          body: JSON.stringify({ messages: chatHistory, lang: currentLang })
+          body: JSON.stringify({ messages: chatHistory, lang: currentLang, mobilityToken: tokens[1], confirmed: Boolean(confirmed) })
         });
       }).then(function (r) {
-        if (r.status === 401) throw authError();
+        if (r.status === 401) {
+          return r.json().catch(function () { return {}; }).then(function (e) {
+            if (e.error === "mobility_unauthorized") {
+              clearMobility();
+              return { reply: t("mobilityExpired") + "\n\n[[action:mobility-connect]]" };
+            }
+            throw authError();
+          });
+        }
         if (!r.ok) throw new Error("chat " + r.status);
         return r.json();
       }).then(function (data) {
-        if (!data.reply && !data.order && !data.transfer) throw new Error("empty reply");
+        if (!data.reply && !data.order && !data.transfer && !data.choice) throw new Error("empty reply");
         return data;
       });
     }
 
-    function send(text) {
+    // opts.display: what the user sees (button label); opts.confirmed: the user pressed a confirm button.
+    function send(text, opts) {
+      opts = opts || {};
       text = (text || "").trim();
       if (!text || busy) return;
       busy = true;
@@ -1596,28 +1640,134 @@
       inputEl.value = "";
       autoGrow();
       chatHistory.push({ role: "user", content: text });
-      addMessage("user", text);
+      addMessage("user", opts.display || text);
       renderChips();
       var typing = showTyping();
 
-      var question = text;
+      var question = opts.display || text;
       var session = chatSession;
       var answer = CHAT_API_URL
-        ? askAi().catch(function (err) { return err.auth ? t("loginAgain") : searchFaq(question); })
+        ? askAi(opts.confirmed).catch(function (err) { return err.auth ? t("loginAgain") : searchFaq(question); })
         : searchFaq(question);
 
       answer.catch(function () { return t("error"); }).then(function (result) {
         if (session !== chatSession) return; // chat was reset while waiting
         typing.remove();
         var data = typeof result === "string" ? { reply: result } : result;
-        var reply = data.reply || (data.order ? t("orderDone") : data.transfer ? t("transferDone") : t("error"));
-        chatHistory.push({ role: "assistant", content: reply });
+        var reply = data.reply || (data.order ? t("orderDone") : data.transfer ? t("transferDone") : data.choice ? data.choice.prompt : t("error"));
+        // The memo carries Mobility's order state into the next turn (not shown to the user).
+        chatHistory.push({ role: "assistant", content: reply + (data.memo ? "\n\n[Mobility: " + data.memo + "]" : "") });
         addMessage("bot", reply);
         if (data.order) addOrderCard(data.order);
         if (data.transfer) addTransferCard(data.transfer);
+        if (data.choice) addChoiceButtons(data.choice);
         busy = false;
         sendEl.disabled = false;
       });
+    }
+
+    // Mobility choices (product, shipping, "Send bestilling" …) as buttons under Arne's answer.
+    var CONFIRM_KEYS = ["confirmation", "decision"];
+    var CANCEL_VALUES = ["no", "nei", "cancel", "avbryt"];
+
+    function addChoiceButtons(choice) {
+      var wrap = document.createElement("div");
+      wrap.className = "choices";
+      (choice.options || []).forEach(function (opt) {
+        var b = document.createElement("button");
+        b.type = "button";
+        var value = String(opt.value != null ? opt.value : opt.label);
+        var isConfirm = CONFIRM_KEYS.indexOf(choice.key) !== -1 && CANCEL_VALUES.indexOf(value.toLowerCase()) === -1;
+        b.className = "chip" + (isConfirm ? " chip-primary" : "");
+        b.textContent = opt.label || value;
+        b.addEventListener("click", function () {
+          if (busy) return;
+          Array.prototype.forEach.call(wrap.querySelectorAll("button"), function (x) { x.disabled = true; });
+          b.classList.add("chip-chosen");
+          send((opt.label || value) + " [valgt " + choice.key + "=" + value + "]", { display: opt.label || value, confirmed: isConfirm });
+        });
+        wrap.appendChild(b);
+      });
+      logEl.appendChild(wrap);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // ---- Mobility login (each user's own Mitt Mobility account, OAuth with PKCE) ----
+    var MOBILITY = { base: "https://portal.mobility.no", clientId: "01a18250-bf79-7305-828d-bcab0415df41", redirect: location.origin + "/" };
+    var MOBILITY_KEY = "minkonto.mobility";
+    var MOBILITY_PKCE = "minkonto.mobility.pkce";
+
+    function readMobility() {
+      try { return JSON.parse(localStorage.getItem(MOBILITY_KEY) || "null"); } catch (e) { return null; }
+    }
+    function saveMobility(tok) {
+      var data = { access_token: tok.access_token, refresh_token: tok.refresh_token || null, expires_at: Date.now() + (tok.expires_in || 3600) * 1000 };
+      try { localStorage.setItem(MOBILITY_KEY, JSON.stringify(data)); } catch (e) {}
+      renderAuth();
+    }
+    function clearMobility() {
+      try { localStorage.removeItem(MOBILITY_KEY); } catch (e) {}
+      renderAuth();
+    }
+
+    function workerPost(path, payload) {
+      return getIdToken().then(function (token) {
+        var headers = { "Content-Type": "application/json" };
+        if (token) headers.Authorization = "Bearer " + token;
+        return fetch(CHAT_API_URL + path, { method: "POST", headers: headers, body: JSON.stringify(payload) });
+      }).then(function (r) { return r.ok ? r.json() : null; });
+    }
+
+    // A valid Mobility token, refreshed through the Worker when it is about to expire.
+    function getMobilityToken() {
+      var m = readMobility();
+      if (!m) return Promise.resolve(null);
+      if (m.expires_at - Date.now() > 5 * 60 * 1000) return Promise.resolve(m.access_token);
+      if (!m.refresh_token) { clearMobility(); return Promise.resolve(null); }
+      return workerPost("/mobility/token", { refresh_token: m.refresh_token }).then(function (tok) {
+        if (!tok) { clearMobility(); return null; }
+        saveMobility(tok);
+        return tok.access_token;
+      }).catch(function () { return null; });
+    }
+
+    function b64url(bytes) {
+      return btoa(String.fromCharCode.apply(null, new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+
+    function connectMobility() {
+      var verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
+      var state = b64url(crypto.getRandomValues(new Uint8Array(16)));
+      crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)).then(function (hash) {
+        try { sessionStorage.setItem(MOBILITY_PKCE, JSON.stringify({ verifier: verifier, state: state })); } catch (e) {}
+        location.href = MOBILITY.base + "/oauth/authorize?" + new URLSearchParams({
+          response_type: "code", client_id: MOBILITY.clientId, redirect_uri: MOBILITY.redirect,
+          scope: "mcp:use offline_access", state: state, code_challenge: b64url(hash),
+          code_challenge_method: "S256", resource: MOBILITY.base
+        }).toString();
+      });
+    }
+
+    // Back from Mobility with ?code=…&state=… – picked up before sign-in, finished after it.
+    var mobilityReturn = (function () {
+      var q = new URLSearchParams(location.search);
+      if (!q.get("code") || !q.get("state")) return null;
+      var pkce = null;
+      try { pkce = JSON.parse(sessionStorage.getItem(MOBILITY_PKCE) || "null"); sessionStorage.removeItem(MOBILITY_PKCE); } catch (e) {}
+      history.replaceState(null, "", location.pathname + location.hash);
+      return pkce && pkce.state === q.get("state") ? { code: q.get("code"), verifier: pkce.verifier } : { error: true };
+    })();
+
+    function finishMobilityLogin() {
+      if (!mobilityReturn || !account) return;
+      openChat();
+      if (mobilityReturn.error) return addMessage("bot", t("mobilityFailed"));
+      workerPost("/mobility/token", { code: mobilityReturn.code, code_verifier: mobilityReturn.verifier, redirect_uri: MOBILITY.redirect })
+        .then(function (tok) {
+          if (!tok) throw new Error("token");
+          saveMobility(tok);
+          addMessage("bot", t("mobilityConnected"));
+        }).catch(function () { addMessage("bot", t("mobilityFailed")); });
     }
 
     function autoGrow() {
@@ -1667,6 +1817,7 @@
       openChat();
       send(t("printerAsk"));
     });
+    document.getElementById("mobility-disconnect").addEventListener("click", clearMobility);
     document.getElementById("logout").addEventListener("click", function () {
       msalApp.logoutRedirect({ account: account });
     });
@@ -1674,6 +1825,7 @@
     initAuth().then(function () {
       renderAuth();
       resumeIntent();
+      finishMobilityLogin();
     });
     document.getElementById("ask-close").addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) {
@@ -1983,6 +2135,7 @@
     logEl.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-form]");
       if (btn && btn.getAttribute("data-form") === "laan-bil") openLoanForm();
+      if (e.target.closest("[data-action='mobility-connect']")) connectMobility();
     });
 
     inputEl.addEventListener("input", autoGrow);
