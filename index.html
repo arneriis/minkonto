@@ -392,6 +392,7 @@
       text-decoration: none;
     }
     .video-link svg { flex: none; width: 28px; height: 28px; color: var(--navy); }
+    .video-hint { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 400; }
     .video-link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
     .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 8px; }
@@ -655,6 +656,7 @@
         askBtn: "Spør Arne",
         chatSub: "AI-assistent for IT-spørsmål",
         close: "Lukk",
+        videoInFolder: "Åpner videomappen – velg",
         watchVideo: "Se video",
         newChat: "Ny chat",
         logout: "Logg ut",
@@ -702,6 +704,7 @@
         askBtn: "Fråga Arne",
         chatSub: "AI-assistent för IT-frågor",
         close: "Stäng",
+        videoInFolder: "Öppnar videomappen – välj",
         watchVideo: "Se video",
         newChat: "Ny chatt",
         logout: "Logga ut",
@@ -749,6 +752,7 @@
         askBtn: "Spørg Arne",
         chatSub: "AI-assistent til IT-spørgsmål",
         close: "Luk",
+        videoInFolder: "Åbner videomappen – vælg",
         watchVideo: "Se video",
         newChat: "Ny chat",
         logout: "Log ud",
@@ -796,6 +800,7 @@
         askBtn: "Ask Arne",
         chatSub: "AI assistant for IT questions",
         close: "Close",
+        videoInFolder: "Opens the video folder – choose",
         watchVideo: "Watch video",
         newChat: "New chat",
         logout: "Sign out",
@@ -938,24 +943,28 @@
       return out;
     }
 
-    // Expense videos in SharePoint (require Recover sign-in). Arne puts [[video:id]] at the right step;
-    // a marker whose url is empty is simply not shown.
+    // Expense videos in SharePoint (require Recover sign-in). Arne puts [[video:id]] at the right step.
+    // Shared SharePoint folder with all videos. Give a video its own url to open it directly instead.
+    var VIDEO_FOLDER = "https://recovernordicgroup.sharepoint.com/:li:/s/SkadearkivNO/IwAQJz8Vvm8_TLHuVoGzJeJCASUW4jG863XQnoSSE_wtEaI?e=zIiqLy";
     var VIDEOS = {
-      "utlegg-app": { title: "Legge inn utlegg", url: "" },
-      "utlegg-pc": { title: "Legge inn utlegg via PC", url: "" },
-      "reise-regning": { title: "Reise på regning med kjørerute og utlegg", url: "" },
-      "reise-regning-pc": { title: "Reise på regning via PC", url: "" },
-      "utland-web": { title: "Utlandsreise i web", url: "" },
-      "kontering": { title: "Endring av kontering", url: "" },
-      "manager": { title: "Manager – godkjenne utlegg", url: "" }
+      "utlegg-app": { title: "Legge inn utlegg", file: "Legge inn utlegg.mp4", url: "" },
+      "utlegg-pc": { title: "Legge inn utlegg via PC", file: "Legge inn utlegg via PC.mp4", url: "" },
+      "reise-regning": { title: "Reise på regning med kjørerute og utlegg", file: "Reise på regning med kjørerute og utlegg.mp4", url: "" },
+      "reise-regning-pc": { title: "Reise på regning via PC", file: "Reise på regning via PC.mp4", url: "" },
+      "utland-web": { title: "Utlandsreise i web", file: "Utlandsreise i web .mp4", url: "" },
+      "kontering": { title: "Endring av kontering", file: "Endring av kontering.mp4", url: "" },
+      "manager": { title: "Manager – godkjenne utlegg", file: "Manager .mp4", url: "" }
     };
 
     function videoCard(id) {
       var v = VIDEOS[id];
-      if (!v || !/^https:\/\//.test(v.url)) return "";
-      return '<a class="video-link" href="' + escapeHtml(v.url) + '" target="_blank" rel="noopener">' +
+      if (!v) return "";
+      var url = v.url || VIDEO_FOLDER;
+      if (!/^https:\/\//.test(url)) return "";
+      var hint = v.url ? "" : '<small class="video-hint">' + escapeHtml(t("videoInFolder")) + " «" + escapeHtml(v.file) + "»</small>";
+      return '<a class="video-link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M10 8l6 4-6 4z" fill="#fff"/></svg>' +
-        "<span>" + escapeHtml(t("watchVideo")) + ": " + escapeHtml(v.title) + "</span></a>";
+        "<span>" + escapeHtml(t("watchVideo")) + ": " + escapeHtml(v.title) + hint + "</span></a>";
     }
 
     // Small, safe Markdown subset: paragraphs, headings, numbered/bulleted lists, tables, bold, links.
