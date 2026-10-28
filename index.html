@@ -404,6 +404,17 @@
     .stepper { display: flex; align-items: center; gap: 6px; }
     .stepper button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); font: inherit; font-size: 18px; font-weight: 600; color: var(--navy); cursor: pointer; }
     .stepper output { min-width: 18px; text-align: center; font-weight: 700; }
+    .chat-notice { margin: 0; padding: 4px 16px 0; font-size: 11.5px; color: var(--muted); text-align: center; background: var(--surface); }
+    .log-list { display: grid; gap: 10px; }
+    .log-item { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; display: grid; gap: 6px; font-size: 14px; }
+    .log-item.has-error { border-left: 4px solid #c0392b; }
+    .log-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--muted); }
+    .log-q { font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .log-a { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); font-size: 13px; }
+    .log-item details summary { cursor: pointer; font-size: 13px; color: var(--navy); font-weight: 600; }
+    .log-tools { margin: 0; padding-left: 18px; font-size: 12.5px; }
+    .log-err { color: #a12a2a; font-size: 13px; }
+    .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--bg); font-size: 11.5px; color: var(--navy); font-weight: 600; }
     /* Loan-of-car form (Norway) */
     .form-link { border: 0; width: 100%; font: inherit; cursor: pointer; text-align: left; }
 
@@ -717,6 +728,7 @@
     <span class="auth-status" id="auth-status" hidden>
       <span id="auth-name"></span>
       · <button type="button" class="link-btn" id="logout" data-i18n="logout">Logg ut</button>
+      <span id="admin-status" hidden> · <button type="button" class="link-btn" id="open-logs">AI-logg</button></span>
       <span id="mobility-status" hidden> · <button type="button" class="link-btn" id="mobility-disconnect" data-i18n="mobilityDisconnect">Koble fra Mobility</button></span>
     </span>
     minkonto.riis.cc
@@ -739,12 +751,39 @@
     </div>
     <div class="chat-log" id="chat-log" aria-live="polite"></div>
     <div class="chips" id="chips"></div>
+    <p class="chat-notice" data-i18n="logNotice">Spørsmål til Arne logges i 90 dager for feilsøking og forbedring.</p>
     <form class="chat-form" id="chat-form">
       <textarea id="chat-input" rows="1" data-i18n-placeholder="placeholder" placeholder="Skriv spørsmålet ditt …" aria-label="Melding"></textarea>
       <button type="submit" class="send-btn" id="chat-send" data-i18n-label="send" aria-label="Send">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
       </button>
     </form>
+  </section>
+
+  <section class="sheet" id="logs" role="dialog" aria-modal="true" aria-labelledby="logs-title" hidden>
+    <div class="chat-head">
+      <div class="chat-title">
+        <strong id="logs-title">AI-logg – Spør Arne</strong>
+        <small>Kun for administrator · slettes etter 90 dager</small>
+      </div>
+      <button type="button" class="icon-btn" id="logs-close" aria-label="Lukk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="sheet-inner">
+        <div class="card">
+          <div class="field"><label for="logs-search">Søk i spørsmål, svar eller bruker</label><input id="logs-search" type="search" autocomplete="off"></div>
+          <div class="sheet-actions">
+            <button type="button" class="btn" id="logs-refresh">Oppdater</button>
+            <button type="button" class="btn" id="logs-csv">Eksporter CSV</button>
+          </div>
+          <p class="hint" id="logs-summary"></p>
+        </div>
+        <div id="logs-list" class="log-list"></div>
+        <div class="sheet-actions"><button type="button" class="btn" id="logs-more" hidden>Last flere</button></div>
+      </div>
+    </div>
   </section>
 
   <section class="sheet" id="printer" role="dialog" aria-modal="true" aria-labelledby="printer-title" hidden>
@@ -916,6 +955,7 @@
         askBtn: "Spør Arne",
         chatSub: "AI-assistent for IT-spørsmål",
         close: "Lukk",
+        logNotice: "Spørsmål til Arne logges i 90 dager for feilsøking og forbedring.",
         priceFrom: "fra",
         priceNote: "Priser er veiledende fra Mobility. Endelig pris og eventuell egenandel vises før du sender bestillingen.",
         choose: "Velg",
@@ -976,6 +1016,7 @@
         askBtn: "Fråga Arne",
         chatSub: "AI-assistent för IT-frågor",
         close: "Stäng",
+        logNotice: "Frågor till Arne loggas i 90 dagar för felsökning och förbättring.",
         priceFrom: "från",
         priceNote: "Priserna är vägledande från Mobility. Slutligt pris visas innan du skickar beställningen.",
         choose: "Välj",
@@ -1036,6 +1077,7 @@
         askBtn: "Spørg Arne",
         chatSub: "AI-assistent til IT-spørgsmål",
         close: "Luk",
+        logNotice: "Spørgsmål til Arne logges i 90 dage til fejlfinding og forbedring.",
         priceFrom: "fra",
         priceNote: "Priserne er vejledende fra Mobility. Endelig pris vises, før du sender bestillingen.",
         choose: "Vælg",
@@ -1096,6 +1138,7 @@
         askBtn: "Ask Arne",
         chatSub: "AI assistant for IT questions",
         close: "Close",
+        logNotice: "Questions to Arne are logged for 90 days for troubleshooting and improvement.",
         priceFrom: "from",
         priceNote: "Prices are indicative from Mobility. The final price is shown before you send the order.",
         choose: "Choose",
@@ -1780,6 +1823,8 @@
       document.body.classList.toggle("locked", isLocked());
       var status = document.getElementById("auth-status");
       status.hidden = !(authEnabled() && account);
+      var as = document.getElementById("admin-status");
+      if (as) as.hidden = !isAdminUser();
       var ms = document.getElementById("mobility-status");
       if (ms) ms.hidden = !readMobility();
       if (account) {
@@ -2131,6 +2176,7 @@
     });
     document.getElementById("ask-close").addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !logsEl.hidden) { logsEl.hidden = true; return; }
       if (e.key === "Escape" && !printerEl.hidden) return closePrinterForm();
       if (e.key === "Escape" && !loanEl.hidden) return closeLoanForm();
       if (e.key === "Escape" && !chatEl.hidden) closeChat();
@@ -2515,6 +2561,102 @@
       var text = "Til: " + ORDER_TO + "\nKopi: " + ORDER_CC + "\nEmne: " + mail.subject + "\n\n" + mail.body;
       navigator.clipboard.writeText(text).then(function () { setPrinterStatus("Kopiert! Lim inn i en ny e-post.", "ok"); });
     });
+
+
+    // ---- AI log (admin only; the Worker checks the sign-in, the link is just hidden for others) ----
+    var ADMIN_EMAILS = ["arne.riis@recover.no"];
+    var logsEl = document.getElementById("logs");
+    var logEntries = [];
+    var logCursor = null;
+
+    function isAdminUser() {
+      return Boolean(account && ADMIN_EMAILS.indexOf(String(account.username || "").toLowerCase()) !== -1);
+    }
+
+    function fetchLogs(more) {
+      if (!more) { logEntries = []; logCursor = null; }
+      document.getElementById("logs-summary").textContent = "Henter …";
+      return getIdToken().then(function (token) {
+        var url = CHAT_API_URL + "/admin/logs" + (more && logCursor ? "?cursor=" + encodeURIComponent(logCursor) : "");
+        return fetch(url, { headers: token ? { Authorization: "Bearer " + token } : {} });
+      }).then(function (r) {
+        if (r.status === 403) throw new Error("Du har ikke tilgang til loggen.");
+        if (!r.ok) throw new Error("Kunne ikke hente loggen (" + r.status + ").");
+        return r.json();
+      }).then(function (data) {
+        logEntries = logEntries.concat(data.entries || []);
+        logCursor = data.cursor;
+        renderLogs();
+      }).catch(function (err) {
+        document.getElementById("logs-summary").textContent = err.message;
+      });
+    }
+
+    function renderLogs() {
+      var q = document.getElementById("logs-search").value.trim().toLowerCase();
+      var list = document.getElementById("logs-list");
+      list.innerHTML = "";
+      var shown = logEntries.filter(function (e) {
+        return !q || [e.question, e.reply, e.user, e.name, e.error].join(" ").toLowerCase().indexOf(q) !== -1;
+      });
+      shown.forEach(function (e) {
+        var item = document.createElement("div");
+        item.className = "log-item" + (e.error ? " has-error" : "");
+        var meta = document.createElement("div");
+        meta.className = "log-meta";
+        var tokens = e.usage ? (e.usage.input + e.usage.cacheRead + e.usage.cacheWrite) + " inn / " + e.usage.output + " ut" : "";
+        [new Date(e.time).toLocaleString("nb-NO"), (e.name ? e.name + " – " : "") + e.user, e.lang, e.model || "", tokens ? tokens + " tokens" : ""]
+          .filter(Boolean).forEach(function (txt) { var sp = document.createElement("span"); sp.textContent = txt; meta.appendChild(sp); });
+        if (e.mobilityConnected) { var tg = document.createElement("span"); tg.className = "tag"; tg.textContent = "Mobility"; meta.appendChild(tg); }
+        if (e.confirmed) { var tc = document.createElement("span"); tc.className = "tag"; tc.textContent = "Bekreftet"; meta.appendChild(tc); }
+        item.appendChild(meta);
+        var qEl = document.createElement("div"); qEl.className = "log-q"; qEl.textContent = e.question || ""; item.appendChild(qEl);
+        if (e.error) { var er = document.createElement("div"); er.className = "log-err"; er.textContent = "Feil: " + e.error; item.appendChild(er); }
+        if (e.reply) {
+          var d = document.createElement("details");
+          var sm = document.createElement("summary"); sm.textContent = "Svar fra Arne"; d.appendChild(sm);
+          var a = document.createElement("div"); a.className = "log-a"; a.textContent = e.reply; d.appendChild(a);
+          item.appendChild(d);
+        }
+        if (e.tools && e.tools.length) {
+          var ul = document.createElement("ul"); ul.className = "log-tools";
+          e.tools.forEach(function (tl) {
+            var li = document.createElement("li");
+            li.textContent = tl.tool + (tl.blocked ? " – blokkert" : "") + (tl.submitted ? " – SENDT" : "") + (tl.decided ? " – avgjort" : "") +
+              (tl.message ? ": " + tl.message : "") + " " + JSON.stringify(tl.args || {});
+            ul.appendChild(li);
+          });
+          item.appendChild(ul);
+        }
+        list.appendChild(item);
+      });
+      var errors = logEntries.filter(function (e) { return e.error; }).length;
+      document.getElementById("logs-summary").textContent = shown.length + " av " + logEntries.length + " forespørsler vist" +
+        (errors ? " – " + errors + " med feil" : "") + (logCursor ? " (flere finnes)" : "");
+      document.getElementById("logs-more").hidden = !logCursor;
+    }
+
+    function exportLogsCsv() {
+      var cell = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
+      var rows = [["Tid", "Bruker", "Navn", "Språk", "Spørsmål", "Svar", "Verktøy", "Feil", "Tokens inn", "Tokens ut"]];
+      logEntries.forEach(function (e) {
+        rows.push([new Date(e.time).toLocaleString("nb-NO"), e.user, e.name, e.lang, e.question, e.reply,
+          (e.tools || []).map(function (tl) { return tl.tool + (tl.submitted ? " (sendt)" : "") + (tl.blocked ? " (blokkert)" : ""); }).join("; "),
+          e.error, e.usage ? e.usage.input + e.usage.cacheRead + e.usage.cacheWrite : "", e.usage ? e.usage.output : ""]);
+      });
+      var csv = "﻿" + rows.map(function (r) { return r.map(cell).join(";"); }).join("\r\n");
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      a.download = "spor-arne-logg-" + new Date().toISOString().slice(0, 10) + ".csv";
+      a.click();
+    }
+
+    document.getElementById("open-logs").addEventListener("click", function () { logsEl.hidden = false; fetchLogs(false); });
+    document.getElementById("logs-close").addEventListener("click", function () { logsEl.hidden = true; });
+    document.getElementById("logs-refresh").addEventListener("click", function () { fetchLogs(false); });
+    document.getElementById("logs-more").addEventListener("click", function () { fetchLogs(true); });
+    document.getElementById("logs-csv").addEventListener("click", exportLogsCsv);
+    document.getElementById("logs-search").addEventListener("input", renderLogs);
 
     logEl.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-form]");

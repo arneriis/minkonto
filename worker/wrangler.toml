@@ -15,6 +15,8 @@ binding = "STATS"
 id = "c90b71c4f5a94eb898f75fb158490209"
 
 [vars]
+# Bare disse kan lese AI-loggen (kommaseparert)
+ADMIN_EMAILS = "arne.riis@recover.no"
 # Arne er registrert som offentlig OAuth-klient hos Mobility (portal.mobility.no)
 MOBILITY_CLIENT_ID = "01a18250-bf79-7305-828d-bcab0415df41"
 ALLOWED_ORIGINS = "https://minkonto.riis.cc,http://minkonto.riis.cc"

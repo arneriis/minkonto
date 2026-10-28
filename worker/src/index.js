@@ -319,6 +319,31 @@ async function exchangeMobilityToken(env, body) {
   return { access_token: data.access_token, refresh_token: data.refresh_token || null, expires_in: data.expires_in || 0 };
 }
 
+// ---- AI log (every question to Arne), readable only by the admin(s) in ADMIN_EMAILS ----
+const LOG_TTL_SECONDS = 90 * 24 * 3600;
+const LOG_PAGE = 50;
+
+function userEmail(user) {
+  return String(user?.preferred_username || user?.email || user?.upn || "").toLowerCase();
+}
+
+function isAdmin(env, user) {
+  const admins = String(env.ADMIN_EMAILS || "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
+  return admins.includes(userEmail(user));
+}
+
+async function writeLog(env, entry) {
+  // Newest first when listed: key sorts by reversed time.
+  const key = `log:${String(9999999999999 - entry.time).padStart(13, "0")}:${crypto.randomUUID().slice(0, 8)}`;
+  await env.STATS.put(key, JSON.stringify(entry), { expirationTtl: LOG_TTL_SECONDS });
+}
+
+async function readLogs(env, cursor) {
+  const list = await env.STATS.list({ prefix: "log:", limit: LOG_PAGE, cursor: cursor || undefined });
+  const entries = await Promise.all(list.keys.map((k) => env.STATS.get(k.name, "json")));
+  return { entries: entries.filter(Boolean), cursor: list.list_complete ? null : list.cursor };
+}
+
 // ---- Suggestion usage (anonymous counts per suggestion id, shared by everyone) ----
 const CHIP_IDS = ["travel", "mobile", "loan", "car-damage", "expense", "vacation", "printer", "transfer", "password",
   "iphone", "android", "mfa", "meps", "network"];
@@ -373,7 +398,7 @@ async function readChipCounts(env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = request.headers.get("Origin") || "";
     const cors = corsHeaders(origin, env);
 
@@ -382,7 +407,8 @@ export default {
     const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
     if (!allowed.includes(origin)) return json({ error: "Forbidden" }, 403, cors);
 
-    if (authEnabled(env) && !(await verifyUser(request, env))) {
+    const user = authEnabled(env) ? await verifyUser(request, env) : null;
+    if (authEnabled(env) && !user) {
       return json({ error: "unauthorized" }, 401, cors);
     }
 
@@ -395,6 +421,11 @@ export default {
     }
     if (request.method === "GET" && path === "/stats/chips") {
       return json({ counts: await readChipCounts(env) }, 200, { ...cors, "Cache-Control": "private, max-age=60" });
+    }
+    if (request.method === "GET" && path === "/admin/logs") {
+      if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
+      const cursor = new URL(request.url).searchParams.get("cursor");
+      return json(await readLogs(env, cursor), 200, { ...cors, "Cache-Control": "private, no-store" });
     }
     if (request.method !== "POST") return json({ error: "Method not allowed" }, 405, cors);
 
@@ -426,6 +457,24 @@ export default {
     const mobilityToken = typeof body.mobilityToken === "string" && body.mobilityToken ? body.mobilityToken : null;
     const confirmed = body.confirmed === true;
 
+    const lastUser = messages[messages.length - 1]?.content || "";
+    const log = {
+      time: Date.now(),
+      user: userEmail(user) || "ukjent",
+      name: user?.name || "",
+      lang,
+      question: lastUser.slice(0, 2000),
+      turns: messages.length,
+      confirmed,
+      mobilityConnected: Boolean(mobilityToken),
+      tools: [],
+      usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    };
+    const saveLog = () => {
+      const job = writeLog(env, log).catch((e) => console.error("log", e));
+      if (ctx?.waitUntil) ctx.waitUntil(job);
+    };
+
     try {
       const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
       let tools = [PRINTER_ORDER_TOOL, NUMBER_TRANSFER_TOOL];
@@ -435,7 +484,7 @@ export default {
           tools = tools.concat(await loadMobilityTools(mobilityToken));
           mobilityNote = "Mobility er koblet til for denne brukeren (verktøyene mobility_order og mobility_approve).";
         } catch (err) {
-          if (err.mobilityAuth) return json({ error: "mobility_unauthorized" }, 401, cors);
+          if (err.mobilityAuth) { log.error = "mobility_unauthorized"; saveLog(); return json({ error: "mobility_unauthorized" }, 401, cors); }
           console.error("Mobility tools unavailable", err);
           mobilityNote = "Mobility svarer ikke akkurat nå. Be brukeren prøve igjen senere.";
         }
@@ -470,6 +519,11 @@ export default {
           tools,
           messages: convo,
         });
+        const u = response.usage || {};
+        log.usage.input += u.input_tokens || 0;
+        log.usage.output += u.output_tokens || 0;
+        log.usage.cacheRead += u.cache_read_input_tokens || 0;
+        log.usage.cacheWrite += u.cache_creation_input_tokens || 0;
         const mobilityCalls = response.content.filter((b) => b.type === "tool_use" && b.name.startsWith("mobility_"));
         if (response.stop_reason !== "tool_use" || !mobilityCalls.length || round >= MAX_TOOL_ROUNDS) break;
 
@@ -483,19 +537,21 @@ export default {
           }
           const blocked = blockedMobilityCall(call.name, call.input || {}, confirmed) || missingOrderDetails(call.name, call.input || {});
           if (blocked) {
+            log.tools.push({ tool: call.name, args: call.input || {}, blocked: blocked.slice(0, 120) });
             results.push({ type: "tool_result", tool_use_id: call.id, content: blocked, is_error: true });
             continue;
           }
           try {
             const r = await callMobilityTool(mobilityToken, call.name, call.input || {});
             lastMobility = { tool: call.name, args: call.input || {}, result: r.structured };
+            log.tools.push({ tool: call.name, args: call.input || {}, message: (r.structured?.message || r.text || "").slice(0, 300), submitted: r.structured?.submitted, decided: r.structured?.decided });
             if (r.structured) await learnPrices(env, r.structured).catch((e) => console.error("prices", e));
             if (call.name === "mobility_order" && r.structured?.submitted === true) {
               await countSubmittedOrder(env, r.structured, call.input || {}).catch((e) => console.error("order count", e));
             }
             results.push({ type: "tool_result", tool_use_id: call.id, content: r.structured ? JSON.stringify(r.structured) : r.text, is_error: r.isError });
           } catch (err) {
-            if (err.mobilityAuth) return json({ error: "mobility_unauthorized" }, 401, cors);
+            if (err.mobilityAuth) { log.error = "mobility_unauthorized"; saveLog(); return json({ error: "mobility_unauthorized" }, 401, cors); }
             results.push({ type: "tool_result", tool_use_id: call.id, content: "Mobility svarte ikke. Prøv igjen.", is_error: true });
           }
         }
@@ -503,6 +559,8 @@ export default {
       }
 
       if (response.stop_reason === "refusal") {
+        log.error = "refusal";
+        saveLog();
         return json({ reply: null, error: "refusal" }, 200, cors);
       }
 
@@ -526,6 +584,12 @@ export default {
         ? JSON.stringify({ tool: lastMobility.tool, args: lastMobility.args, message: res?.message, submitted: res?.submitted, decided: res?.decided })
         : null;
 
+      log.reply = reply.slice(0, 4000);
+      log.model = response.model;
+      if (toolInput(PRINTER_ORDER_TOOL.name)) log.tools.push({ tool: PRINTER_ORDER_TOOL.name, args: toolInput(PRINTER_ORDER_TOOL.name) });
+      if (toolInput(NUMBER_TRANSFER_TOOL.name)) log.tools.push({ tool: NUMBER_TRANSFER_TOOL.name, args: toolInput(NUMBER_TRANSFER_TOOL.name) });
+      saveLog();
+
       return json({
         reply,
         order: toolInput(PRINTER_ORDER_TOOL.name),
@@ -534,6 +598,8 @@ export default {
         memo,
       }, 200, cors);
     } catch (err) {
+      log.error = `${err?.status || ""} ${err?.message || err}`.trim().slice(0, 500);
+      saveLog();
       if (err instanceof Anthropic.RateLimitError) {
         return json({ error: "busy" }, 429, cors);
       }
