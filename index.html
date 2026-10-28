@@ -1010,10 +1010,10 @@
         <div class="card">
           <h3>1–5 Uhellet</h3>
           <div class="row2">
-            <div class="field"><label for="s-date">Skadedato</label><input id="s-date" type="date" data-pdf-date="Text1,Text2,Text3" data-year="4" required></div>
-            <div class="field"><label for="s-time">Klokken</label><input id="s-time" type="time" data-pdf-time="Text4,Text5" required></div>
+            <div class="field"><label for="s-date">Skadedato</label><input id="s-date" type="date" data-pdf-date="Text1,Text2,Text3" data-year="4"></div>
+            <div class="field"><label for="s-time">Klokken</label><input id="s-time" type="time" data-pdf-time="Text4,Text5"></div>
           </div>
-          <div class="field"><label for="s-place">Skadested (gate/kryss, husnr. – mest mulig eksakt)</label><input id="s-place" data-pdf="Text6" required></div>
+          <div class="field"><label for="s-place">Skadested (gate/kryss, husnr. – mest mulig eksakt)</label><input id="s-place" data-pdf="Text6"></div>
           <div class="row2">
             <div class="field"><label for="s-kommune">Kommune</label><input id="s-kommune" data-pdf="Text7"></div>
             <div class="field"><label for="s-land">Land</label><input id="s-land" data-pdf="Text8" value="Norge"></div>
@@ -1037,7 +1037,7 @@
         <div class="card">
           <h3>Kjøretøy A – vår bil</h3>
           <div class="row2">
-            <div class="field"><label for="s-a-reg">Reg.nr.</label><input id="s-a-reg" data-pdf="Text20" data-upper autocomplete="off" required></div>
+            <div class="field"><label for="s-a-reg">Reg.nr.</label><input id="s-a-reg" data-pdf="Text20" data-upper autocomplete="off"></div>
             <div class="field"><label for="s-a-make">Merke/type</label><input id="s-a-make" data-pdf="Text22"></div>
           </div>
           <div class="row2">
@@ -1055,8 +1055,8 @@
         <div class="card">
           <h3>Fører A – deg</h3>
           <div class="row2">
-            <div class="field"><label for="s-a-last">Etternavn</label><input id="s-a-last" data-pdf="Text32" data-upper autocomplete="family-name" required></div>
-            <div class="field"><label for="s-a-first">Fornavn</label><input id="s-a-first" data-pdf="Text33" autocomplete="given-name" required></div>
+            <div class="field"><label for="s-a-last">Etternavn</label><input id="s-a-last" data-pdf="Text32" data-upper autocomplete="family-name"></div>
+            <div class="field"><label for="s-a-first">Fornavn</label><input id="s-a-first" data-pdf="Text33" autocomplete="given-name"></div>
           </div>
           <div class="row2">
             <div class="field"><label for="s-a-born">Fødselsdato</label><input id="s-a-born" type="date" data-pdf-date="Text34,Text35,Text36" data-age="Text36a"></div>
@@ -1078,7 +1078,7 @@
           <h3>Kjøretøy B – motparten</h3>
           <p class="hint">Gi telefonen til den andre føreren. Hen fyller ut dette og signerer nederst.</p>
           <div class="row2">
-            <div class="field"><label for="s-b-reg">Reg.nr.</label><input id="s-b-reg" data-pdf="Text63" data-upper autocomplete="off" data-b-required></div>
+            <div class="field"><label for="s-b-reg">Reg.nr.</label><input id="s-b-reg" data-pdf="Text63" data-upper autocomplete="off"></div>
             <div class="field"><label for="s-b-make">Merke/type</label><input id="s-b-make" data-pdf="Text65"></div>
           </div>
           <div class="field"><label for="s-b-land">Registreringsland</label><input id="s-b-land" data-pdf="Text67" value="Norge"></div>
@@ -1222,7 +1222,7 @@
           <div class="field" data-when="s-prev"><label for="s-prevtxt">Kort beskrivelse</label><input id="s-prevtxt" data-pdf="Text105"></div>
           <div class="field"><label for="s-police">Behandles saken hos politiet?</label><select id="s-police" data-pdf-choice="NEIJA16"><option value="0">Nei</option><option value="1">Ja</option></select></div>
           <div class="field" data-when="s-police"><label for="s-policetxt">Politidistrikt</label><input id="s-policetxt" data-pdf="Text111"></div>
-          <div class="field"><label for="s-desc">Beskriv så tydelig som mulig hvordan uhellet skjedde</label><textarea id="s-desc" rows="5" data-pdf="Text112" required></textarea></div>
+          <div class="field"><label for="s-desc">Beskriv så tydelig som mulig hvordan uhellet skjedde</label><textarea id="s-desc" rows="5" data-pdf="Text112"></textarea></div>
         </div>
 
         <div class="card" data-when="s-injury">
@@ -1268,7 +1268,7 @@
           <h3>15 Signatur fører A</h3>
           <div class="sigpad"><canvas id="s-sig-a"></canvas><span>Fører A signerer med fingeren</span></div>
           <div class="sheet-actions"><button type="button" class="btn" data-clear="s-sig-a">Tøm signatur</button></div>
-          <label class="check"><input type="checkbox" id="s-confirm" data-pdf-check="Check Box258" required> <span>Jeg bekrefter at opplysningene er riktige</span></label>
+          <label class="check"><input type="checkbox" id="s-confirm" data-pdf-check="Check Box258"> <span>Jeg bekrefter at opplysningene er riktige</span></label>
         </div>
 
         <div class="card s-b-only" hidden>
@@ -1279,7 +1279,7 @@
         </div>
 
         <div class="card">
-          <div class="field"><label for="s-leader">Avdelingsleder / bilansvarlig (e-post)</label><input id="s-leader" type="email" autocomplete="off" placeholder="fornavn.etternavn@recover.no" required></div>
+          <div class="field"><label for="s-leader">Avdelingsleder / bilansvarlig (e-post)</label><input id="s-leader" type="email" autocomplete="off" placeholder="fornavn.etternavn@recover.no"></div>
           <p class="hint" id="s-sendto"></p>
           <div class="sheet-actions">
             <button type="button" class="btn" id="s-preview">Se PDF</button>
@@ -3112,25 +3112,14 @@
       text.Text145 = two(today.getMonth() + 1);
       text.Text146 = String(today.getFullYear()).slice(2);
 
-      var sigA = skadePads["s-sig-a"].png(true);
-      var images = [{ png: sigA, field: "Text96" }, { png: sigA, field: "Text148" }];
+      var images = [];
+      if (skadePads["s-sig-a"].ink) {
+        var sigA = skadePads["s-sig-a"].png(true);
+        images.push({ png: sigA, field: "Text96" }, { png: sigA, field: "Text148" });
+      }
       if (skadeHasB && skadePads["s-sig-b"].ink) images.push({ png: skadePads["s-sig-b"].png(true), field: "Text97" });
       if (skadePads["s-sketch"].ink) images.push({ png: skadePads["s-sketch"].png(), page: 0, rect: SKADE_SKETCH_RECT });
       return { text: text, checks: checks, choices: choices, images: images };
-    }
-
-    function validateSkade() {
-      var bad = Array.prototype.find.call(skadeEl.querySelectorAll("[required], [data-b-required]"), function (el) {
-        if (!skadeActive(el)) return false;
-        return el.type === "checkbox" ? !el.checked : !el.value.trim();
-      });
-      if (bad) {
-        bad.focus();
-        return bad.id === "s-confirm" ? "Bekreft at opplysningene er riktige." : "Fyll ut feltet: " + (skadeEl.querySelector("label[for='" + bad.id + "']") || {}).textContent;
-      }
-      if (!/@recover/i.test($("s-leader").value)) return "Skriv inn Recover-e-posten til avdelingsleder eller bilansvarlig.";
-      if (!skadePads["s-sig-a"].ink) return "Fører A må signere.";
-      return "";
     }
 
     function loadPdfLib() {
@@ -3161,23 +3150,32 @@
     }
 
     function skadeFileName() {
-      return "Skademelding " + ($("s-a-reg").value.trim().toUpperCase() || "bil") + " " + ($("s-date").value || "") + ".pdf";
+      return ["Skademelding", $("s-a-reg").value.trim().toUpperCase() || "bil", $("s-date").value].filter(Boolean).join(" ") + ".pdf";
     }
 
+    // Works for a partly filled (or empty) form: only what is filled in is mentioned.
     function skadeMail() {
       var r = skadeRecipients();
       var reg = $("s-a-reg").value.trim().toUpperCase();
       var bReg = skadeHasB ? $("s-b-reg").value.trim().toUpperCase() : "";
       var date = nbDate($("s-date").value);
+      var time = $("s-time").value;
+      var place = [$("s-place").value.trim(), $("s-kommune").value.trim()].filter(Boolean).join(", ");
+      var name = ($("s-a-first").value.trim() + " " + $("s-a-last").value.trim()).trim();
+      var counterpart = !skadeHasB ? "Ingen motpart."
+        : "Motpart" + (bReg ? " " + bReg : " (reg.nr. ikke oppgitt)") + "." +
+          (skadePads["s-sig-b"].ink ? " Skjemaet er signert av begge førere." : " Motparten har ikke signert.");
       var lines = [
         "Hei,", "",
-        "Vedlagt er skademelding for vår bil " + reg + ", skadedato " + date + " kl. " + $("s-time").value + ".",
-        "Skadested: " + $("s-place").value.trim() + ($("s-kommune").value.trim() ? ", " + $("s-kommune").value.trim() : "") + ".",
-        bReg ? "Motpartens reg.nr.: " + bReg + "." + (skadePads["s-sig-b"].ink ? " Skjemaet er signert av begge førere." : " Motparten har ikke signert.") : "Ingen motpart.",
+        "Vedlagt er skademelding" + (reg ? " for vår bil " + reg : "") + (date ? ", skadedato " + date + (time ? " kl. " + time : "") : "") + ".",
+        place ? "Skadested: " + place + "." : null,
+        counterpart,
         "Forsikringstaker: Recover AS. Avtale " + $("s-a-policy").value + ".", "",
-        "Med vennlig hilsen", ($("s-a-first").value.trim() + " " + $("s-a-last").value.trim()).trim()
-      ];
-      return { to: r.to, cc: r.cc, subject: "Skademelding " + reg + " – " + date + (bReg ? " – motpart " + bReg : ""), body: lines.join("\n") };
+        "Med vennlig hilsen"
+      ].filter(function (line) { return line !== null; });
+      if (name) lines.push(name);
+      var subject = ["Skademelding", reg, date, bReg ? "motpart " + bReg : ""].filter(Boolean).join(" – ").replace("Skademelding – ", "Skademelding ");
+      return { to: r.to, cc: r.cc, subject: subject, body: lines.join("\n") };
     }
 
     function setSkadeStatus(text, kind) {
@@ -3229,8 +3227,6 @@
     });
 
     $("s-preview").addEventListener("click", function () {
-      var err = validateSkade();
-      if (err) return setSkadeStatus(err, "err");
       setSkadeStatus("Lager PDF …");
       buildSkadePdf().then(function (pdf) {
         setSkadeStatus("");
@@ -3241,8 +3237,6 @@
     // Mobile: share the PDF and photos straight into the Outlook app; recipients are copied to paste.
     $("skade-form").addEventListener("submit", function (e) {
       e.preventDefault();
-      var err = validateSkade();
-      if (err) return setSkadeStatus(err, "err");
       var mail = skadeMail();
       setSkadeStatus("Lager PDF …");
       buildSkadePdf().then(function (pdf) {
@@ -3263,8 +3257,6 @@
     });
 
     $("s-compose").addEventListener("click", function () {
-      var err = validateSkade();
-      if (err) return setSkadeStatus(err, "err");
       var mail = skadeMail();
       buildSkadePdf().then(function (pdf) {
         saveBlob(pdf, skadeFileName());
