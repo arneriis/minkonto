@@ -7,6 +7,32 @@
 - **Utstyret mitt** – alt som er handlet på ditt navn, og bestilling av utstyr (Mitt Mobility): https://mitt.mobility.no/login/59051448604ee7bc4a40df12216414c4/
 - **Oppsett av mobilen** – Firmaportal / Intune Company Portal. iPhone/iPad: https://apps.apple.com/app/id719171358 – Android: https://play.google.com/store/apps/details?id=com.microsoft.windowsintune.companyportal
 
+## IFS Cloud og IFS MWO-appen
+
+Recover bruker IFS Cloud som forretningssystem (ERP) og til feltservice. Teknikere i felt bruker mobilappen IFS MWO Service (Mobile Work Order) til arbeidsordrene sine.
+
+- IFS Cloud på nett (PC/Mac): https://recover.ifs.cloud
+- Cloud-adressen (server-URL) i MWO-appen: https://recover.ifs.cloud
+
+Hva MWO-appen brukes til:
+
+- Se arbeidsordrene og oppgavene dine
+- Registrere utført arbeid, timer og materiell, og oppdatere status på jobben
+- Se reservedeler og lager
+- Appen virker også uten dekning – endringer synkroniseres når du er på nett igjen
+
+Sette opp IFS MWO-appen første gang:
+
+1. Last ned appen «IFS MWO Service» fra IFS Corporation. iPhone/iPad: https://apps.apple.com/app/id6744721354 – Android: søk etter «IFS MWO Service» i Google Play (https://play.google.com/store/search?q=IFS%20MWO%20Service&c=apps).
+2. Åpne appen. Når den spør etter server-URL / cloud-adresse, skriv inn: https://recover.ifs.cloud
+3. Logg inn med IFS-brukeren din – samme innlogging som du bruker i IFS Cloud på nett.
+4. Første gang laster appen ned data, så la den stå åpen til synkroniseringen er ferdig. Gjør det gjerne på wifi.
+
+Hvis du ikke får logget inn i appen:
+
+- Sjekk at server-URL-en er skrevet nøyaktig: https://recover.ifs.cloud
+- Test om du kommer inn på https://recover.ifs.cloud i nettleseren. Kommer du inn der, men ikke i appen, mangler brukeren din sannsynligvis tilgang til MWO-appen – kontakt Iver support, så får IFS-ansvarlig gitt deg tilgang.
+
 ## Ferie og fravær (CatalystOne)
 
 Ferie og annet fravær registreres og sjekkes i CatalystOne: https://recovernordic.catalystone.com/ – dette gjelder ansatte i alle land.
