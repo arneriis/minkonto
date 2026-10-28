@@ -1656,6 +1656,7 @@
         if (session !== chatSession) return; // chat was reset while waiting
         typing.remove();
         var data = typeof result === "string" ? { reply: result } : result;
+        if (data.reply) data.reply = data.reply.replace(/\s*\[Mobility:\s*\{[\s\S]*?\}\]\s*/g, "\n").trim();
         var reply = data.reply || (data.order ? t("orderDone") : data.transfer ? t("transferDone") : data.choice ? data.choice.prompt : t("error"));
         // The memo carries Mobility's order state into the next turn (not shown to the user).
         chatHistory.push({ role: "assistant", content: reply + (data.memo ? "\n\n[Mobility: " + data.memo + "]" : "") });

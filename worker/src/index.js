@@ -57,6 +57,8 @@ Bestille mobil, nettbrett og tilbehør (Mobility):
 - Tidligere Mobility-steg står i «[Mobility: …]» i dine egne meldinger. Send alle verdier som allerede er valgt med på nytt i hvert kall.
 - Send confirmation YES, eller decision approve/reject, BARE når brukerens siste melding er et trykk på bekreftelsesknappen. Systemet blokkerer det ellers.
 - Bestillingen går til godkjenneren (som regel lederen) før Mobility behandler den. Spør om godkjenner når Mobility ber om det.
+- Når brukeren har valgt produkt, spør (i én melding) før bestillingen gjøres klar: er den til deg selv eller til en annen ansatt (da navn og mobilnummer), og hvor skal den leveres (mottaker, gateadresse, postnummer, sted). Man kan bestille for andre ansatte – det avgjør Mobility ut fra brukerens tilgang. Gjenta adressen og mottakeren i oppsummeringen før «Send bestilling».
+- «[Mobility: …]» er et internt notat som legges til automatisk. Skriv det aldri selv i svaret.
 
 Tjenestebil, bilforsikring og bilordninger (Norge):
 - Vil noen låne tjenestebilen privat (tilfeldig transport), forklar kort reglene og tilby skjemaet: ta med markøren [[form:laan-bil]] alene på egen linje. Skjemaet fyller de ut og signerer med fingeren; PDF-en åpnes i Outlook-appen som vedlegg (før turen til leder, etter turen til bil og lønn).
@@ -251,6 +253,19 @@ function blockedMobilityCall(name, args, confirmed) {
   return null;
 }
 
+// Before Mobility can finish an order, Arne must have asked who it is for and where it goes.
+function missingOrderDetails(name, args) {
+  if (name !== "mobility_order" || !args.sku) return null;
+  const hasAddress = args.delivery_address && args.delivery_postal_code && args.delivery_city;
+  const hasRecipient = typeof args.ordered_for_name === "string" || args.ordered_for || args.recipient;
+  if (hasAddress && hasRecipient) return null;
+  return "Ikke sendt til Mobility ennå. Spør brukeren først (i én melding): " +
+    (hasRecipient ? "" : "1) Er bestillingen til deg selv eller til en annen ansatt? Er den til en annen, trengs navn og mobilnummer. ") +
+    (hasAddress ? "" : "2) Hvor skal den leveres? Navn/mottaker, gateadresse, postnummer og sted. ") +
+    "Kall deretter mobility_order igjen med sku og alle tidligere valg, pluss delivery_name, delivery_address, delivery_postal_code, delivery_city, " +
+    "og ordered_for_name + ordered_for_phone hvis den er til en annen (ordered_for_name tom streng \"\" hvis den er til brukeren selv).";
+}
+
 async function callMobilityTool(token, name, args) {
   const sid = await mobilitySession(token);
   const { body } = await mobilityRpc(token, { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name, arguments: args } }, sid);
@@ -367,7 +382,7 @@ export default {
             results.push({ type: "tool_result", tool_use_id: call.id, content: "OK" });
             continue;
           }
-          const blocked = blockedMobilityCall(call.name, call.input || {}, confirmed);
+          const blocked = blockedMobilityCall(call.name, call.input || {}, confirmed) || missingOrderDetails(call.name, call.input || {});
           if (blocked) {
             results.push({ type: "tool_result", tool_use_id: call.id, content: blocked, is_error: true });
             continue;
@@ -392,6 +407,7 @@ export default {
         .filter((block) => block.type === "text")
         .map((block) => block.text)
         .join("\n")
+        .replace(/\s*\[Mobility:\s*\{[\s\S]*?\}\]\s*/g, "\n")  // internal state note, never shown
         .trim();
 
       // The page turns these orders into a ready-to-send e-mail; no tool_result round trip is needed.
