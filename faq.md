@@ -72,6 +72,117 @@ Dette trengs (feltene i Mobility-skjemaet):
 
 Arne kan fylle ut overdragelsen og lage e-posten til ordre@mobility.no for deg. Fødselsdato skriver du selv inn i e-posten før du sender – den skal ikke skrives i chatten.
 
+## Expense: kom i gang med reise og utlegg (SD Worx) – Norge
+
+Reiseregninger og utlegg for ansatte i Norge registreres i Expense fra SD Worx. Det finnes to apper:
+
+- **Daily by SD Worx** – her legger du inn dine egne utlegg og reiser.
+- **Manager by SD Worx** – for ledere som skal godkjenne (attestere) utlegg og reiseregninger.
+
+Første gang du skal logge inn og registrere deg for appene, MÅ du logge inn via nettleseren – ikke i appen:
+
+- Daily: https://hr.aditro.com/sso/mobile/open/daily/AHR2218570
+- Manager: https://hr.aditro.com/sso/mobile/open/manager/AHR2218570
+
+1. Åpne lenken over i nettleseren.
+2. Skriv inn e-postadressen du bruker for å logge inn i Recovers systemer (har du «kort» e-postadresse, bruk den), og velg «Glemt passord».
+3. Du får en e-post med lenke for å lage nytt passord.
+4. Når du har logget inn på lenken første gang, logger du inn i appen med samme brukernavn og passord.
+
+- På PC logger du inn på https://www.hr.aditro.com med samme innlogging.
+- Er du leder med tilgang til Manager: husk å stå på «Employee» når du registrerer dine egne utlegg og reiser.
+- Du kan også åpne Expense via Okta under «Mine apper» (SD Worx-ikonet). Mangler ikonet, kontakt Crayon og be dem legge det til.
+- Har du «kort» e-postadresse og logger inn via Okta: sjekk at det står den korte e-postadressen øverst til høyre. Står det den fulle adressen og du får feilmelding, logg ut og logg inn igjen med den korte adressen.
+
+## Expense: nytt passord i SD Worx (hr.aditro.com) – Norge
+
+1. Gå til https://hr.aditro.com og klikk «Har du glemt passordet ditt?».
+2. Skriv inn e-postadressen din og klikk «Neste».
+3. Du får en bekreftelseskode på e-post. Skriv den inn og klikk «Neste».
+4. Lag nytt passord: minst 8 tegn, og minst tre typer tegn (store og små bokstaver, tall eller tegn). Klikk «Neste».
+
+## Expense: legge inn utlegg (Daily-appen og PC) – Norge
+
+I Daily-appen:
+
+1. Gå til «Utlegg/Reise» og trykk på plusstegnet (+).
+2. Velg «Utlegg».
+3. Velg utleggstype (for eksempel kontorrekvisita, taxi eller bompenger). Under «Sist valgte» ligger typene du har brukt nylig.
+4. Legg inn dato og beløp. Er utlegget i utenlandsk valuta, velg riktig valuta – vekslingskursen regnes ut automatisk (Forex).
+5. Legg ved kvittering: ta bilde direkte med kameraknappen, hent bilde fra kamerarullen, eller legg ved en lagret fil (binders).
+6. Trykk «Lagre», se over og trykk «Send til godkjenning». Du ser hvilken leder som skal godkjenne, og kan legge til en kommentar.
+
+[[video:utlegg-app]]
+
+Via PC: logg inn på https://www.hr.aditro.com og legg inn utlegget der.
+
+[[video:utlegg-pc]]
+
+## Expense: reise på regning med kjørerute og utlegg – Norge
+
+«Reise på regning» brukes når du legger ut for utgiftene på en reise og får dem refundert mot kvittering – og når du vil samle flere utlegg eller kjøreruter på samme reise.
+
+1. I Daily-appen: gå til «Utlegg/Reise», trykk plusstegnet (+) og velg «Reiseregning/utlegg» → «Reise på regning».
+2. Velg varighet (fra og til). Under «Grunndata» fyller du inn formål og tilleggsopplysninger. Trykk «Opprett».
+3. Kilometergodtgjørelse: trykk plusstegnet og velg «Ny kjørerute». Legg inn hvor du reiser fra og til – kilometerne regnes ut automatisk. Formål er påkrevet. Har du hatt passasjerer, trykk «Passasjerer», legg til navn og hvor langt hver av dem satt på («Legg til passasjer» for flere), trykk «Ferdig» og pil tilbake. Trykk «Lagre».
+4. Utlegg på reisen: trykk plusstegnet og velg «Utlegg». Velg utleggstype, legg inn beløp og legg ved kvittering (kamerarull, kamera eller fil). Trykk «Lagre».
+5. Se over at alt stemmer, og trykk «Send til godkjenning». Du ser navnet på lederen din og kan legge til en kommentar.
+6. Du får varsel i appen når reisen er godkjent eller returnert. Lederen din får også varsel.
+
+[[video:reise-regning]]
+
+Via PC: logg inn på https://www.hr.aditro.com og registrer reisen der.
+
+[[video:reise-regning-pc]]
+
+## Expense: reise med diett innland – Norge
+
+1. I Daily-appen: gå til «Utlegg/Reise», trykk plusstegnet, velg «Reiseregning/utlegg» og deretter «Innland».
+2. Legg inn fra- og til-dato og klokkeslett, og fyll ut «Grunndata» (for eksempel «Hokksund – Trondheim» og «Tur/retur»). Har du flere ansattforhold, velg riktig. Trykk «Opprett».
+3. I reisedagboken fyller du inn overnattingstype og sted, og hvilke måltider du har fått dekket (frokost, lunsj, middag). Er alle dagene like, bruk «Endre for hver dag». Er de ulike, legg inn dag for dag. Trykk «Fortsett».
+4. Kjøring: trykk plusstegnet og velg «Ny kjørerute». Formål er påkrevet – husk passasjerer.
+5. Utlegg (for eksempel flybillett): trykk plusstegnet, velg «Utlegg», velg type, legg inn beløp og kvittering, og trykk «Lagre». Gjenta for alle utlegg.
+6. Se over detaljer og sammendrag, og trykk «Send til godkjenning». Du ser hvilken leder som skal attestere, og kan legge til en kommentar.
+
+Regler for diett innland:
+
+- For reiser med overnatting er satsen p.t. kr 825,- per døgn.
+- Et døgn regnes som 24 timer fra reisens starttidspunkt. Reiser som varer mer enn 6 timer inn i et nytt døgn gir full døgndiett etter samme sats som siste døgn.
+- For at reisen skal regnes som en reise med overnatting, må du være mer enn fem timer borte fra hjemmet mellom kl. 22.00 og 06.00. Stedet du overnatter er avgjørende for hva som kan utbetales trekkfritt.
+
+## Expense: reise med diett utland – Norge
+
+1. I Daily-appen: gå til «Utlegg/Reise», trykk plusstegnet, velg «Reiseregning/utlegg» og deretter «Utland». (Engelsk: Expense → Claim → Foreign.)
+2. Legg inn varighet, velg land og fyll ut «Grunndata». Har du flere ansattforhold, velg riktig. Besøker du flere land, start med det første – andre land legges til senere («Legg til ankomst til nytt land for reisen»). Trykk «Opprett».
+3. I reisedagboken: legg inn overnattingstype og hvilke måltider du har fått dekket – for hele reisen under «Endre for hver dag», eller dag for dag.
+4. Velg kompensasjonstillegg: «Compensation allowance abroad (K)».
+5. Overnatting: velg type (for eksempel Hotel). Finnes ikke hotellet på listen, trykk plusstegnet, legg inn hotellet og trykk «Legg til». Velg hotellet og trykk «Fortsett».
+6. Kjøring (for eksempel til flyplassen): plusstegnet → «Ny kjørerute». Husk passasjerer.
+7. Utlegg: plusstegnet → «Utlegg». Velg type (for eksempel «Taxi, abroad»), ta bilde av kvitteringen eller velg «Bruk lagret bilde», og velg riktig valuta. Trykk «Lagre».
+8. Sjekk at alt og alle datoer stemmer, og trykk «Send til godkjenning».
+
+Utenlandsreise via web (PC): logg inn på https://www.hr.aditro.com.
+
+[[video:utland-web]]
+
+## Expense: endre kontering – Norge
+
+Konteringen (for eksempel «Administration NO») står øverst på reiseregningen eller utlegget. Trykk på «Kontering» for å endre den før du sender til godkjenning.
+
+[[video:kontering]]
+
+## Expense: godkjenne reiseregning og utlegg (Manager-appen, for ledere) – Norge
+
+1. Logg inn i Manager-appen. Nederst får du varsel når det ligger en oppgave til deg, og den nyeste ligger øverst i «To-Do's».
+2. Trykk på reiseregningen for å se alle detaljer (diett, utgifter, kjøreruter, vedlegg og sammendrag).
+3. Ser alt riktig ut, trykk «Godkjenne».
+4. Mangler noe og den skal sendes tilbake, trykk «Mer» og deretter «Returner».
+5. Du kan også sveipe til venstre på en reiseregning i «To-Do's» og velge «Returner» eller «Godkjenn» direkte. Den forsvinner da fra listen.
+
+(Engelsk: Log on to the app, open the claim from «To-Do's», tap «Approve» – or «More» → «Return». You can also swipe left in the list.)
+
+[[video:manager]]
+
 ## Bestille skriver / printer (Canon) – kun Norge
 
 Gjelder foreløpig bare Norge – bestilling for andre land kommer senere (kontakt Iver support så lenge). Recover har avtale med Canon om multifunksjonsskrivere (MFP) i Norge. Alle priser er månedssum per maskin.

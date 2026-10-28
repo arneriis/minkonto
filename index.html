@@ -379,6 +379,21 @@
     .msg .btn.primary, .btn.primary { background: var(--navy); border-color: var(--navy); color: #fff; }
     .btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
+    .video-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--navy) !important;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .video-link svg { flex: none; width: 28px; height: 28px; color: var(--navy); }
+    .video-link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
     .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 8px; }
     .chips[hidden] { display: none; }
 
@@ -640,13 +655,14 @@
         askBtn: "Spør Arne",
         chatSub: "AI-assistent for IT-spørsmål",
         close: "Lukk",
+        watchVideo: "Se video",
         newChat: "Ny chat",
         logout: "Logg ut",
         loggedInAs: "Innlogget som",
         loginAgain: "Innloggingen din har gått ut. Lukk chatten og trykk «Spør Arne» for å logge inn igjen.",
         send: "Send",
         placeholder: "Skriv spørsmålet ditt …",
-        greeting: "Hei! Jeg er Arne 👋 Jeg kan hjelpe deg med passord, ferie, oppsett av mobil, MFA, Meps, nettverk og bestilling av skriver. Hva lurer du på?",
+        greeting: "Hei! Jeg er Arne 👋 Jeg kan hjelpe deg med passord, ferie, reiseregning og utlegg, oppsett av mobil, IFS, MFA, Meps, nettverk og bestilling av skriver. Hva lurer du på?",
         printerTitle: "Bestille skriver",
         printerText: "Arne hjelper deg å fylle ut og sende bestillingen",
         printerAsk: "Jeg vil bestille en skriver",
@@ -666,7 +682,7 @@
         transferNote: "E-posten åpnes med ordre@mobility.no som mottaker. Fyll inn fødselsdato der det står ________, se over og trykk Send.",
         transferPdf: "Husk å legge ved signert overdragelsesskjema (PDF) fra tidligere eier.",
         transferDone: "Overdragelsen er klar. Trykk på knappen for å åpne e-posten, fyll inn fødselsdato og send den.",
-        chips: ["Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
+        chips: ["Reiseregning og utlegg", "Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
         fromFaq: "Dette fant jeg i FAQ-en:",
         notFound: "Jeg fant dessverre ikke noe om det i FAQ-en. Prøv å spørre på en annen måte, eller kontakt Iver support.",
         error: "Noe gikk galt. Prøv igjen om litt, eller kontakt Iver support."
@@ -686,6 +702,7 @@
         askBtn: "Fråga Arne",
         chatSub: "AI-assistent för IT-frågor",
         close: "Stäng",
+        watchVideo: "Se video",
         newChat: "Ny chatt",
         logout: "Logga ut",
         loggedInAs: "Inloggad som",
@@ -732,6 +749,7 @@
         askBtn: "Spørg Arne",
         chatSub: "AI-assistent til IT-spørgsmål",
         close: "Luk",
+        watchVideo: "Se video",
         newChat: "Ny chat",
         logout: "Log ud",
         loggedInAs: "Logget ind som",
@@ -778,6 +796,7 @@
         askBtn: "Ask Arne",
         chatSub: "AI assistant for IT questions",
         close: "Close",
+        watchVideo: "Watch video",
         newChat: "New chat",
         logout: "Sign out",
         loggedInAs: "Signed in as",
@@ -919,6 +938,26 @@
       return out;
     }
 
+    // Expense videos in SharePoint (require Recover sign-in). Arne puts [[video:id]] at the right step;
+    // a marker whose url is empty is simply not shown.
+    var VIDEOS = {
+      "utlegg-app": { title: "Legge inn utlegg", url: "" },
+      "utlegg-pc": { title: "Legge inn utlegg via PC", url: "" },
+      "reise-regning": { title: "Reise på regning med kjørerute og utlegg", url: "" },
+      "reise-regning-pc": { title: "Reise på regning via PC", url: "" },
+      "utland-web": { title: "Utlandsreise i web", url: "" },
+      "kontering": { title: "Endring av kontering", url: "" },
+      "manager": { title: "Manager – godkjenne utlegg", url: "" }
+    };
+
+    function videoCard(id) {
+      var v = VIDEOS[id];
+      if (!v || !/^https:\/\//.test(v.url)) return "";
+      return '<a class="video-link" href="' + escapeHtml(v.url) + '" target="_blank" rel="noopener">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M10 8l6 4-6 4z" fill="#fff"/></svg>' +
+        "<span>" + escapeHtml(t("watchVideo")) + ": " + escapeHtml(v.title) + "</span></a>";
+    }
+
     // Small, safe Markdown subset: paragraphs, headings, numbered/bulleted lists, tables, bold, links.
     function renderMarkdown(text) {
       var html = "", list = null, para = [], table = null;
@@ -941,6 +980,7 @@
           return;
         }
         flushTable();
+        if ((m = line.match(/^\[\[video:([a-z-]+)\]\]$/))) { flushPara(); flushList(); html += videoCard(m[1]); return; }
         if (!line) { flushPara(); flushList(); return; }
         if ((m = line.match(/^#{1,4}\s+(.*)$/))) { flushPara(); flushList(); html += "<p><strong>" + inline(m[1]) + "</strong></p>"; return; }
         if ((m = line.match(/^\d+[.)]\s+(.*)$/))) { flushPara(); if (list !== "ol") { flushList(); html += "<ol>"; list = "ol"; } html += "<li>" + inline(m[1]) + "</li>"; return; }
@@ -1205,6 +1245,7 @@
     // ---- Local FAQ search (used when the AI worker isn't configured or fails) ----
     var SYNONYMS = {
       overforing: ["overføre", "overføring", "overdra", "overdragelse", "flytte", "flytta", "transfer", "porting", "nummeret", "mobilnummer", "abonnement", "abonnemang", "mobility", "telenor", "simkort", "esim", "tvillingsim", "datasim"],
+      expense: ["expense", "utlegg", "utgift", "reiseregning", "reiseregninger", "reise", "diett", "kjørerute", "kilometer", "kilometergodtgjørelse", "kvittering", "daily", "manager", "attestere", "sdworx", "aditro", "kontering", "refusjon", "claim", "receipt", "passasjer", "passasjerer"],
       passord: ["passord", "password", "lösenord", "losenord", "adgangskode", "sspr", "glemt", "glömt", "forgot", "reset", "tilbakestill", "nulstil", "återställ"],
       iphone: ["iphone", "ipad", "ios", "apple", "appstore"],
       android: ["android", "samsung", "google", "play"],
@@ -1230,8 +1271,18 @@
       return word;
     }
 
-    function tokens(text) {
-      return text.toLowerCase().split(/[^a-z0-9æøåäöü-]+/i).filter(function (w) { return w.length >= 3; }).map(normalize);
+    function words(text) {
+      return text.toLowerCase().split(/[^a-z0-9æøåäöü-]+/i).filter(function (w) { return w.length >= 3; });
+    }
+
+    function tokens(text) { return words(text).map(normalize); }
+
+    // Same word stem: one word starts with the other ("legger"/"legge", "kilometer"/"kilometerne").
+    function hasPrefix(list, w) {
+      return list.some(function (x) {
+        var a = x.length < w.length ? x : w, b = a === x ? w : x;
+        return a.length >= 5 && b.indexOf(a) === 0;
+      });
     }
 
     function loadFaq() {
@@ -1250,6 +1301,8 @@
         faqSections.forEach(function (s) {
           s.titleTokens = tokens(s.title);
           s.bodyTokens = tokens(s.body);
+          s.titleWords = words(s.title);
+          s.bodyWords = words(s.body);
         });
         return faqSections;
       });
@@ -1258,14 +1311,23 @@
     function searchFaq(question) {
       return loadFaq().then(function (sections) {
         var q = tokens(question);
+        var qWords = words(question);
         var best = null, bestScore = 0;
         sections.forEach(function (s) {
           var score = 0;
-          // Topic words decide the match; other words only break ties.
+          // Topic words decide the match; exact words pick between sections on the same topic.
           q.forEach(function (w) {
             var topic = SYNONYMS.hasOwnProperty(w);
             if (s.titleTokens.indexOf(w) !== -1) score += topic ? 4 : 1;
             if (s.bodyTokens.indexOf(w) !== -1) score += topic ? 2 : 0;
+          });
+          qWords.forEach(function (w) {
+            if (hasPrefix(s.titleWords, w)) score += 2;
+            else if (hasPrefix(s.bodyWords, w)) score += 1;
+          });
+          // Prefer the general section when the title adds a topic the question never mentioned.
+          s.titleTokens.forEach(function (w, i) {
+            if (SYNONYMS.hasOwnProperty(w) && s.titleTokens.indexOf(w) === i && q.indexOf(w) === -1) score -= 2;
           });
           if (score > bestScore) { best = s; bestScore = score; }
         });
