@@ -7,6 +7,23 @@
 - **Utstyret mitt** – alt som er handlet på ditt navn, og bestilling av utstyr (Mitt Mobility): https://mitt.mobility.no/login/59051448604ee7bc4a40df12216414c4/
 - **Oppsett av mobilen** – Firmaportal / Intune Company Portal. iPhone/iPad: https://apps.apple.com/app/id719171358 – Android: https://play.google.com/store/apps/details?id=com.microsoft.windowsintune.companyportal
 
+## Ferie og fravær (CatalystOne)
+
+Ferie og annet fravær registreres og sjekkes i CatalystOne: https://recovernordic.catalystone.com/ – dette gjelder ansatte i alle land.
+
+Sjekke hvor mye ferie du har igjen:
+
+1. Gå til https://recovernordic.catalystone.com/ og logg inn.
+2. På forsiden finner du boksen «Mitt fravær». Der ser du for eksempel «Ferie 33 / 37 – Dager brukt», altså hvor mange feriedager du har brukt av det du har til rådighet.
+
+Søke om ferie:
+
+1. Gå til https://recovernordic.catalystone.com/ og logg inn.
+2. I boksen «Mitt fravær» trykker du «Registrer» under Ferie (eller «Registrer ny» øverst til høyre i boksen).
+3. Velg fraværstype – for ferie velger du «Ferie». Du kan også søke etter fraværstype eller kategori i søkefeltet. Trykk «Neste».
+4. Velg hvilke datoer du skal ha ferie, og velg årsak – som regel det som passer til fraværstypen du valgte (her: ferie).
+5. Send inn registreringen. Ferie krever godkjenning fra leder, så søknaden går til lederen din, som må godkjenne den.
+
 ## Bestille skriver / printer (Canon)
 
 Recover har avtale med Canon om multifunksjonsskrivere (MFP). Alle priser er månedssum per maskin.
