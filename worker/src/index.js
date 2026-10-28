@@ -390,7 +390,8 @@ export default {
           output_config: { effort: "low" },
           betas: ["server-side-fallback-2026-07-01"],
           fallbacks: "default",
-          system: systemPrompt(FAQ, lang),
+          // The FAQ-heavy system prompt is identical across requests – cache it to cut cost per question.
+          system: [{ type: "text", text: systemPrompt(FAQ, lang), cache_control: { type: "ephemeral" } }],
           tools,
           messages: convo,
         });
