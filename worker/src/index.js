@@ -4,6 +4,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 // Internal knowledge – bundled into the Worker, never published (knowledge/ is git-ignored).
 import FAQ from "../knowledge/faq.md";
+// Price snapshot from Recover's Mobility shop (sku → price); refreshed in KV whenever Mobility shows a price.
+import PRICE_SNAPSHOT from "../knowledge/prices.json";
 
 const LANG_NAMES = { nb: "norsk (bokmål)", sv: "svenska", da: "dansk", en: "English" };
 const MAX_MESSAGES = 12;
@@ -338,6 +340,32 @@ async function topOrdered(env, n = 8) {
 
 const POPULAR_WORDS = /\b(mest\s+(kjøpt|bestilt|brukt|populær\w*)|populær\w*|mest\s+köpt|most\s+(bought|ordered|popular)|bestselger\w*|mest solgt)\b/i;
 
+// Mobility only shows prices once a product is chosen, so Arne remembers them to show in the picker.
+async function learnPrices(env, result) {
+  const lines = Array.isArray(result?.lines) ? result.lines : [];
+  const fresh = lines.filter((l) => l.sku && Number(l.unit_price) > 0);
+  if (!fresh.length) return;
+  const known = (await env.STATS.get("prices", "json")) || {};
+  let changed = false;
+  for (const l of fresh) {
+    const price = Math.round(Number(l.unit_price) * 100) / 100;
+    if (known[l.sku] !== price) { known[l.sku] = price; changed = true; }
+  }
+  if (changed) await env.STATS.put("prices", JSON.stringify(known));
+}
+
+async function withPrices(env, choice) {
+  if (!choice || choice.key !== "sku" || !Array.isArray(choice.options)) return choice;
+  const known = (await env.STATS.get("prices", "json").catch(() => null)) || {};
+  return {
+    ...choice,
+    options: choice.options.map((o) => {
+      const price = known[o.value] ?? PRICE_SNAPSHOT[o.value];
+      return price ? { ...o, price } : o;
+    }),
+  };
+}
+
 async function readChipCounts(env) {
   return (await env.STATS.get("chips", "json")) || {};
 }
@@ -459,6 +487,7 @@ export default {
           try {
             const r = await callMobilityTool(mobilityToken, call.name, call.input || {});
             lastMobility = { tool: call.name, args: call.input || {}, result: r.structured };
+            if (r.structured) await learnPrices(env, r.structured).catch((e) => console.error("prices", e));
             if (call.name === "mobility_order" && r.structured?.submitted === true) {
               await countSubmittedOrder(env, r.structured, call.input || {}).catch((e) => console.error("order count", e));
             }
@@ -490,7 +519,7 @@ export default {
 
       // Mobility choices become buttons in the chat; the memo keeps the order state for the next turn.
       const res = lastMobility?.result || null;
-      const choice = res?.choice && Array.isArray(res.choice.options) ? res.choice : null;
+      const choice = res?.choice && Array.isArray(res.choice.options) ? await withPrices(env, res.choice) : null;
       const memo = lastMobility
         ? JSON.stringify({ tool: lastMobility.tool, args: lastMobility.args, message: res?.message, submitted: res?.submitted, decided: res?.decided })
         : null;

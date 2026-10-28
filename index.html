@@ -457,14 +457,28 @@
     .choices { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; max-width: 100%; }
     .picker, .option-list { display: grid; gap: 8px; align-self: stretch; }
     .picker-card { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; }
-    .picker-model { font-weight: 700; font-size: 15px; margin-bottom: 8px; color: var(--navy); }
+    .picker-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .picker-model { font-weight: 700; font-size: 15px; color: var(--navy); }
+    .picker-from { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .device-art { width: 40px; height: 50px; flex: none; filter: drop-shadow(0 2px 3px #0f2c4333); }
+    .device-art .art-body { fill: var(--device, #c8ccd2); stroke: #0000002e; stroke-width: 1; transition: fill .2s; }
+    .device-art .art-screen { fill: #1b2a35; opacity: .9; }
+    .device-art .art-notch { fill: #000; }
+    .device-art .art-strap { fill: var(--device, #c8ccd2); opacity: .75; }
+    .picker .variant { display: inline-grid; grid-template-columns: 12px auto; grid-template-rows: auto auto; column-gap: 8px; row-gap: 1px; align-items: center; text-align: left; padding: 7px 14px 7px 10px; border-radius: 12px; }
+    .picker .variant .dot { grid-row: 1 / span 2; grid-column: 1; }
+    .picker .variant .vname { grid-column: 2; font-weight: 600; line-height: 1.2; }
+    .picker .variant .vprice { grid-column: 2; font-size: 12px; color: var(--muted); line-height: 1.2; }
+    .picker .variant:not(:has(.dot)) { grid-template-columns: auto; }
+    .picker .variant:not(:has(.dot)) .vname, .picker .variant:not(:has(.dot)) .vprice { grid-column: 1; }
+    .picker-note { margin: 0; font-size: 12px; color: var(--muted); padding: 0 4px; }
     .picker-variants { display: flex; flex-wrap: wrap; gap: 6px; }
     .variant {
       display: inline-flex; align-items: center; gap: 6px;
       border: 1px solid var(--border); background: var(--bg); color: var(--text);
       border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
     }
-    .variant .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #0000002a; flex: none; }
+    .variant .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #0000002a; }
     .variant:hover { border-color: var(--navy); }
     .option-row {
       display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
@@ -902,6 +916,8 @@
         askBtn: "Spør Arne",
         chatSub: "AI-assistent for IT-spørsmål",
         close: "Lukk",
+        priceFrom: "fra",
+        priceNote: "Priser er veiledende fra Mobility. Endelig pris og eventuell egenandel vises før du sender bestillingen.",
         choose: "Velg",
         mobileTitle: "Bestille mobil eller nettbrett",
         mobileText: "Bestill via Mobility – Arne hjelper deg gjennom bestillingen",
@@ -960,6 +976,8 @@
         askBtn: "Fråga Arne",
         chatSub: "AI-assistent för IT-frågor",
         close: "Stäng",
+        priceFrom: "från",
+        priceNote: "Priserna är vägledande från Mobility. Slutligt pris visas innan du skickar beställningen.",
         choose: "Välj",
         mobileTitle: "Beställa mobil eller surfplatta",
         mobileText: "Beställ via Mobility – Arne hjälper dig",
@@ -1018,6 +1036,8 @@
         askBtn: "Spørg Arne",
         chatSub: "AI-assistent til IT-spørgsmål",
         close: "Luk",
+        priceFrom: "fra",
+        priceNote: "Priserne er vejledende fra Mobility. Endelig pris vises, før du sender bestillingen.",
         choose: "Vælg",
         mobileTitle: "Bestil mobil eller tablet",
         mobileText: "Bestil via Mobility – Arne hjælper dig",
@@ -1076,6 +1096,8 @@
         askBtn: "Ask Arne",
         chatSub: "AI assistant for IT questions",
         close: "Close",
+        priceFrom: "from",
+        priceNote: "Prices are indicative from Mobility. The final price is shown before you send the order.",
         choose: "Choose",
         mobileTitle: "Order a phone or tablet",
         mobileText: "Order via Mobility – Arne guides you",
@@ -1857,6 +1879,29 @@
       return { model: label, variant: "", color: "" };
     }
 
+    function money(n) { return "kr " + Math.round(n).toLocaleString("nb-NO"); }
+
+    // Small drawing of the product type, filled with the product colour (no external product photos).
+    function deviceArt(name, color) {
+      var n = name.toLowerCase();
+      var shape;
+      if (/ipad|tab\b|tab |nettbrett|tablet|surfplatta/.test(n)) {
+        shape = '<rect x="6" y="5" width="36" height="50" rx="5" class="art-body"/><rect x="9" y="9" width="30" height="40" rx="2" class="art-screen"/>';
+      } else if (/watch|klokke/.test(n)) {
+        shape = '<rect x="17" y="2" width="14" height="10" rx="3" class="art-strap"/><rect x="17" y="48" width="14" height="10" rx="3" class="art-strap"/><rect x="12" y="11" width="24" height="38" rx="8" class="art-body"/><rect x="15" y="15" width="18" height="30" rx="5" class="art-screen"/>';
+      } else if (/deksel|case|cover|wallet|grip|glass|beskytter|lader|kabel|adapter|batteri|holder|pakke/.test(n)) {
+        shape = '<rect x="12" y="4" width="24" height="52" rx="7" class="art-body"/><circle cx="20" cy="13" r="3.5" class="art-screen"/><circle cx="20" cy="22" r="3.5" class="art-screen"/>';
+      } else {
+        shape = '<rect x="11" y="2" width="26" height="56" rx="7" class="art-body"/><rect x="14" y="7" width="20" height="46" rx="4" class="art-screen"/><rect x="20" y="9" width="8" height="2.5" rx="1.25" class="art-notch"/>';
+      }
+      return '<svg class="device-art" viewBox="0 0 48 60" aria-hidden="true" style="--device:' + color + '">' + shape + "</svg>";
+    }
+
+    function paintArt(head, color) {
+      var art = head.querySelector(".device-art");
+      if (art) art.style.setProperty("--device", color);
+    }
+
     function choiceButton(className, html, onPick) {
       var b = document.createElement("button");
       b.type = "button";
@@ -1897,19 +1942,32 @@
         groups.forEach(function (g) {
           var card = document.createElement("div");
           card.className = "picker-card";
-          var h = document.createElement("div");
-          h.className = "picker-model";
-          h.textContent = g.model;
-          card.appendChild(h);
+          var prices = g.items.map(function (it) { return Number(it.opt.price) || 0; }).filter(Boolean);
+          var firstColor = (g.items.filter(function (it) { return COLOR_DOTS[it.p.color]; })[0] || {}).p;
+          var head = document.createElement("div");
+          head.className = "picker-head";
+          head.innerHTML = deviceArt(g.model, firstColor ? COLOR_DOTS[firstColor.color] : "#c8ccd2") +
+            '<div><div class="picker-model"></div><div class="picker-from"></div></div>';
+          head.querySelector(".picker-model").textContent = g.model;
+          head.querySelector(".picker-from").textContent = prices.length ? t("priceFrom") + " " + money(Math.min.apply(null, prices)) : "";
+          card.appendChild(head);
           var row = document.createElement("div");
           row.className = "picker-variants";
           g.items.forEach(function (it) {
             var dot = COLOR_DOTS[it.p.color] ? '<span class="dot" style="background:' + COLOR_DOTS[it.p.color] + '"></span>' : "";
-            row.appendChild(choiceButton("variant", dot + escapeHtml(it.p.variant || t("choose")), function (b) { pick(it.opt, false, b); }));
+            var price = Number(it.opt.price) ? '<span class="vprice">' + escapeHtml(money(Number(it.opt.price))) + "</span>" : "";
+            var b = choiceButton("variant", dot + '<span class="vname">' + escapeHtml(it.p.variant || t("choose")) + "</span>" + price, function (btn) { pick(it.opt, false, btn); });
+            // Hovering a colour repaints the little device in that colour.
+            if (COLOR_DOTS[it.p.color]) b.addEventListener("mouseenter", function () { paintArt(head, COLOR_DOTS[it.p.color]); });
+            row.appendChild(b);
           });
           card.appendChild(row);
           wrap.appendChild(card);
         });
+        var note = document.createElement("p");
+        note.className = "picker-note";
+        note.textContent = t("priceNote");
+        wrap.appendChild(note);
       } else if (options.length <= 6) {
         // Few options (shop, shipping, who it is for …): full-width rows.
         wrap.className = "option-list";
