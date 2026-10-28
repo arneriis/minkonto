@@ -939,6 +939,7 @@
         transferNote: "E-posten åpnes med ordre@mobility.no som mottaker. Fyll inn fødselsdato der det står ________, se over og trykk Send.",
         transferPdf: "Husk å legge ved signert overdragelsesskjema (PDF) fra tidligere eier.",
         transferDone: "Overdragelsen er klar. Trykk på knappen for å åpne e-posten, fyll inn fødselsdato og send den.",
+        chipIds: ["mobile", "loan", "car-damage", "expense", "vacation", "printer", "transfer", "password", "iphone", "android", "mfa", "meps", "network"],
         chips: ["Bestille mobil eller nettbrett", "Låne bil privat", "Skade på tjenestebil", "Reiseregning og utlegg", "Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
         fromFaq: "Dette fant jeg i FAQ-en:",
         notFound: "Jeg fant dessverre ikke noe om det i FAQ-en. Prøv å spørre på en annen måte, eller kontakt Iver support.",
@@ -996,6 +997,7 @@
         transferNote: "E-posten öppnas med ordre@mobility.no som mottagare. Fyll i födelsedatum där det står ________, kontrollera och tryck Skicka.",
         transferPdf: "Kom ihåg att bifoga signerat överlåtelseformulär (PDF) från tidigare ägare.",
         transferDone: "Överlåtelsen är klar. Tryck på knappen för att öppna e-posten, fyll i födelsedatum och skicka den.",
+        chipIds: ["vacation", "transfer", "password", "iphone", "android", "mfa", "meps", "network"],
         chips: ["Ansöka om semester", "Flytta mobilnummer (Norge)", "Jag har glömt lösenordet", "Konfigurera ny iPhone", "Konfigurera ny Android", "Authenticator på ny mobil", "Meps fungerar inte", "Problem med nätverket"],
         fromFaq: "Det här hittade jag i FAQ:n (på norska):",
         notFound: "Jag hittade tyvärr inget om det i FAQ:n. Försök fråga på ett annat sätt, eller kontakta Iver support.",
@@ -1053,6 +1055,7 @@
         transferNote: "E-mailen åbnes med ordre@mobility.no som modtager. Udfyld fødselsdato, hvor der står ________, tjek den og tryk Send.",
         transferPdf: "Husk at vedhæfte underskrevet overdragelsesskema (PDF) fra tidligere ejer.",
         transferDone: "Overdragelsen er klar. Tryk på knappen for at åbne e-mailen, udfyld fødselsdato og send den.",
+        chipIds: ["vacation", "transfer", "password", "iphone", "android", "mfa", "meps", "network"],
         chips: ["Søg om ferie", "Overfør mobilnummer (Norge)", "Jeg har glemt min adgangskode", "Opsæt ny iPhone", "Opsæt ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med netværket"],
         fromFaq: "Det her fandt jeg i FAQ'en (på norsk):",
         notFound: "Jeg fandt desværre ikke noget om det i FAQ'en. Prøv at spørge på en anden måde, eller kontakt Iver support.",
@@ -1110,6 +1113,7 @@
         transferNote: "The e-mail opens with ordre@mobility.no as recipient. Fill in the date of birth where it says ________, check it and press Send.",
         transferPdf: "Remember to attach the signed transfer form (PDF) from the previous owner.",
         transferDone: "Your transfer is ready. Press the button to open the e-mail, fill in the date of birth and send it.",
+        chipIds: ["vacation", "transfer", "password", "iphone", "android", "mfa", "meps", "network"],
         chips: ["Request vacation", "Transfer a mobile number (Norway)", "I forgot my password", "Set up a new iPhone", "Set up a new Android", "Authenticator on a new phone", "Meps isn't working", "Network problems"],
         fromFaq: "Here's what I found in the FAQ (in Norwegian):",
         notFound: "Sorry, I couldn't find anything about that in the FAQ. Try asking another way, or contact Iver support.",
@@ -1544,20 +1548,48 @@
       return div;
     }
 
+    // Suggestions are ordered by how often everyone uses them (anonymous counts kept by the Worker).
+    var chipCounts = null;
+
+    function loadChipCounts() {
+      if (chipCounts || !CHAT_API_URL || isLocked()) return;
+      chipCounts = {};
+      getIdToken().then(function (token) {
+        return fetch(CHAT_API_URL + "/stats/chips", { headers: token ? { Authorization: "Bearer " + token } : {} });
+      }).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
+        if (data && data.counts) { chipCounts = data.counts; renderChips(); }
+      }).catch(function () {});
+    }
+
+    function countChip(id) {
+      if (!CHAT_API_URL || !id) return;
+      chipCounts = chipCounts || {};
+      chipCounts[id] = (chipCounts[id] || 0) + 1;
+      getIdToken().then(function (token) {
+        var headers = { "Content-Type": "application/json" };
+        if (token) headers.Authorization = "Bearer " + token;
+        return fetch(CHAT_API_URL + "/stats/chip", { method: "POST", headers: headers, body: JSON.stringify({ id: id }) });
+      }).catch(function () {});
+    }
+
     function renderChips() {
       if (!chipsEl) return;
       chipsEl.innerHTML = "";
       var started = chatHistory && chatHistory.length > 0;
       chipsEl.hidden = started;
       if (started) return;
-      t("chips").forEach(function (label) {
-        var b = document.createElement("button");
-        b.type = "button";
-        b.className = "chip";
-        b.textContent = label;
-        b.addEventListener("click", function () { send(label); });
-        chipsEl.appendChild(b);
-      });
+      var labels = t("chips"), ids = t("chipIds") || [];
+      var counts = chipCounts || {};
+      labels.map(function (label, i) { return { label: label, id: ids[i], i: i }; })
+        .sort(function (a, b) { return ((counts[b.id] || 0) - (counts[a.id] || 0)) || (a.i - b.i); })
+        .forEach(function (c) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "chip";
+          b.textContent = c.label;
+          b.addEventListener("click", function () { countChip(c.id); send(c.label); });
+          chipsEl.appendChild(b);
+        });
     }
 
     // ---- Local FAQ search (used when the AI worker isn't configured or fails) ----
@@ -1982,6 +2014,7 @@
       chatEl.hidden = false;
       document.body.style.overflow = "hidden";
       if (!logEl.children.length) addMessage("bot", t("greeting"));
+      loadChipCounts();
       renderChips();
       if (window.matchMedia("(hover: hover)").matches) inputEl.focus();
       if (!isLocked()) loadFaq().catch(function () {});

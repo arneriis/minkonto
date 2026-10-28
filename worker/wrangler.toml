@@ -9,6 +9,11 @@ type = "Text"
 globs = ["**/*.md"]
 fallthrough = true
 
+# Anonym telling av hvilke forslag i Spør Arne som brukes mest
+[[kv_namespaces]]
+binding = "STATS"
+id = "c90b71c4f5a94eb898f75fb158490209"
+
 [vars]
 # Arne er registrert som offentlig OAuth-klient hos Mobility (portal.mobility.no)
 MOBILITY_CLIENT_ID = "01a18250-bf79-7305-828d-bcab0415df41"

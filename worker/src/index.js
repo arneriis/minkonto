@@ -313,6 +313,14 @@ async function exchangeMobilityToken(env, body) {
   return { access_token: data.access_token, refresh_token: data.refresh_token || null, expires_in: data.expires_in || 0 };
 }
 
+// ---- Suggestion usage (anonymous counts per suggestion id, shared by everyone) ----
+const CHIP_IDS = ["mobile", "loan", "car-damage", "expense", "vacation", "printer", "transfer", "password",
+  "iphone", "android", "mfa", "meps", "network"];
+
+async function readChipCounts(env) {
+  return (await env.STATS.get("chips", "json")) || {};
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -334,6 +342,9 @@ export default {
         headers: { ...cors, "Content-Type": "text/markdown; charset=utf-8", "Cache-Control": "private, no-store" },
       });
     }
+    if (request.method === "GET" && path === "/stats/chips") {
+      return json({ counts: await readChipCounts(env) }, 200, { ...cors, "Cache-Control": "private, max-age=60" });
+    }
     if (request.method !== "POST") return json({ error: "Method not allowed" }, 405, cors);
 
     let body;
@@ -341,6 +352,14 @@ export default {
       body = await request.json();
     } catch {
       return json({ error: "Invalid JSON" }, 400, cors);
+    }
+
+    if (path === "/stats/chip") {
+      if (!CHIP_IDS.includes(body.id)) return json({ error: "unknown" }, 400, cors);
+      const counts = await readChipCounts(env);
+      counts[body.id] = (counts[body.id] || 0) + 1;
+      await env.STATS.put("chips", JSON.stringify(counts));
+      return json({ ok: true }, 200, cors);
     }
 
     // Mobility login: exchange the code (or refresh) for the user's own Mobility token.
