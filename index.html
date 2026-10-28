@@ -749,8 +749,9 @@
           <p class="hint" id="l-sendto"></p>
           <div class="sheet-actions">
             <button type="button" class="btn" id="l-preview">Se PDF</button>
-            <button type="submit" class="btn primary" id="l-send">Send fra min e-post</button>
+            <button type="submit" class="btn primary" id="l-send">Åpne i Outlook</button>
           </div>
+          <div class="sheet-actions"><button type="button" class="btn" id="l-compose">Åpne ferdig adressert e-post (legg ved PDF selv)</button></div>
           <p class="status" id="l-status" role="status"></p>
         </div>
       </form>
@@ -1775,7 +1776,7 @@
       $("l-warn").textContent = warns.join(" ");
       var r = loanRecipients();
       $("l-sendto").textContent = "Sendes til: " + (r.to.filter(Boolean).join(", ") || "leders e-post") +
-        (r.cc.length ? " – kopi: " + r.cc.join(", ") : "") + ". PDF-en legges ved.";
+        (r.cc.length ? " – kopi: " + r.cc.join(", ") : "") + ". «Åpne i Outlook» legger ved PDF-en – velg Outlook i delingsmenyen og lim inn mottakerne.";
     }
 
     function loanData() {
@@ -1892,30 +1893,20 @@
       return { to: r.to, cc: r.cc, subject: subject, body: lines.join("\n") };
     }
 
-    // Sends from the user's own mailbox via Microsoft Graph (delegated Mail.Send).
-    function sendViaGraph(mail, pdfBase64, fileName) {
-      var req = { scopes: ["Mail.Send"], account: account };
-      return msalApp.acquireTokenSilent(req).catch(function () {
-        return msalApp.acquireTokenPopup(req);
-      }).then(function (res) {
-        var rcpt = function (list) { return list.filter(Boolean).map(function (a) { return { emailAddress: { address: a } }; }); };
-        return fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
-          method: "POST",
-          headers: { Authorization: "Bearer " + res.accessToken, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: {
-              subject: mail.subject,
-              body: { contentType: "Text", content: mail.body },
-              toRecipients: rcpt(mail.to),
-              ccRecipients: rcpt(mail.cc),
-              attachments: [{ "@odata.type": "#microsoft.graph.fileAttachment", name: fileName, contentType: "application/pdf", contentBytes: pdfBase64 }]
-            },
-            saveToSentItems: true
-          })
-        });
-      }).then(function (r) {
-        if (r.status !== 202) throw new Error("graph " + r.status);
-      });
+    var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    // Ready-addressed new e-mail: Outlook app on mobile, the default mail program on PC.
+    function composeUrl(mail) {
+      var q = function (k, v) { return k + "=" + encodeURIComponent(v); };
+      var body = mail.body.replace(/\n/g, "\r\n");
+      if (isMobile) {
+        return "ms-outlook://compose?" + [q("to", mail.to.join(",")), q("cc", mail.cc.join(",")), q("subject", mail.subject), q("body", body)].join("&");
+      }
+      return "mailto:" + mail.to.join(",") + "?" + [q("cc", mail.cc.join(",")), q("subject", mail.subject), q("body", body)].join("&");
+    }
+
+    function recipientsText(mail) {
+      return mail.to.join("; ") + (mail.cc.length ? "  (kopi: " + mail.cc.join("; ") + ")" : "");
     }
 
     function setLoanStatus(text, kind) {
@@ -1951,6 +1942,7 @@
       window.open(doc.output("bloburl"), "_blank");
     });
 
+    // Mobile: share the PDF straight into the Outlook app (attachment + text); recipients are copied to paste.
     $("loan-form").addEventListener("submit", function (e) {
       e.preventDefault();
       var err = validateLoan();
@@ -1959,20 +1951,33 @@
       var doc = buildLoanPdf(d);
       var fileName = loanFileName(d);
       var mail = loanMail(d);
-      var base64 = doc.output("datauristring").split(",")[1];
-      $("l-send").disabled = true;
-      setLoanStatus("Sender …");
-      sendViaGraph(mail, base64, fileName).then(function () {
-        setLoanStatus("Sendt fra din e-post til " + mail.to.join(", ") + ". Du finner den i Sendte elementer.", "ok");
-      }).catch(function () {
-        // Fallback: save the PDF and open a ready-addressed e-mail; the user attaches the PDF.
-        doc.save(fileName);
-        window.location.href = "mailto:" + mail.to.join(",") +
-          "?cc=" + encodeURIComponent(mail.cc.join(",")) +
-          "&subject=" + encodeURIComponent(mail.subject) +
-          "&body=" + encodeURIComponent((mail.body + "\n\n(Legg ved PDF-en " + fileName + " som ble lastet ned.)").replace(/\n/g, "\r\n"));
-        setLoanStatus("Kunne ikke sende automatisk. PDF-en er lastet ned og e-posten er åpnet – legg ved PDF-en og trykk Send.", "err");
-      }).then(function () { $("l-send").disabled = false; });
+      var file = new File([doc.output("blob")], fileName, { type: "application/pdf" });
+
+      if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
+        if (navigator.clipboard) navigator.clipboard.writeText(mail.to.join("; ")).catch(function () {});
+        setLoanStatus("Velg Outlook. Mottakerne er kopiert – lim dem inn i Til-feltet: " + recipientsText(mail), "ok");
+        navigator.share({ files: [file], title: mail.subject, text: mail.body }).catch(function (shareErr) {
+          if (shareErr && shareErr.name === "AbortError") return;
+          setLoanStatus("Deling virket ikke. Bruk «Åpne ferdig adressert e-post» under.", "err");
+        });
+        return;
+      }
+
+      // PC (or no sharing): save the PDF and open a ready-addressed e-mail.
+      doc.save(fileName);
+      window.location.href = composeUrl(mail);
+      setLoanStatus("PDF-en " + fileName + " er lastet ned. Legg den ved e-posten som åpnes, og trykk Send.", "ok");
+    });
+
+    $("l-compose").addEventListener("click", function () {
+      var err = validateLoan();
+      if (err) return setLoanStatus(err, "err");
+      var d = loanData();
+      var doc = buildLoanPdf(d);
+      var mail = loanMail(d);
+      doc.save(loanFileName(d));
+      window.location.href = composeUrl(mail);
+      setLoanStatus("PDF-en er lagret (Filer/Nedlastinger). Legg den ved i e-posten som åpnes, og trykk Send.", "ok");
     });
 
     logEl.addEventListener("click", function (e) {
