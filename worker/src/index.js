@@ -383,13 +383,11 @@ export default {
       let response;
       let lastMobility = null;
       for (let round = 0; ; round++) {
-        response = await client.beta.messages.create({
-          model: "claude-opus-5-5",
+        response = await client.messages.create({
+          model: "claude-haiku-5-5",
           // Short chat answers on a public endpoint – cap output to keep cost bounded.
           max_tokens: 2000,
           output_config: { effort: "low" },
-          betas: ["server-side-fallback-2026-07-01"],
-          fallbacks: "default",
           // The FAQ-heavy system prompt is identical across requests – cache it to cut cost per question.
           system: [{ type: "text", text: systemPrompt(FAQ, lang), cache_control: { type: "ephemeral" } }],
           tools,
