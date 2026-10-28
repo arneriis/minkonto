@@ -986,6 +986,7 @@
         mobileAsk: "Jeg vil bestille mobil eller nettbrett",
         mobilityConnect: "Koble til Mobility",
         mobilityConnected: "Mobility er koblet til ✓ Hva vil du bestille?",
+        mobilityReturnApp: "Mobility er koblet til ✓ Lukk dette vinduet og gå tilbake til Min konto-appen.",
         mobilityFailed: "Kunne ikke koble til Mobility. Prøv igjen.",
         mobilityExpired: "Mobility-innloggingen din har gått ut. Koble til på nytt:",
         mobilityDisconnect: "Koble fra Mobility",
@@ -1047,6 +1048,7 @@
         mobileAsk: "Jag vill beställa mobil eller surfplatta",
         mobilityConnect: "Anslut Mobility",
         mobilityConnected: "Mobility är anslutet ✓ Vad vill du beställa?",
+        mobilityReturnApp: "Mobility är anslutet ✓ Stäng det här fönstret och gå tillbaka till Mitt konto-appen.",
         mobilityFailed: "Kunde inte ansluta Mobility. Försök igen.",
         mobilityExpired: "Din Mobility-inloggning har gått ut. Anslut igen:",
         mobilityDisconnect: "Koppla från Mobility",
@@ -1108,6 +1110,7 @@
         mobileAsk: "Jeg vil bestille mobil eller tablet",
         mobilityConnect: "Forbind Mobility",
         mobilityConnected: "Mobility er forbundet ✓ Hvad vil du bestille?",
+        mobilityReturnApp: "Mobility er forbundet ✓ Luk dette vindue og gå tilbage til Min konto-appen.",
         mobilityFailed: "Kunne ikke forbinde Mobility. Prøv igen.",
         mobilityExpired: "Dit Mobility-login er udløbet. Forbind igen:",
         mobilityDisconnect: "Afbryd Mobility",
@@ -1169,6 +1172,7 @@
         mobileAsk: "I want to order a phone or tablet",
         mobilityConnect: "Connect Mobility",
         mobilityConnected: "Mobility is connected ✓ What would you like to order?",
+        mobilityReturnApp: "Mobility is connected ✓ Close this window and go back to the My account app.",
         mobilityFailed: "Could not connect Mobility. Please try again.",
         mobilityExpired: "Your Mobility sign-in has expired. Connect again:",
         mobilityDisconnect: "Disconnect Mobility",
@@ -2058,7 +2062,6 @@
     // ---- Mobility login (each user's own Mitt Mobility account, OAuth with PKCE) ----
     var MOBILITY = { base: "https://portal.mobility.no", clientId: "01a18250-bf79-7305-828d-bcab0415df41", redirect: location.origin + "/" };
     var MOBILITY_KEY = "minkonto.mobility";
-    var MOBILITY_PKCE = "minkonto.mobility.pkce";
 
     function readMobility() {
       try { return JSON.parse(localStorage.getItem(MOBILITY_KEY) || "null"); } catch (e) { return null; }
@@ -2098,40 +2101,109 @@
       return btoa(String.fromCharCode.apply(null, new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     }
 
+    // The Worker holds the login, so it also works from a home-screen app: on iOS the Mobility login opens in a
+    // separate Safari window that shares no storage with the app. The app registers the verifier, the return
+    // page hands the code to the Worker, and the app collects the token when it is in front again.
+    var MOBILITY_PENDING = "minkonto.mobility.pending";
+    var MOBILITY_PENDING_MS = 10 * 60 * 1000;
+
+    function readPending() {
+      try {
+        var p = JSON.parse(localStorage.getItem(MOBILITY_PENDING) || "null");
+        return p && Date.now() - p.at < MOBILITY_PENDING_MS ? p : null;
+      } catch (e) { return null; }
+    }
+    function clearPending() {
+      try { localStorage.removeItem(MOBILITY_PENDING); } catch (e) {}
+    }
+
     function connectMobility() {
       var verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
       var state = b64url(crypto.getRandomValues(new Uint8Array(16)));
-      crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)).then(function (hash) {
-        try { sessionStorage.setItem(MOBILITY_PKCE, JSON.stringify({ verifier: verifier, state: state })); } catch (e) {}
+      Promise.all([
+        crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)),
+        workerPost("/mobility/start", { state: state, verifier: verifier, redirect: MOBILITY.redirect })
+      ]).then(function (r) {
+        if (!r[1]) throw new Error("start");
+        try { localStorage.setItem(MOBILITY_PENDING, JSON.stringify({ state: state, at: Date.now() })); } catch (e) {}
         location.href = MOBILITY.base + "/oauth/authorize?" + new URLSearchParams({
           response_type: "code", client_id: MOBILITY.clientId, redirect_uri: MOBILITY.redirect,
-          scope: "mcp:use offline_access", state: state, code_challenge: b64url(hash),
+          scope: "mcp:use offline_access", state: state, code_challenge: b64url(r[0]),
           code_challenge_method: "S256", resource: MOBILITY.base
         }).toString();
-      });
+      }).catch(function () { addMessage("bot", t("mobilityFailed")); });
     }
 
-    // Back from Mobility with ?code=…&state=… – picked up before sign-in, finished after it.
+    // Back from Mobility with ?code=…&state=…: hand the code to the Worker straight away (no sign-in needed).
     var mobilityReturn = (function () {
       var q = new URLSearchParams(location.search);
       if (!q.get("code") || !q.get("state")) return null;
-      var pkce = null;
-      try { pkce = JSON.parse(sessionStorage.getItem(MOBILITY_PKCE) || "null"); sessionStorage.removeItem(MOBILITY_PKCE); } catch (e) {}
       history.replaceState(null, "", location.pathname + location.hash);
-      return pkce && pkce.state === q.get("state") ? { code: q.get("code"), verifier: pkce.verifier } : { error: true };
+      var pending = readPending();
+      return {
+        own: Boolean(pending && pending.state === q.get("state")),
+        done: fetch(CHAT_API_URL + "/mobility/callback", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: q.get("state"), code: q.get("code") })
+        }).then(function (r) { return r.ok; }).catch(function () { return false; })
+      };
     })();
 
-    function finishMobilityLogin() {
-      if (!mobilityReturn || !account) return;
-      openChat();
-      if (mobilityReturn.error) return addMessage("bot", t("mobilityFailed"));
-      workerPost("/mobility/token", { code: mobilityReturn.code, code_verifier: mobilityReturn.verifier, redirect_uri: MOBILITY.redirect })
-        .then(function (tok) {
-          if (!tok) throw new Error("token");
-          saveMobility(tok);
-          addMessage("bot", t("mobilityConnected"));
-        }).catch(function () { addMessage("bot", t("mobilityFailed")); });
+    // A login started in another window (the home-screen app) ends here: tell the user to go back to the app.
+    if (mobilityReturn && !mobilityReturn.own) {
+      mobilityReturn.done.then(function (ok) {
+        var note = document.createElement("div");
+        note.setAttribute("role", "status");
+        note.style.cssText = "position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg);font-size:18px;line-height:1.5;text-align:center;";
+        note.textContent = t(ok ? "mobilityReturnApp" : "mobilityFailed");
+        document.body.appendChild(note);
+      });
     }
+
+    var claiming = false;
+    function claimMobility(announce) {
+      var pending = readPending();
+      if (!pending || !account || claiming) return Promise.resolve(false);
+      claiming = true;
+      return workerPost("/mobility/claim", { state: pending.state }).then(function (tok) {
+        if (!tok || !tok.access_token) return false;
+        clearPending();
+        saveMobility(tok);
+        if (announce) { openChat(); addMessage("bot", t("mobilityConnected")); }
+        return true;
+      }).catch(function () { return false; }).then(function (ok) { claiming = false; return ok; });
+    }
+
+    function finishMobilityLogin() {
+      if (mobilityReturn && mobilityReturn.own) {
+        if (!account) return;
+        openChat();
+        mobilityReturn.done.then(function (ok) {
+          if (!ok) { clearPending(); return addMessage("bot", t("mobilityFailed")); }
+          return claimMobility(false).then(function (got) {
+            addMessage("bot", t(got ? "mobilityConnected" : "mobilityFailed"));
+          });
+        });
+        return;
+      }
+      if (!mobilityReturn) watchMobilityLogin();
+    }
+
+    // The home-screen app waits for the login finished in the Safari window.
+    var watchTimer = null;
+    function watchMobilityLogin() {
+      if (watchTimer || !readPending()) return;
+      watchTimer = setInterval(function () {
+        if (!readPending()) { clearInterval(watchTimer); watchTimer = null; return; }
+        if (document.visibilityState === "visible") claimMobility(true);
+      }, 3000);
+      claimMobility(true);
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState !== "visible") return;
+      renderAuth(); // Android finishes the login in a browser tab that shares storage with the app
+      watchMobilityLogin();
+    });
 
     function autoGrow() {
       inputEl.style.height = "auto";

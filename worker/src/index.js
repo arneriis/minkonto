@@ -319,6 +319,23 @@ async function exchangeMobilityToken(env, body) {
   return { access_token: data.access_token, refresh_token: data.refresh_token || null, expires_in: data.expires_in || 0 };
 }
 
+// Mobility login held by the Worker, so it also works from a home-screen app: on iOS the login opens in a
+// separate Safari window that shares no storage with the app. The app registers the PKCE verifier (start),
+// the return page hands over the code (callback, no Entra session there), and the app collects the token (claim).
+const MOBILITY_LOGIN_TTL = 600;
+const STATE_RE = /^[A-Za-z0-9_-]{16,64}$/;
+
+async function mobilityCallback(env, body) {
+  if (!STATE_RE.test(String(body.state || "")) || !body.code) return false;
+  const pending = await env.STATS.get(`mobpkce:${body.state}`, "json");
+  if (!pending) return false;
+  await env.STATS.delete(`mobpkce:${body.state}`);
+  const token = await exchangeMobilityToken(env, { code: body.code, code_verifier: pending.verifier, redirect_uri: pending.redirect });
+  if (!token) return false;
+  await env.STATS.put(`mobtok:${body.state}`, JSON.stringify({ user: pending.user, token }), { expirationTtl: MOBILITY_LOGIN_TTL });
+  return true;
+}
+
 // ---- AI log (every question to Arne), readable only by the admin(s) in ADMIN_EMAILS ----
 const LOG_TTL_SECONDS = 90 * 24 * 3600;
 const LOG_PAGE = 50;
@@ -429,13 +446,18 @@ export default {
     const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
     if (!allowed.includes(origin)) return json({ error: "Forbidden" }, 403, cors);
 
+    const path = new URL(request.url).pathname;
+    if (request.method === "POST" && path === "/mobility/callback") {
+      const body = await request.json().catch(() => ({}));
+      return (await mobilityCallback(env, body)) ? json({ ok: true }, 200, cors) : json({ error: "mobility_callback_failed" }, 400, cors);
+    }
+
     const user = authEnabled(env) ? await verifyUser(request, env) : null;
     if (authEnabled(env) && !user) {
       return json({ error: "unauthorized" }, 401, cors);
     }
 
     // The page's offline FAQ search, for signed-in users only.
-    const path = new URL(request.url).pathname;
     if (request.method === "GET" && path === "/faq") {
       return new Response(FAQ, {
         headers: { ...cors, "Content-Type": "text/markdown; charset=utf-8", "Cache-Control": "private, no-store" },
@@ -468,6 +490,20 @@ export default {
       counts[body.id] = (counts[body.id] || 0) + 1;
       await env.STATS.put("chips", JSON.stringify(counts));
       return json({ ok: true }, 200, cors);
+    }
+
+    if (path === "/mobility/start") {
+      if (!STATE_RE.test(String(body.state || "")) || !body.verifier || !body.redirect) return json({ error: "invalid" }, 400, cors);
+      const pending = { verifier: String(body.verifier), redirect: String(body.redirect), user: userEmail(user) };
+      await env.STATS.put(`mobpkce:${body.state}`, JSON.stringify(pending), { expirationTtl: MOBILITY_LOGIN_TTL });
+      return json({ ok: true }, 200, cors);
+    }
+    if (path === "/mobility/claim") {
+      if (!STATE_RE.test(String(body.state || ""))) return json({ error: "invalid" }, 400, cors);
+      const done = await env.STATS.get(`mobtok:${body.state}`, "json");
+      if (!done || done.user !== userEmail(user)) return json({ pending: true }, 200, cors);
+      await env.STATS.delete(`mobtok:${body.state}`);
+      return json(done.token, 200, cors);
     }
 
     // Mobility login: exchange the code (or refresh) for the user's own Mobility token.
