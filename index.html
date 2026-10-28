@@ -188,6 +188,24 @@
       padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 20px);
     }
 
+    .auth-status { display: block; margin-bottom: 6px; }
+    .auth-status[hidden] { display: none; }
+    .link-btn {
+      border: 0;
+      background: none;
+      padding: 4px;
+      font: inherit;
+      color: var(--focus);
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* Lock badges show only while sign-in is required and the user is signed out. */
+    .lock { display: none; flex: none; width: 14px; height: 14px; }
+    body.locked .lock { display: inline-block; }
+    .label .lock { vertical-align: -1px; margin-left: 6px; color: var(--muted); }
+
     .top-actions { display: flex; align-items: center; gap: 8px; }
 
     .ask-btn {
@@ -469,6 +487,7 @@
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
         <span data-i18n="askBtn">Spør Arne</span>
+        <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
       </button>
       </div>
     </div>
@@ -554,7 +573,7 @@
             </svg>
           </span>
           <span class="label">
-            <strong data-i18n="printerTitle">Bestille skriver</strong>
+            <strong><span data-i18n="printerTitle">Bestille skriver</span><svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg></strong>
             <small data-i18n="printerText">Arne hjelper deg å fylle ut og sende bestillingen</small>
           </span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
@@ -563,7 +582,13 @@
     </ul>
   </main>
 
-  <footer>minkonto.riis.cc</footer>
+  <footer>
+    <span class="auth-status" id="auth-status" hidden>
+      <span id="auth-name"></span>
+      · <button type="button" class="link-btn" id="logout" data-i18n="logout">Logg ut</button>
+    </span>
+    minkonto.riis.cc
+  </footer>
 
   <section class="chat" id="chat" role="dialog" aria-modal="true" aria-labelledby="chat-title" hidden>
     <div class="chat-head">
@@ -590,7 +615,15 @@
     </form>
   </section>
 
+  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.30.0/lib/msal-browser.min.js"
+    integrity="sha384-RGxxfG5yRS8DLU7ZJ8OoLhbV/BsJFHyPuMVHrTLbpj3t5Z15LnviJmaznKY/a7LZ"
+    crossorigin="anonymous"></script>
   <script>
+    // Sign-in needs a secure context, so always use HTTPS on the real domain.
+    if (location.protocol === "http:" && location.hostname === "minkonto.riis.cc") {
+      location.replace("https://" + location.host + location.pathname + location.search + location.hash);
+    }
+
     var STRINGS = {
       nb: {
         brand: "Min konto",
@@ -608,6 +641,9 @@
         chatSub: "AI-assistent for IT-spørsmål",
         close: "Lukk",
         newChat: "Ny chat",
+        logout: "Logg ut",
+        loggedInAs: "Innlogget som",
+        loginAgain: "Innloggingen din har gått ut. Lukk chatten og trykk «Spør Arne» for å logge inn igjen.",
         send: "Send",
         placeholder: "Skriv spørsmålet ditt …",
         greeting: "Hei! Jeg er Arne 👋 Jeg kan hjelpe deg med passord, ferie, oppsett av mobil, MFA, Meps, nettverk og bestilling av skriver. Hva lurer du på?",
@@ -651,6 +687,9 @@
         chatSub: "AI-assistent för IT-frågor",
         close: "Stäng",
         newChat: "Ny chatt",
+        logout: "Logga ut",
+        loggedInAs: "Inloggad som",
+        loginAgain: "Din inloggning har gått ut. Stäng chatten och tryck «Fråga Arne» för att logga in igen.",
         send: "Skicka",
         placeholder: "Skriv din fråga …",
         greeting: "Hej! Jag är Arne 👋 Jag kan hjälpa dig med lösenord, semester, konfigurering av mobil, MFA, Meps, nätverk och beställning av skrivare. Vad undrar du?",
@@ -694,6 +733,9 @@
         chatSub: "AI-assistent til IT-spørgsmål",
         close: "Luk",
         newChat: "Ny chat",
+        logout: "Log ud",
+        loggedInAs: "Logget ind som",
+        loginAgain: "Dit login er udløbet. Luk chatten og tryk «Spørg Arne» for at logge ind igen.",
         send: "Send",
         placeholder: "Skriv dit spørgsmål …",
         greeting: "Hej! Jeg er Arne 👋 Jeg kan hjælpe dig med adgangskode, ferie, opsætning af mobil, MFA, Meps, netværk og bestilling af printer. Hvad vil du vide?",
@@ -737,6 +779,9 @@
         chatSub: "AI assistant for IT questions",
         close: "Close",
         newChat: "New chat",
+        logout: "Sign out",
+        loggedInAs: "Signed in as",
+        loginAgain: "Your sign-in has expired. Close the chat and tap «Ask Arne» to sign in again.",
         send: "Send",
         placeholder: "Type your question …",
         greeting: "Hi! I'm Arne 👋 I can help with passwords, vacation, phone setup, MFA, Meps, network issues and ordering printers. What do you need?",
@@ -1228,12 +1273,82 @@
       });
     }
 
+    // ---- Sign-in with Recover account (Microsoft Entra ID) ----
+    // Fill in both values from the app registration to require sign-in for Spør Arne and printer ordering.
+    var AUTH = { tenantId: "", clientId: "" };
+    var LOGIN_SCOPES = ["openid", "profile", "email"];
+    var INTENT_KEY = "minkonto.intent";
+    var msalApp = null;
+    var account = null;
+
+    function authEnabled() { return Boolean(AUTH.tenantId && AUTH.clientId && window.msal); }
+    function isLocked() { return authEnabled() && !account; }
+
+    function initAuth() {
+      if (!authEnabled()) return Promise.resolve();
+      msalApp = new msal.PublicClientApplication({
+        auth: {
+          clientId: AUTH.clientId,
+          authority: "https://login.microsoftonline.com/" + AUTH.tenantId,
+          redirectUri: location.origin + "/",
+          postLogoutRedirectUri: location.origin + "/"
+        },
+        cache: { cacheLocation: "localStorage" }
+      });
+      return msalApp.initialize().then(function () {
+        return msalApp.handleRedirectPromise();
+      }).then(function (result) {
+        account = (result && result.account) || msalApp.getAllAccounts()[0] || null;
+        if (account) msalApp.setActiveAccount(account);
+      }).catch(function (err) {
+        console.error("Sign-in failed", err);
+      });
+    }
+
+    function login(intent) {
+      try { sessionStorage.setItem(INTENT_KEY, intent); } catch (e) {}
+      msalApp.loginRedirect({ scopes: LOGIN_SCOPES, prompt: "select_account" });
+    }
+
+    function getIdToken() {
+      if (!authEnabled()) return Promise.resolve(null);
+      if (!account) return Promise.reject(authError());
+      return msalApp.acquireTokenSilent({ scopes: LOGIN_SCOPES, account: account })
+        .then(function (r) { return r.idToken; })
+        .catch(function () { throw authError(); });
+    }
+
+    function authError() { var e = new Error("auth"); e.auth = true; return e; }
+
+    function renderAuth() {
+      document.body.classList.toggle("locked", isLocked());
+      var status = document.getElementById("auth-status");
+      status.hidden = !(authEnabled() && account);
+      if (account) {
+        document.getElementById("auth-name").textContent = t("loggedInAs") + " " + (account.name || account.username);
+      }
+    }
+
+    // Run the action the user tapped before being sent to Microsoft sign-in.
+    function resumeIntent() {
+      var intent = null;
+      try { intent = sessionStorage.getItem(INTENT_KEY); sessionStorage.removeItem(INTENT_KEY); } catch (e) {}
+      if (!account || !intent) return;
+      openChat();
+      if (intent === "printer") send(t("printerAsk"));
+    }
+
     function askAi() {
-      return fetch(CHAT_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: chatHistory, lang: currentLang })
+      return getIdToken().then(function (token) {
+        var headers = { "Content-Type": "application/json" };
+        if (token) headers.Authorization = "Bearer " + token;
+        return fetch(CHAT_API_URL, {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({ messages: chatHistory, lang: currentLang })
+        });
       }).then(function (r) {
+        if (r.status === 401) throw authError();
         if (!r.ok) throw new Error("chat " + r.status);
         return r.json();
       }).then(function (data) {
@@ -1257,7 +1372,7 @@
       var question = text;
       var session = chatSession;
       var answer = CHAT_API_URL
-        ? askAi().catch(function () { return searchFaq(question); })
+        ? askAi().catch(function (err) { return err.auth ? t("loginAgain") : searchFaq(question); })
         : searchFaq(question);
 
       answer.catch(function () { return t("error"); }).then(function (result) {
@@ -1307,15 +1422,27 @@
       openEl.focus();
     }
 
-    openEl.addEventListener("click", openChat);
+    openEl.addEventListener("click", function () {
+      if (isLocked()) return login("chat");
+      openChat();
+    });
     document.getElementById("new-chat").addEventListener("click", function () {
       resetChat();
       if (window.matchMedia("(hover: hover)").matches) inputEl.focus();
     });
     document.getElementById("order-printer").addEventListener("click", function (e) {
       e.preventDefault();
+      if (isLocked()) return login("printer");
       openChat();
       send(t("printerAsk"));
+    });
+    document.getElementById("logout").addEventListener("click", function () {
+      msalApp.logoutRedirect({ account: account });
+    });
+
+    initAuth().then(function () {
+      renderAuth();
+      resumeIntent();
     });
     document.getElementById("ask-close").addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) {

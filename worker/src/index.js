@@ -1,6 +1,7 @@
 // "Spør Arne" – Cloudflare Worker that keeps the Anthropic API key secret
 // and answers questions from minkonto.riis.cc using the FAQ published on the site.
 import Anthropic from "@anthropic-ai/sdk";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const LANG_NAMES = { nb: "norsk (bokmål)", sv: "svenska", da: "dansk", en: "English" };
 const MAX_MESSAGES = 12;
@@ -8,6 +9,30 @@ const MAX_CHARS = 2000;
 const FAQ_TTL_MS = 5 * 60 * 1000;
 
 let faqCache = { text: "", fetchedAt: 0 };
+let jwks = null;
+
+// Sign-in with Recover's Microsoft Entra ID. Active once AZURE_TENANT_ID and AZURE_CLIENT_ID are set.
+function authEnabled(env) {
+  return Boolean(env.AZURE_TENANT_ID && env.AZURE_CLIENT_ID);
+}
+
+async function verifyUser(request, env) {
+  const header = request.headers.get("Authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!token) return null;
+  jwks ??= createRemoteJWKSet(
+    new URL(`https://login.microsoftonline.com/${env.AZURE_TENANT_ID}/discovery/v2.0/keys`),
+  );
+  try {
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer: `https://login.microsoftonline.com/${env.AZURE_TENANT_ID}/v2.0`,
+      audience: env.AZURE_CLIENT_ID,
+    });
+    return payload;
+  } catch {
+    return null;
+  }
+}
 
 async function loadFaq(env) {
   if (faqCache.text && Date.now() - faqCache.fetchedAt < FAQ_TTL_MS) return faqCache.text;
@@ -135,7 +160,7 @@ function corsHeaders(origin, env) {
   return {
     "Access-Control-Allow-Origin": allowed.includes(origin) ? origin : allowed[0],
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Vary": "Origin",
   };
 }
@@ -168,6 +193,10 @@ export default {
 
     const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
     if (!allowed.includes(origin)) return json({ error: "Forbidden" }, 403, cors);
+
+    if (authEnabled(env) && !(await verifyUser(request, env))) {
+      return json({ error: "unauthorized" }, 401, cors);
+    }
 
     let body;
     try {
