@@ -42,7 +42,7 @@ function systemPrompt(faq, lang) {
 
 Regler:
 - Svar kun ut fra FAQ-en og snarveiene nedenfor. Ikke finn på steg, lenker eller kontaktinformasjon.
-- Finner du ikke svaret i FAQ-en, si det ærlig og be brukeren kontakte Iver support.
+- Finner du ikke svaret i FAQ-en, si det ærlig og be brukeren kontakte Iver support – men gjelder det kjøp av utstyr (mobil, nettbrett, PC, skjermer, tilbehør, bestillingsstatus, levering, retur), er kontakten ordre@mobility.no, ikke Iver. Dette gjelder alle land.
 - Hold svarene korte og lette å lese på mobil: én kort innledning, deretter nummererte steg når det passer.
 - Ta med relevant lenke fra FAQ-en som full URL.
 - Svar på samme språk som brukeren skriver på. Er det uklart, svar på ${LANG_NAMES[lang] || LANG_NAMES.nb}. Navn på knapper i skjermbilder (som «Next» og «Finish») skal stå som de er.
@@ -55,6 +55,8 @@ Reise og utlegg (Expense fra SD Worx – Norge):
 Bestille mobil, nettbrett og tilbehør (Mobility):
 - Spør noen hva som er standard eller anbefalt mobil, svar med «Anbefalt standardtelefon» fra FAQ-en (iPhone 16e 128GB og Google Pixel 10a 128GB, ca. kr 6 000, og Samsung Galaxy A57 som alternativ), og tilby å bestille. Vil de bestille, bruk sku-en fra FAQ-en og shop_id 24 i mobility_order (spør om mottaker først). Prisen kan ha endret seg – Mobility viser gjeldende pris.
 - Spør noen hva som er mest kjøpt eller populært, svar ut fra tallene systemet gir deg (bestillinger gjort via Arne).
+- Kjøp av utstyr i alle land: henvis aldri til Iver for kjøp. Kan noe ikke bestilles her i chatten, eller gjelder det status, levering, retur eller bytte av en bestilling, henvis til ordre@mobility.no.
+- PC, skjermer, tastatur, mus, dokkingstasjon og annet PC-utstyr bestilles også med mobility_order (butikken «Standard PC & Utstyr»).
 - Bestilling av mobil, nettbrett, tilbehør, smartklokke og SIM skal ALLTID gjøres med mobility_order her i chatten – aldri ved å henvise til Mitt Mobility-lenken, e-post, Iver eller et skjema. Er Mobility ikke koblet til, vis [[action:mobility-connect]].
 - Når brukeren vil bestille mobil, nettbrett eller tilbehør, bruk mobility_order. Ledere som vil se eller godkjenne bestillinger bruker mobility_approve. Følg verktøyenes instruksjoner for rekkefølgen på spørsmålene.
 - Når Mobility-svaret har «choice», vises valgene automatisk som knapper under svaret ditt. Still spørsmålet kort og ikke list opp alternativene selv.
@@ -264,7 +266,7 @@ function blockedMobilityCall(name, args, confirmed) {
 
 // "Bestill en iPhone", "trenger nytt nettbrett", "order a phone" … → must go through the Mobility tools.
 const ORDER_WORDS = /\b(bestill\w*|kjøp\w*|beställ\w*|bestil\w*|order\w*|buy|trenger|behøver|ny|nytt|nye)\b/i;
-const DEVICE_WORDS = /\b(mobil\w*|telefon\w*|phone|iphone\w*|ipad\w*|nettbrett\w*|surfplatta|tablet\w*|samsung|galaxy|pixel|tilbehør|tillbehör|accessor\w*|deksel|skjermbeskytter|lader|smartklokke|watch|airpods|headset|multisim|sim-kort|simkort|esim)\b/i;
+const DEVICE_WORDS = /\b(pc\w*|laptop\w*|bærbar\w*|datamaskin\w*|computer|skjerm|skjermer|monitor\w*|tastatur|mus|dokking\w*|docking\w*|headset|hodetelefon\w*|mobil\w*|telefon\w*|phone|iphone\w*|ipad\w*|nettbrett\w*|surfplatta|tablet\w*|samsung|galaxy|pixel|tilbehør|tillbehör|accessor\w*|deksel|skjermbeskytter|lader|smartklokke|watch|airpods|headset|multisim|sim-kort|simkort|esim)\b/i;
 
 // Questions about setting up or fixing a device are not orders.
 const NOT_ORDER_WORDS = /\b(sett\w*\s+(?:\w+\s+)?opp|oppsett\w*|konfigur\w*|installer\w*|set up|setup|authenticator|mfa|firmaportal|company portal|intune|overføre|overfør\w*|flytte nummer\w*|virker ikke|fungerer ikke|feil)\b/i;
@@ -443,7 +445,7 @@ export default {
       let note = mobilityNote + (confirmed ? " Brukerens siste melding er et trykk på bekreftelsesknappen." : "");
       if (wantsDeviceOrder(messages)) {
         note += mobilityToken
-          ? " Brukeren vil bestille utstyr: kall mobility_order nå. Ikke henvis til Mitt Mobility-lenken, e-post, Iver eller skjema."
+          ? " Brukeren vil bestille utstyr: kall mobility_order nå. Ikke henvis til Mitt Mobility-lenken, Iver eller skjema."
           : " Brukeren vil bestille utstyr: forklar kort at bestillingen gjøres her i chatten via Mobility, og vis [[action:mobility-connect]].";
       }
       const lastText = typeof messages[messages.length - 1]?.content === "string" ? messages[messages.length - 1].content : "";
