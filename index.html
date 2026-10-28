@@ -673,7 +673,7 @@
         transferNote: "E-posten öppnas med ordre@mobility.no som mottagare. Fyll i födelsedatum där det står ________, kontrollera och tryck Skicka.",
         transferPdf: "Kom ihåg att bifoga signerat överlåtelseformulär (PDF) från tidigare ägare.",
         transferDone: "Överlåtelsen är klar. Tryck på knappen för att öppna e-posten, fyll i födelsedatum och skicka den.",
-        chips: ["Ansöka om semester", "Beställa skrivare", "Flytta mobilnummer (Norge)", "Jag har glömt lösenordet", "Konfigurera ny iPhone", "Konfigurera ny Android", "Authenticator på ny mobil", "Meps fungerar inte", "Problem med nätverket"],
+        chips: ["Ansöka om semester", "Flytta mobilnummer (Norge)", "Jag har glömt lösenordet", "Konfigurera ny iPhone", "Konfigurera ny Android", "Authenticator på ny mobil", "Meps fungerar inte", "Problem med nätverket"],
         fromFaq: "Det här hittade jag i FAQ:n (på norska):",
         notFound: "Jag hittade tyvärr inget om det i FAQ:n. Försök fråga på ett annat sätt, eller kontakta Iver support.",
         error: "Något gick fel. Försök igen om en stund, eller kontakta Iver support."
@@ -716,7 +716,7 @@
         transferNote: "E-mailen åbnes med ordre@mobility.no som modtager. Udfyld fødselsdato, hvor der står ________, tjek den og tryk Send.",
         transferPdf: "Husk at vedhæfte underskrevet overdragelsesskema (PDF) fra tidligere ejer.",
         transferDone: "Overdragelsen er klar. Tryk på knappen for at åbne e-mailen, udfyld fødselsdato og send den.",
-        chips: ["Søg om ferie", "Bestil printer", "Overfør mobilnummer (Norge)", "Jeg har glemt min adgangskode", "Opsæt ny iPhone", "Opsæt ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med netværket"],
+        chips: ["Søg om ferie", "Overfør mobilnummer (Norge)", "Jeg har glemt min adgangskode", "Opsæt ny iPhone", "Opsæt ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med netværket"],
         fromFaq: "Det her fandt jeg i FAQ'en (på norsk):",
         notFound: "Jeg fandt desværre ikke noget om det i FAQ'en. Prøv at spørge på en anden måde, eller kontakt Iver support.",
         error: "Noget gik galt. Prøv igen om lidt, eller kontakt Iver support."
@@ -759,7 +759,7 @@
         transferNote: "The e-mail opens with ordre@mobility.no as recipient. Fill in the date of birth where it says ________, check it and press Send.",
         transferPdf: "Remember to attach the signed transfer form (PDF) from the previous owner.",
         transferDone: "Your transfer is ready. Press the button to open the e-mail, fill in the date of birth and send it.",
-        chips: ["Request vacation", "Order a printer", "Transfer a mobile number (Norway)", "I forgot my password", "Set up a new iPhone", "Set up a new Android", "Authenticator on a new phone", "Meps isn't working", "Network problems"],
+        chips: ["Request vacation", "Transfer a mobile number (Norway)", "I forgot my password", "Set up a new iPhone", "Set up a new Android", "Authenticator on a new phone", "Meps isn't working", "Network problems"],
         fromFaq: "Here's what I found in the FAQ (in Norwegian):",
         notFound: "Sorry, I couldn't find anything about that in the FAQ. Try asking another way, or contact Iver support.",
         error: "Something went wrong. Please try again shortly, or contact Iver support."
@@ -801,6 +801,8 @@
       document.title = t.brand;
       document.getElementById("lang").value = lang;
       currentLang = lang;
+      // Printer ordering is only set up for Norway so far.
+      document.getElementById("order-printer").parentNode.hidden = lang !== "nb";
       renderChips();
     }
 

@@ -44,9 +44,9 @@ Dette trengs (feltene i Mobility-skjemaet):
 
 Arne kan fylle ut overdragelsen og lage e-posten til ordre@mobility.no for deg. Fødselsdato skriver du selv inn i e-posten før du sender – den skal ikke skrives i chatten.
 
-## Bestille skriver / printer (Canon)
+## Bestille skriver / printer (Canon) – kun Norge
 
-Recover har avtale med Canon om multifunksjonsskrivere (MFP). Alle priser er månedssum per maskin.
+Gjelder foreløpig bare Norge – bestilling for andre land kommer senere (kontakt Iver support så lenge). Recover har avtale med Canon om multifunksjonsskrivere (MFP) i Norge. Alle priser er månedssum per maskin.
 
 | Modell | Maskin | Inkludert | Månedssum |
 |---|---|---|---|
