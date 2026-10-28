@@ -1,3 +1,5 @@
 node_modules/
 .wrangler/
 .dev.vars
+# Arnes kunnskap er intern og skal ikke ligge i det offentlige repoet
+knowledge/

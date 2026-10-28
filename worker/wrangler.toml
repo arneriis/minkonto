@@ -3,8 +3,13 @@ main = "src/index.js"
 compatibility_date = "2026-10-01"
 compatibility_flags = ["nodejs_compat"]
 
+# FAQ-en (knowledge/faq.md) bygges inn som tekst
+[[rules]]
+type = "Text"
+globs = ["**/*.md"]
+fallthrough = true
+
 [vars]
-FAQ_URL = "https://raw.githubusercontent.com/arneriis/minkonto/main/faq.md"
 ALLOWED_ORIGINS = "https://minkonto.riis.cc,http://minkonto.riis.cc"
 
 # API-nøkkelen settes som hemmelighet, ikke her:

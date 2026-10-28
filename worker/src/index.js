@@ -1,14 +1,14 @@
 // "Spør Arne" – Cloudflare Worker that keeps the Anthropic API key secret
-// and answers questions from minkonto.riis.cc using the FAQ published on the site.
+// and answers questions from minkonto.riis.cc using Recover's internal FAQ.
 import Anthropic from "@anthropic-ai/sdk";
 import { createRemoteJWKSet, jwtVerify } from "jose";
+// Internal knowledge – bundled into the Worker, never published (knowledge/ is git-ignored).
+import FAQ from "../knowledge/faq.md";
 
 const LANG_NAMES = { nb: "norsk (bokmål)", sv: "svenska", da: "dansk", en: "English" };
 const MAX_MESSAGES = 12;
 const MAX_CHARS = 2000;
-const FAQ_TTL_MS = 5 * 60 * 1000;
 
-let faqCache = { text: "", fetchedAt: 0 };
 let jwks = null;
 
 // Sign-in with Recover's Microsoft Entra ID. Active once AZURE_TENANT_ID and AZURE_CLIENT_ID are set.
@@ -34,14 +34,6 @@ async function verifyUser(request, env) {
   }
 }
 
-async function loadFaq(env) {
-  if (faqCache.text && Date.now() - faqCache.fetchedAt < FAQ_TTL_MS) return faqCache.text;
-  const res = await fetch(env.FAQ_URL, { cf: { cacheTtl: 300 } });
-  if (!res.ok) throw new Error(`FAQ fetch failed: ${res.status}`);
-  faqCache = { text: await res.text(), fetchedAt: Date.now() };
-  return faqCache.text;
-}
-
 function systemPrompt(faq, lang) {
   return `Du er «Arne», en vennlig IT-assistent for ansatte i Recover. Du svarer på spørsmål fra nettsiden minkonto.riis.cc, som oftest på mobil.
 
@@ -56,6 +48,10 @@ Regler:
 Reise og utlegg (Expense fra SD Worx – Norge):
 - Veiledningene for Expense (Daily- og Manager-appen) gjelder ansatte i Norge. Er det uklart hvilket land brukeren jobber i, spør. Gjelder det ikke Norge, si at veiledning for andre land kommer senere, og henvis til Iver support.
 - Svar med de konkrete stegene for det brukeren spør om (utlegg, reise på regning, diett innland/utland, kontering, godkjenning, innlogging/passord).
+
+Tjenestebil, bilforsikring og bilordninger (Norge):
+- Alt om tjenestebil, skade, forsikring, lading, kjørebok, privat bil i tjeneste og bilrabatter gjelder Recover Norge. Er det uklart hvilket land brukeren jobber i, spør. Gjelder det ikke Norge, si at dette kommer senere og henvis til bil@recover.no eller Iver support.
+- Ved skade: si hva brukeren skal gjøre nå (sikkerhet, veihjelp, skademelding, hvem som skal ha kopi), og skill mellom forsikringsskade og mindre skade under kr 23 000. Spør om det er person-/varebil eller ansattbil hvis egenandelen er relevant.
 
 Videoer:
 - Noen steg i FAQ-en har en videomarkør som [[video:utlegg-app]]. Når du svarer på noe som har en slik markør, ta med markøren nøyaktig slik den står, alene på egen linje, rett etter stegene den hører til. Ikke lag nye markører og ikke skriv lenker til videoene selv.
@@ -166,7 +162,7 @@ function corsHeaders(origin, env) {
   const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
   return {
     "Access-Control-Allow-Origin": allowed.includes(origin) ? origin : allowed[0],
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Vary": "Origin",
   };
@@ -196,7 +192,6 @@ export default {
     const cors = corsHeaders(origin, env);
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-    if (request.method !== "POST") return json({ error: "Method not allowed" }, 405, cors);
 
     const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
     if (!allowed.includes(origin)) return json({ error: "Forbidden" }, 403, cors);
@@ -204,6 +199,15 @@ export default {
     if (authEnabled(env) && !(await verifyUser(request, env))) {
       return json({ error: "unauthorized" }, 401, cors);
     }
+
+    // The page's offline FAQ search, for signed-in users only.
+    const path = new URL(request.url).pathname;
+    if (request.method === "GET" && path === "/faq") {
+      return new Response(FAQ, {
+        headers: { ...cors, "Content-Type": "text/markdown; charset=utf-8", "Cache-Control": "private, no-store" },
+      });
+    }
+    if (request.method !== "POST") return json({ error: "Method not allowed" }, 405, cors);
 
     let body;
     try {
@@ -217,7 +221,6 @@ export default {
     const lang = LANG_NAMES[body.lang] ? body.lang : "nb";
 
     try {
-      const faq = await loadFaq(env);
       const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
       const response = await client.beta.messages.create({
         model: "claude-opus-5-5",
@@ -226,7 +229,7 @@ export default {
         output_config: { effort: "low" },
         betas: ["server-side-fallback-2026-07-01"],
         fallbacks: "default",
-        system: systemPrompt(faq, lang),
+        system: systemPrompt(FAQ, lang),
         tools: [PRINTER_ORDER_TOOL, NUMBER_TRANSFER_TOOL],
         messages,
       });

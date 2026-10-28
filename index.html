@@ -684,7 +684,7 @@
         transferNote: "E-posten åpnes med ordre@mobility.no som mottaker. Fyll inn fødselsdato der det står ________, se over og trykk Send.",
         transferPdf: "Husk å legge ved signert overdragelsesskjema (PDF) fra tidligere eier.",
         transferDone: "Overdragelsen er klar. Trykk på knappen for å åpne e-posten, fyll inn fødselsdato og send den.",
-        chips: ["Reiseregning og utlegg", "Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
+        chips: ["Skade på tjenestebil", "Reiseregning og utlegg", "Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
         fromFaq: "Dette fant jeg i FAQ-en:",
         notFound: "Jeg fant dessverre ikke noe om det i FAQ-en. Prøv å spørre på en annen måte, eller kontakt Iver support.",
         error: "Noe gikk galt. Prøv igjen om litt, eller kontakt Iver support."
@@ -1255,6 +1255,7 @@
     var SYNONYMS = {
       overforing: ["overføre", "overføring", "overdra", "overdragelse", "flytte", "flytta", "transfer", "porting", "nummeret", "mobilnummer", "abonnement", "abonnemang", "mobility", "telenor", "simkort", "esim", "tvillingsim", "datasim"],
       expense: ["expense", "utlegg", "utgift", "reiseregning", "reiseregninger", "reise", "diett", "kjørerute", "kilometer", "kilometergodtgjørelse", "kvittering", "daily", "manager", "attestere", "sdworx", "aditro", "kontering", "refusjon", "claim", "receipt", "passasjer", "passasjerer"],
+      bil: ["bil", "bilen", "biler", "tjenestebil", "firmabil", "arbeidsbil", "varebil", "leasing", "ayvens", "leaseplan", "bilforsikring", "forsikring", "forsikringen", "egenandel", "skademelding", "kasko", "drivstoffkort", "drivstoff", "ladebrikke", "bombrikke", "hjemmelader", "lader", "lading", "elbil", "easee", "zaptec", "circle", "dekk", "dekkhotell", "piggdekk", "pkk", "eu-kontroll", "parkering", "easypark", "parkeringsbot", "innredning", "milwaukee", "packout", "lafinto", "tilhenger", "kjørebok", "zeekit", "påkost", "tilbakelevering", "billønn", "steinsprut", "frontrute", "ruteskade", "veihjelp", "bilia", "vianor", "carglass", "hurtigruta", "volvo", "toyota", "bmw"],
       passord: ["passord", "password", "lösenord", "losenord", "adgangskode", "sspr", "glemt", "glömt", "forgot", "reset", "tilbakestill", "nulstil", "återställ"],
       iphone: ["iphone", "ipad", "ios", "apple", "appstore"],
       android: ["android", "samsung", "google", "play"],
@@ -1280,23 +1281,36 @@
       return word;
     }
 
+    // Small words that say nothing about the topic.
+    var STOPWORDS = ["hva", "hvor", "hvordan", "hvem", "når", "jeg", "har", "fått", "får", "kan", "skal", "med", "for", "som", "den", "det", "til", "min", "mitt", "mine", "meg", "seg", "ikke", "eller", "vad", "hur", "jag", "hvad", "hvordan", "the", "and", "how", "what", "can", "my"];
+
     function words(text) {
-      return text.toLowerCase().split(/[^a-z0-9æøåäöü-]+/i).filter(function (w) { return w.length >= 3; });
+      return text.toLowerCase().split(/[^a-z0-9æøåäöü-]+/i).filter(function (w) {
+        return w.length >= 3 && STOPWORDS.indexOf(w) === -1;
+      });
     }
 
     function tokens(text) { return words(text).map(normalize); }
 
+    // Strip common Norwegian/Scandinavian endings ("frontruta"/"frontruten"/"frontrute" → "frontrut").
+    function stem(w) { return w.replace(/(ene|en|et|er|ar|or|a|e)$/, ""); }
+
     // Same word stem: one word starts with the other ("legger"/"legge", "kilometer"/"kilometerne").
     function hasPrefix(list, w) {
+      var ws = stem(w);
       return list.some(function (x) {
-        var a = x.length < w.length ? x : w, b = a === x ? w : x;
+        var xs = stem(x);
+        var a = xs.length < ws.length ? xs : ws, b = a === xs ? ws : xs;
         return a.length >= 5 && b.indexOf(a) === 0;
       });
     }
 
     function loadFaq() {
       if (faqSections) return Promise.resolve(faqSections);
-      return fetch("faq.md", { cache: "no-cache" }).then(function (r) {
+      // The FAQ is internal: fetched from the Worker with the user's sign-in, never published on the site.
+      return getIdToken().then(function (token) {
+        return fetch(CHAT_API_URL + "/faq", { headers: token ? { Authorization: "Bearer " + token } : {} });
+      }).then(function (r) {
         if (!r.ok) throw new Error("faq " + r.status);
         return r.text();
       }).then(function (md) {
@@ -1321,6 +1335,7 @@
       return loadFaq().then(function (sections) {
         var q = tokens(question);
         var qWords = words(question);
+        var hasTopic = q.some(function (w) { return SYNONYMS.hasOwnProperty(w); });
         var best = null, bestScore = 0;
         sections.forEach(function (s) {
           var score = 0;
@@ -1334,10 +1349,13 @@
             if (hasPrefix(s.titleWords, w)) score += 2;
             else if (hasPrefix(s.bodyWords, w)) score += 1;
           });
-          // Prefer the general section when the title adds a topic the question never mentioned.
-          s.titleTokens.forEach(function (w, i) {
-            if (SYNONYMS.hasOwnProperty(w) && s.titleTokens.indexOf(w) === i && q.indexOf(w) === -1) score -= 2;
-          });
+          // Prefer the general section when the title adds a topic the question never mentioned
+          // (only when the question has a topic of its own).
+          if (hasTopic) {
+            s.titleTokens.forEach(function (w, i) {
+              if (SYNONYMS.hasOwnProperty(w) && s.titleTokens.indexOf(w) === i && q.indexOf(w) === -1) score -= 2;
+            });
+          }
           if (score > bestScore) { best = s; bestScore = score; }
         });
         if (!best || bestScore < 2) return t("notFound");
@@ -1472,7 +1490,7 @@
       if (!logEl.children.length) addMessage("bot", t("greeting"));
       renderChips();
       if (window.matchMedia("(hover: hover)").matches) inputEl.focus();
-      loadFaq().catch(function () {});
+      if (!isLocked()) loadFaq().catch(function () {});
     }
 
     function resetChat() {
