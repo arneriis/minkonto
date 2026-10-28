@@ -472,6 +472,29 @@
     .sigpad canvas { width: 100%; height: 100%; display: block; border-radius: 12px; }
     .sigpad span { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
     .sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .field select, .field textarea {
+      font: inherit;
+      font-size: 16px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      min-width: 0;
+    }
+    .field textarea { resize: vertical; line-height: 1.4; }
+    .field select:focus, .field textarea:focus { outline: 2px solid var(--focus); outline-offset: 0; }
+    .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-items: end; }
+    .opts { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+    .opts legend { padding: 0; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .opts label { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 14px; cursor: pointer; }
+    .opts label:has(input:checked) { border-color: var(--navy); background: #e8f0f5; color: var(--navy); }
+    .opts input { width: 16px; height: 16px; margin: 0; }
+    .circ { display: grid; grid-template-columns: 44px 1fr 44px; gap: 4px 8px; align-items: center; font-size: 14px; }
+    .circ .head { font-size: 13px; font-weight: 700; color: var(--navy); text-align: center; }
+    .circ input { width: 22px; height: 22px; margin: 0 auto; display: block; }
+    .circ .b[hidden] { display: block; visibility: hidden; }
+    .sigpad.sketch { height: auto; aspect-ratio: 348 / 154; background-image: linear-gradient(#e6eaed 1px, transparent 1px), linear-gradient(90deg, #e6eaed 1px, transparent 1px); background-size: 16px 16px; }
     .status { margin: 0; font-size: 14px; }
     .status.ok { color: #1b6b3a; }
     .status.err { color: #a12a2a; }
@@ -717,6 +740,24 @@
         </a>
       </li>
       <li>
+        <a class="action" id="order-skade" href="#">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 17H3v-5l2-5h10l4 5h2v5h-2" />
+              <circle cx="7.5" cy="17" r="2" />
+              <circle cx="16.5" cy="17" r="2" />
+              <path d="M9.5 17h5" />
+              <path d="m11 7 1.5 3-2 1 1.5 3" />
+            </svg>
+          </span>
+          <span class="label">
+            <strong><span>Skademelding bil</span><svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg></strong>
+            <small>Ingen skademelding i bilen? Fyll ut og signer på mobilen – begge førere</small>
+          </span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </a>
+      </li>
+      <li>
         <a class="action" id="order-mobile" href="#">
           <span class="icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -949,12 +990,315 @@
     </div>
   </section>
 
+  <section class="sheet" id="skade" role="dialog" aria-modal="true" aria-labelledby="skade-title" hidden>
+    <div class="chat-head">
+      <div class="chat-title">
+        <strong id="skade-title">Skademelding – bil</strong>
+        <small>Ayvens «Skademelding-motorvogn», fylt ut digitalt</small>
+      </div>
+      <button type="button" class="icon-btn" id="skade-close" aria-label="Lukk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <form class="sheet-inner" id="skade-form" novalidate>
+        <div class="card">
+          <p class="hint">Brukes når du ikke har papirskjema i bilen. Du (fører A) fyller ut din del. Er det en motpart, gir du telefonen til den andre føreren, som fyller ut kjøretøy B og signerer. Skademeldingen er ingen skylderkjennelse.</p>
+          <p class="warn">Selvforskyldt skade under kr 23 000 uten motpart meldes ikke til forsikringen – gi beskjed til avdelingsleder og bil@recover.no. Personskade, brann, tyveri, innbrudd og hærverk meldes også til politiet.</p>
+        </div>
+
+        <div class="card">
+          <h3>1–5 Uhellet</h3>
+          <div class="row2">
+            <div class="field"><label for="s-date">Skadedato</label><input id="s-date" type="date" data-pdf-date="Text1,Text2,Text3" data-year="4" required></div>
+            <div class="field"><label for="s-time">Klokken</label><input id="s-time" type="time" data-pdf-time="Text4,Text5" required></div>
+          </div>
+          <div class="field"><label for="s-place">Skadested (gate/kryss, husnr. – mest mulig eksakt)</label><input id="s-place" data-pdf="Text6" required></div>
+          <div class="row2">
+            <div class="field"><label for="s-kommune">Kommune</label><input id="s-kommune" data-pdf="Text7"></div>
+            <div class="field"><label for="s-land">Land</label><input id="s-land" data-pdf="Text8" value="Norge"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="s-injury">Personskade?</label><select id="s-injury" data-pdf-choice="NEIJA1"><option value="0">Nei</option><option value="1">Ja</option></select></div>
+            <div class="field"><label for="s-other">Annen materiell skade enn på A og B?</label><select id="s-other" data-pdf-choice="NEIJA2"><option value="0">Nei</option><option value="1">Ja</option></select></div>
+          </div>
+          <div class="field"><label for="s-objects">Skade på andre objekter enn kjøretøy?</label><select id="s-objects" data-pdf-choice="NEIJA3"><option value="0">Nei</option><option value="1">Ja</option></select></div>
+          <div class="field"><label for="s-witness">Vitner (navn, adresse, telefon – noter om de var passasjer i A eller B)</label><textarea id="s-witness" rows="2" data-pdf="Text9"></textarea></div>
+        </div>
+
+        <div class="card">
+          <div class="seg" role="group" aria-label="Motpart">
+            <button type="button" id="s-b-no" aria-pressed="true">Ingen motpart</button>
+            <button type="button" id="s-b-yes" aria-pressed="false">Motpart (kjøretøy B)</button>
+          </div>
+          <p class="hint" id="s-b-hint">Bare kjøretøy A fylles ut.</p>
+        </div>
+
+        <div class="card">
+          <h3>Kjøretøy A – vår bil</h3>
+          <div class="row2">
+            <div class="field"><label for="s-a-reg">Reg.nr.</label><input id="s-a-reg" data-pdf="Text20" data-upper autocomplete="off" required></div>
+            <div class="field"><label for="s-a-make">Merke/type</label><input id="s-a-make" data-pdf="Text22"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="s-a-trailer">Tilhenger reg.nr.</label><input id="s-a-trailer" data-pdf="Text21" data-upper autocomplete="off"></div>
+            <div class="field"><label for="s-a-land">Registreringsland</label><input id="s-a-land" data-pdf="Text24" value="Norge"></div>
+          </div>
+          <div class="field"><label for="s-a-policy">Bilavtale</label><select id="s-a-policy" data-pdf-select="Text27"><option value="88.220">Person- eller varebil (88.220)</option><option value="88.244">Ansattbil (88.244)</option></select></div>
+          <p class="hint">Forsikringstaker: Recover AS. Forsikring: Ayvens Insurance (Euro Insurances DAC), kasko.</p>
+          <input type="hidden" data-pdf="Text10" value="RECOVER AS">
+          <input type="hidden" data-pdf="Text26" value="Ayvens Insurance (Euro Insurances DAC)">
+          <input type="hidden" data-pdf-choice="NEIJA4" value="1">
+          <input type="hidden" data-pdf-choice="NEIJA5" value="1">
+        </div>
+
+        <div class="card">
+          <h3>Fører A – deg</h3>
+          <div class="row2">
+            <div class="field"><label for="s-a-last">Etternavn</label><input id="s-a-last" data-pdf="Text32" data-upper autocomplete="family-name" required></div>
+            <div class="field"><label for="s-a-first">Fornavn</label><input id="s-a-first" data-pdf="Text33" autocomplete="given-name" required></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="s-a-born">Fødselsdato</label><input id="s-a-born" type="date" data-pdf-date="Text34,Text35,Text36" data-age="Text36a"></div>
+            <div class="field"><label for="s-a-sex">Kjønn</label><select id="s-a-sex" data-pdf-choice="NEIJA6"><option value="">–</option><option value="0">Kvinne</option><option value="1">Mann</option></select></div>
+          </div>
+          <div class="field"><label for="s-a-addr">Adresse</label><input id="s-a-addr" data-pdf="Text37" autocomplete="street-address"></div>
+          <div class="field"><label for="s-a-zip">Postnr./sted, land</label><input id="s-a-zip" data-pdf="Text38"></div>
+          <div class="row2">
+            <div class="field"><label for="s-a-mob">Mobil</label><input id="s-a-mob" type="tel" data-pdf="Text40" autocomplete="tel"></div>
+            <div class="field"><label for="s-a-mail">E-post</label><input id="s-a-mail" type="email" data-pdf="Text41" autocomplete="email"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="s-a-lic">Førerkortnr.</label><input id="s-a-lic" data-pdf="Text42" autocomplete="off"></div>
+            <div class="field"><label for="s-a-class">Klasse</label><input id="s-a-class" data-pdf="Text43" data-upper value="B"></div>
+          </div>
+        </div>
+
+        <div class="card" id="s-b" hidden>
+          <h3>Kjøretøy B – motparten</h3>
+          <p class="hint">Gi telefonen til den andre føreren. Hen fyller ut dette og signerer nederst.</p>
+          <div class="row2">
+            <div class="field"><label for="s-b-reg">Reg.nr.</label><input id="s-b-reg" data-pdf="Text63" data-upper autocomplete="off" data-b-required></div>
+            <div class="field"><label for="s-b-make">Merke/type</label><input id="s-b-make" data-pdf="Text65"></div>
+          </div>
+          <div class="field"><label for="s-b-land">Registreringsland</label><input id="s-b-land" data-pdf="Text67" value="Norge"></div>
+          <div class="row2">
+            <div class="field"><label for="s-b-ins">Forsikringsselskap</label><input id="s-b-ins" data-pdf="Text69"></div>
+            <div class="field"><label for="s-b-pol">Avtalenr.</label><input id="s-b-pol" data-pdf="Text69a"></div>
+          </div>
+          <div class="field"><label for="s-b-kasko">Kaskoforsikring?</label><select id="s-b-kasko" data-pdf-choice="NEIJA8"><option value="">Vet ikke</option><option value="0">Nei</option><option value="1">Ja</option></select></div>
+
+          <h3>Forsikringstaker (eier) B</h3>
+          <div class="row2">
+            <div class="field"><label for="s-b-olast">Etternavn / firma</label><input id="s-b-olast" data-pdf="Text53" data-upper></div>
+            <div class="field"><label for="s-b-ofirst">Fornavn</label><input id="s-b-ofirst" data-pdf="Text54"></div>
+          </div>
+          <div class="field"><label for="s-b-oaddr">Adresse</label><input id="s-b-oaddr" data-pdf="Text58"></div>
+          <div class="field"><label for="s-b-ozip">Postnr./sted, land</label><input id="s-b-ozip" data-pdf="Text59"></div>
+          <div class="row2">
+            <div class="field"><label for="s-b-omob">Mobil</label><input id="s-b-omob" type="tel" data-pdf="Text60"></div>
+            <div class="field"><label for="s-b-omail">E-post</label><input id="s-b-omail" type="email" data-pdf="Text62"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="s-b-same" checked> <span>Føreren er samme person som forsikringstaker</span></label>
+
+          <h3>Fører B</h3>
+          <div id="s-b-driver" hidden>
+            <div class="row2">
+              <div class="field"><label for="s-b-last">Etternavn</label><input id="s-b-last" data-pdf="Text74" data-upper></div>
+              <div class="field"><label for="s-b-first">Fornavn</label><input id="s-b-first" data-pdf="Text75"></div>
+            </div>
+            <div class="field"><label for="s-b-addr">Adresse</label><input id="s-b-addr" data-pdf="Text80"></div>
+            <div class="field"><label for="s-b-zip">Postnr./sted, land</label><input id="s-b-zip" data-pdf="Text81"></div>
+            <div class="row2">
+              <div class="field"><label for="s-b-mob">Mobil</label><input id="s-b-mob" type="tel" data-pdf="Text83"></div>
+              <div class="field"><label for="s-b-mail">E-post</label><input id="s-b-mail" type="email" data-pdf="Text84"></div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="s-b-born">Fødselsdato fører</label><input id="s-b-born" type="date" data-pdf-date="Text76,Text77,Text78" data-age="Text79"></div>
+            <div class="field"><label for="s-b-sex">Kjønn</label><select id="s-b-sex" data-pdf-choice="NEIJA9"><option value="">–</option><option value="0">Kvinne</option><option value="1">Mann</option></select></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="s-b-lic">Førerkortnr.</label><input id="s-b-lic" data-pdf="Text85"></div>
+            <div class="field"><label for="s-b-class">Klasse</label><input id="s-b-class" data-pdf="Text86" data-upper></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>12 Omstendigheter</h3>
+          <p class="hint">Kryss av det som passer for hvert kjøretøy.</p>
+          <div class="circ" id="s-circ" role="group" aria-label="Omstendigheter"></div>
+        </div>
+
+        <div class="card">
+          <h3>13 Skisse</h3>
+          <p class="hint">Tegn veien med navn, bilene merket A og B, kjøreretning før kollisjonen, trafikkskilt og vikeplikt.</p>
+          <div class="sigpad sketch" id="s-sketchpad"><canvas id="s-sketch"></canvas><span>Tegn med fingeren</span></div>
+          <div class="sheet-actions"><button type="button" class="btn" data-clear="s-sketch">Tøm skisse</button></div>
+          <div class="field"><label for="s-photos">Bilder av skadene og stedet (legges ved e-posten)</label><input id="s-photos" type="file" accept="image/*" multiple></div>
+        </div>
+
+        <div class="card">
+          <h3>11 og 14 Skader og merknader</h3>
+          <div class="field"><label for="s-a-dmg">Synlige skader på kjøretøy A</label><textarea id="s-a-dmg" rows="2" data-pdf="Text50"></textarea></div>
+          <div class="field"><label for="s-a-rem">Merknader / uenighet, fører A</label><textarea id="s-a-rem" rows="2" data-pdf="Text94"></textarea></div>
+          <div class="s-b-only" hidden>
+            <div class="field"><label for="s-b-dmg">Synlige skader på kjøretøy B</label><textarea id="s-b-dmg" rows="2" data-pdf="Text93"></textarea></div>
+            <div class="field"><label for="s-b-rem">Merknader / uenighet, fører B</label><textarea id="s-b-rem" rows="2" data-pdf="Text95"></textarea></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>16–33 Tilleggsopplysninger fra fører A</h3>
+          <input type="hidden" data-pdf-choice="NEIJA10" value="0">
+          <div class="row3">
+            <div class="field"><label for="s-v1">Fart da det oppsto (km/t)</label><input id="s-v1" inputmode="numeric" data-pdf="Text98"></div>
+            <div class="field"><label for="s-v2">Fart ved kollisjon (km/t)</label><input id="s-v2" inputmode="numeric" data-pdf="Text99"></div>
+            <div class="field"><label for="s-v3">Fartsgrense (km/t)</label><input id="s-v3" inputmode="numeric" data-pdf="Text100"></div>
+          </div>
+          <fieldset class="opts"><legend>Veidekke</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box188"> Fast dekke</label>
+            <label><input type="checkbox" data-pdf-check="Check Box189"> Grus</label>
+          </fieldset>
+          <fieldset class="opts"><legend>Føre</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box190"> Tørt</label>
+            <label><input type="checkbox" data-pdf-check="Check Box191"> Vått</label>
+            <label><input type="checkbox" data-pdf-check="Check Box192"> Snø/is</label>
+          </fieldset>
+          <fieldset class="opts"><legend>Vær</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box193"> Opphold</label>
+            <label><input type="checkbox" data-pdf-check="Check Box194"> Regn</label>
+            <label><input type="checkbox" data-pdf-check="Check Box195"> Snø</label>
+            <label><input type="checkbox" data-pdf-check="Check Box196"> Tåke</label>
+          </fieldset>
+          <div class="field"><label for="s-temp">Temperatur ca. (°C)</label><input id="s-temp" inputmode="numeric" data-pdf="Text101"></div>
+          <fieldset class="opts"><legend>Lysforhold</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box197"> Dagslys</label>
+            <label><input type="checkbox" data-pdf-check="Check Box198"> Skumring</label>
+            <label><input type="checkbox" data-pdf-check="Check Box199"> Mørkt</label>
+            <label><input type="checkbox" data-pdf-check="Check Box200"> Gatelys tent</label>
+          </fieldset>
+          <fieldset class="opts"><legend>Lys som var i bruk</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box201"> Fjernlys</label>
+            <label><input type="checkbox" data-pdf-check="Check Box202"> Nærlys</label>
+            <label><input type="checkbox" data-pdf-check="Check Box203"> Parklys</label>
+            <label><input type="checkbox" data-pdf-check="Check Box204"> Ekstralys</label>
+            <label><input type="checkbox" data-pdf-check="Check Box205"> Brukte ikke lys</label>
+          </fieldset>
+          <fieldset class="opts"><legend>Dekk og utstyr</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box206"> Kjettinger</label>
+            <label><input type="checkbox" data-pdf-check="Check Box207"> Vinterdekk uten pigger</label>
+            <label><input type="checkbox" data-pdf-check="Check Box208"> Piggdekk</label>
+            <label><input type="checkbox" data-pdf-check="Check Box209"> Sommerdekk</label>
+          </fieldset>
+          <fieldset class="opts"><legend>Signal gitt med</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box210"> Blinklys</label>
+            <label><input type="checkbox" data-pdf-check="Check Box211"> Horn</label>
+            <label><input type="checkbox" data-pdf-check="Check Box212"> Lys</label>
+          </fieldset>
+          <fieldset class="opts"><legend>Hvem er etter din mening ansvarlig?</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box213"> Fører A</label>
+            <label><input type="checkbox" data-pdf-check="Check Box214"> Fører B</label>
+            <label><input type="checkbox" data-pdf-check="Check Box215"> Annen</label>
+            <label><input type="checkbox" data-pdf-check="Check Box216"> Vet ikke</label>
+          </fieldset>
+          <div class="row2">
+            <div class="field"><label for="s-business">Brukt i næring (jobb)?</label><select id="s-business" data-pdf-choice="NEIJA11"><option value="1">Ja</option><option value="0">Nei</option></select></div>
+            <div class="field"><label for="s-km">Kilometerstand</label><input id="s-km" inputmode="numeric" data-pdf="Text102"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="s-rus">Alkohol, rusmidler eller trafikkfarlige legemidler?</label><select id="s-rus" data-pdf-choice="NEIJA12"><option value="0">Nei</option><option value="1">Ja</option></select></div>
+            <div class="field"><label for="s-breath">Utåndings-/blodprøve tatt?</label><select id="s-breath" data-pdf-choice="NEIJA13"><option value="0">Nei</option><option value="1">Ja</option></select></div>
+          </div>
+          <fieldset class="opts" data-when="s-rus"><legend>Hvis ja</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box218"> Alkohol</label>
+            <label><input type="checkbox" data-pdf-check="Check Box219"> Andre rusmidler</label>
+            <label><input type="checkbox" data-pdf-check="Check Box220"> Legemidler</label>
+          </fieldset>
+          <div class="field"><label for="s-tow">Bilredningsfirma tilkalt?</label><select id="s-tow" data-pdf-choice="NEIJA14"><option value="0">Nei</option><option value="1">Ja</option></select></div>
+          <div class="field" data-when="s-tow"><label for="s-towfirm">Hvilket firma?</label><input id="s-towfirm" data-pdf="Text103"></div>
+          <div class="field" data-when="s-other"><label for="s-otherdmg">Annen materiell skade (gjenstand/eiendom)</label><input id="s-otherdmg" data-pdf="Text104"></div>
+          <div class="field"><label for="s-prev">Tidligere skader på bilen?</label><select id="s-prev" data-pdf-choice="NEIJA15"><option value="0">Nei</option><option value="1">Ja</option></select></div>
+          <div class="field" data-when="s-prev"><label for="s-prevtxt">Kort beskrivelse</label><input id="s-prevtxt" data-pdf="Text105"></div>
+          <div class="field"><label for="s-police">Behandles saken hos politiet?</label><select id="s-police" data-pdf-choice="NEIJA16"><option value="0">Nei</option><option value="1">Ja</option></select></div>
+          <div class="field" data-when="s-police"><label for="s-policetxt">Politidistrikt</label><input id="s-policetxt" data-pdf="Text111"></div>
+          <div class="field"><label for="s-desc">Beskriv så tydelig som mulig hvordan uhellet skjedde</label><textarea id="s-desc" rows="5" data-pdf="Text112" required></textarea></div>
+        </div>
+
+        <div class="card" data-when="s-injury">
+          <h3>34 Skadet person</h3>
+          <p class="hint">Gjelder ikke fører/passasjer i motpartens kjøretøy. Personskade skal meldes til politiet.</p>
+          <div class="field"><label for="s-p-name">Etternavn, fornavn</label><input id="s-p-name" data-pdf="Text113"></div>
+          <div class="row2">
+            <div class="field"><label for="s-p-addr">Adresse</label><input id="s-p-addr" data-pdf="Text114"></div>
+            <div class="field"><label for="s-p-zip">Postnr./sted</label><input id="s-p-zip" data-pdf="Text115"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="s-p-mob">Mobil</label><input id="s-p-mob" type="tel" data-pdf="Text120"></div>
+            <div class="field"><label for="s-p-mail">E-post</label><input id="s-p-mail" type="email" data-pdf="Text121"></div>
+          </div>
+          <fieldset class="opts"><legend>Var</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box221"> Fører</label>
+            <label><input type="checkbox" data-pdf-check="Check Box222"> Passasjer</label>
+            <label><input type="checkbox" data-pdf-check="Check Box223"> Fotgjenger</label>
+            <label><input type="checkbox" data-pdf-check="Check Box224"> Syklist</label>
+          </fieldset>
+          <fieldset class="opts"><legend>Sikring</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box225"> Bilbelte</label>
+            <label><input type="checkbox" data-pdf-check="Check Box226"> Kollisjonspute</label>
+            <label><input type="checkbox" data-pdf-check="Check Box227"> Barnesikring</label>
+            <label><input type="checkbox" data-pdf-check="Check Box228"> Hjelm</label>
+            <label><input type="checkbox" data-pdf-check="Check Box229"> Ingen</label>
+          </fieldset>
+          <fieldset class="opts"><legend>Følger</legend>
+            <label><input type="checkbox" data-pdf-check="Check Box230"> Omkommet</label>
+            <label><input type="checkbox" data-pdf-check="Check Box232"> Innlagt på sykehus</label>
+            <label><input type="checkbox" data-pdf-check="Check Box233"> Legebehandlet</label>
+          </fieldset>
+          <div class="field"><label for="s-p-doc">Behandlet av lege/sykehus</label><input id="s-p-doc" data-pdf="Text123"></div>
+          <div class="s-b-only" hidden>
+            <div class="row2">
+              <div class="field"><label for="s-p-b">Skadet person i motpartens bil?</label><select id="s-p-b" data-pdf-choice="NEIJA20"><option value="0">Nei</option><option value="1">Ja</option></select></div>
+              <div class="field"><label for="s-p-bn">Hvor mange?</label><input id="s-p-bn" inputmode="numeric" data-pdf="Text143a"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>15 Signatur fører A</h3>
+          <div class="sigpad"><canvas id="s-sig-a"></canvas><span>Fører A signerer med fingeren</span></div>
+          <div class="sheet-actions"><button type="button" class="btn" data-clear="s-sig-a">Tøm signatur</button></div>
+          <label class="check"><input type="checkbox" id="s-confirm" data-pdf-check="Check Box258" required> <span>Jeg bekrefter at opplysningene er riktige</span></label>
+        </div>
+
+        <div class="card s-b-only" hidden>
+          <h3>15 Signatur fører B</h3>
+          <p class="hint">Den andre føreren signerer her. Hen kan skrive sine merknader over først.</p>
+          <div class="sigpad"><canvas id="s-sig-b"></canvas><span>Fører B signerer med fingeren</span></div>
+          <div class="sheet-actions"><button type="button" class="btn" data-clear="s-sig-b">Tøm signatur</button></div>
+        </div>
+
+        <div class="card">
+          <div class="field"><label for="s-leader">Avdelingsleder / bilansvarlig (e-post)</label><input id="s-leader" type="email" autocomplete="off" placeholder="fornavn.etternavn@recover.no" required></div>
+          <p class="hint" id="s-sendto"></p>
+          <div class="sheet-actions">
+            <button type="button" class="btn" id="s-preview">Se PDF</button>
+            <button type="submit" class="btn primary" id="s-send">Åpne i Outlook</button>
+          </div>
+          <div class="sheet-actions"><button type="button" class="btn" id="s-compose">Åpne ferdig adressert e-post (legg ved PDF selv)</button></div>
+          <p class="status" id="s-status" role="status"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"
     integrity="sha512-plOdviVmws4Y3JAvbnpfKb2hVxKM1lCwsi3vmElYRj+tiDLffZ4FVUj5a8vyKJ9pIgl8JCAHEJ4D1iUKBecswg=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.30.0/lib/msal-browser.min.js"
     integrity="sha384-RGxxfG5yRS8DLU7ZJ8OoLhbV/BsJFHyPuMVHrTLbpj3t5Z15LnviJmaznKY/a7LZ"
     crossorigin="anonymous"></script>
+  <script src="skademelding.js"></script>
   <script>
     // Sign-in needs a secure context, so always use HTTPS on the real domain.
     if (location.protocol === "http:" && location.hostname === "minkonto.riis.cc") {
@@ -1249,6 +1593,7 @@
       currentLang = lang;
       // Printer ordering is only set up for Norway so far.
       document.getElementById("order-printer").parentNode.hidden = lang !== "nb";
+      document.getElementById("order-skade").parentNode.hidden = lang !== "nb";
       document.getElementById("order-mobile").parentNode.hidden = lang !== "nb";
       renderChips();
     }
@@ -1346,7 +1691,7 @@
     }
 
     // Forms Arne can open from a [[form:id]] marker (Norway only).
-    var FORMS = { "laan-bil": "Fyll ut og signer: Lån av bil", "printer": "Fyll ut: Bestilling av skriver (Canon)" };
+    var FORMS = { "laan-bil": "Fyll ut og signer: Lån av bil", "printer": "Fyll ut: Bestilling av skriver (Canon)", "skademelding": "Fyll ut og signer: Skademelding bil (Ayvens)" };
 
     function mobilityConnectCard() {
       return '<button type="button" class="video-link form-link" data-action="mobility-connect">' +
@@ -1864,6 +2209,7 @@
       try { intent = sessionStorage.getItem(INTENT_KEY); sessionStorage.removeItem(INTENT_KEY); } catch (e) {}
       if (!account || !intent) return;
       if (intent === "printer") return openPrinterForm();
+      if (intent === "skade") return openSkadeForm();
       openChat();
       if (intent === "mobile") send(t("mobileAsk"));
     }
@@ -2253,6 +2599,11 @@
       openChat();
       send(t("mobileAsk"));
     });
+    document.getElementById("order-skade").addEventListener("click", function (e) {
+      e.preventDefault();
+      if (isLocked()) return login("skade");
+      openSkadeForm();
+    });
     document.getElementById("order-printer").addEventListener("click", function (e) {
       e.preventDefault();
       if (isLocked()) return login("printer");
@@ -2273,6 +2624,7 @@
       if (e.key === "Escape" && !logsEl.hidden) { logsEl.hidden = true; return; }
       if (e.key === "Escape" && !printerEl.hidden) return closePrinterForm();
       if (e.key === "Escape" && !loanEl.hidden) return closeLoanForm();
+      if (e.key === "Escape" && !skadeEl.hidden) return closeSkadeForm();
       if (e.key === "Escape" && !chatEl.hidden) closeChat();
     });
     document.getElementById("chat-form").addEventListener("submit", function (e) {
@@ -2576,6 +2928,361 @@
     });
 
 
+    // ---- Damage report (Norway): Ayvens "Skademelding-motorvogn" filled digitally, both drivers sign ----
+    // Inputs name their PDF field (data-pdf, data-pdf-check, data-pdf-choice …); skademelding.js fills Ayvens' own form.
+    var SKADE_TO = ["forsikring@ayvens.com"];
+    var SKADE_CC = ["bil@recover.no"];
+    var SKADE_PDF = "skademelding-ayvens.pdf";
+    var SKADE_SKETCH_RECT = [124, 80, 348, 154];
+    var PDFLIB_SRC = "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";
+    var PDFLIB_SRI = "sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI";
+    var CIRCUMSTANCES = [
+      "Parkert / sto stille", "Satte kjøretøyet i bevegelse / åpnet døra", "Var i ferd med å stoppe",
+      "Kjørte ut fra parkeringsplass, privat område, gårdsvei o.l.", "Kjørte inn på parkeringsplass, privat område, gårdsvei o.l.",
+      "Kjørte inn i en rundkjøring", "Kjørte i en rundkjøring", "Kjørte på bakfra i samme retning og samme kjørefelt",
+      "Kjørte i samme retning i annet kjørefelt", "Skiftet kjørefelt", "Kjørte forbi", "Svingte til høyre", "Svingte til venstre",
+      "Rygget", "Kom inn på del av veien bestemt for trafikk i motsatt retning", "Kom fra høyre i et kryss",
+      "Fulgte ikke varsel om vikeplikt eller rødt lys"
+    ];
+    // Row n: A is "Check Box78" for row 1, then 79+n (row 2 = 81); B is 96+n.
+    function circBox(side, n) { return "Check Box" + (side === "a" ? (n === 1 ? 78 : 79 + n) : 96 + n); }
+
+    var skadeEl = document.getElementById("skade");
+    var skadeHasB = false;
+    var skadeTemplate = null;
+    var pdfLibLoad = null;
+
+    function makePad(canvas) {
+      var ctx = canvas.getContext("2d");
+      var pad = { ink: false };
+      pad.clear = function () {
+        var r = canvas.getBoundingClientRect();
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(r.width * dpr);
+        canvas.height = Math.round(r.height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineWidth = 2.4;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#0f2c43";
+        pad.ink = false;
+        box = null;
+      };
+      // trim: crop to the ink, so a small signature still fills the signature box.
+      pad.png = function (trim) {
+        var src = canvas;
+        if (trim && box) {
+          var dpr = canvas.width / canvas.getBoundingClientRect().width || 1, m = 6;
+          var x = Math.max(0, box.x0 - m), y = Math.max(0, box.y0 - m);
+          var w = Math.min(canvas.width / dpr, box.x1 + m) - x, h = Math.min(canvas.height / dpr, box.y1 + m) - y;
+          src = document.createElement("canvas");
+          src.width = Math.round(w * dpr);
+          src.height = Math.round(h * dpr);
+          src.getContext("2d").drawImage(canvas, x * dpr, y * dpr, w * dpr, h * dpr, 0, 0, src.width, src.height);
+        }
+        var bin = atob(src.toDataURL("image/png").split(",")[1]);
+        var bytes = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+      };
+      var drawing = false, box = null;
+      function pos(e) {
+        var r = canvas.getBoundingClientRect();
+        var p = { x: e.clientX - r.left, y: e.clientY - r.top };
+        box = box ? { x0: Math.min(box.x0, p.x), y0: Math.min(box.y0, p.y), x1: Math.max(box.x1, p.x), y1: Math.max(box.y1, p.y) }
+          : { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
+        return p;
+      }
+      canvas.addEventListener("pointerdown", function (e) {
+        e.preventDefault();
+        drawing = true;
+        try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+        var p = pos(e);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x + 0.1, p.y + 0.1);
+        ctx.stroke();
+        pad.ink = true;
+      });
+      canvas.addEventListener("pointermove", function (e) {
+        if (!drawing) return;
+        var p = pos(e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      });
+      ["pointerup", "pointercancel", "pointerleave"].forEach(function (ev) {
+        canvas.addEventListener(ev, function () { drawing = false; });
+      });
+      return pad;
+    }
+    var skadePads = { "s-sig-a": makePad($("s-sig-a")), "s-sig-b": makePad($("s-sig-b")), "s-sketch": makePad($("s-sketch")) };
+
+    (function renderCircumstances() {
+      var html = '<span class="head">A</span><span></span><span class="head b">B</span>';
+      CIRCUMSTANCES.forEach(function (label, i) {
+        var n = i + 1;
+        html += '<input type="checkbox" aria-label="A: ' + escapeHtml(label) + '" data-pdf-check="' + circBox("a", n) + '" data-count="a">' +
+          "<span>" + n + ". " + escapeHtml(label) + "</span>" +
+          '<input type="checkbox" class="b" aria-label="B: ' + escapeHtml(label) + '" data-pdf-check="' + circBox("b", n) + '" data-count="b">';
+      });
+      $("s-circ").innerHTML = html;
+    })();
+
+    function setSkadeB(on) {
+      skadeHasB = on;
+      $("s-b-no").setAttribute("aria-pressed", String(!on));
+      $("s-b-yes").setAttribute("aria-pressed", String(on));
+      $("s-b").hidden = !on;
+      skadeEl.querySelectorAll(".s-b-only").forEach(function (el) { el.hidden = !on; });
+      $("s-circ").querySelectorAll(".b").forEach(function (el) { el.hidden = !on; });
+      skadeEl.querySelectorAll(".circ .head.b").forEach(function (el) { el.hidden = !on; });
+      $("s-b-hint").textContent = on
+        ? "Fyll ut din del, og gi så telefonen til den andre føreren for kjøretøy B og signatur."
+        : "Bare kjøretøy A fylles ut.";
+      if (on) requestAnimationFrame(function () { if (!skadePads["s-sig-b"].ink) skadePads["s-sig-b"].clear(); });
+    }
+
+    // Follow-up fields shown only when their NEI/JA question is answered JA.
+    function updateSkadeWhen() {
+      skadeEl.querySelectorAll("[data-when]").forEach(function (el) {
+        el.hidden = $(el.getAttribute("data-when")).value !== "1";
+      });
+      $("s-b-driver").hidden = $("s-b-same").checked;
+      var r = skadeRecipients();
+      $("s-sendto").textContent = "Sendes til: " + r.to.join(", ") + " – kopi: " + r.cc.join(", ") +
+        ". Vårt reg.nr. står i emnefeltet. «Åpne i Outlook» legger ved PDF-en og bildene – velg Outlook i delingsmenyen og lim inn mottakerne.";
+    }
+
+    function skadeRecipients() {
+      var leader = $("s-leader").value.trim();
+      return { to: SKADE_TO, cc: SKADE_CC.concat(leader ? [leader] : []) };
+    }
+
+    // An input counts unless it sits in a hidden part of the form (no motpart, unanswered follow-up …).
+    function skadeActive(el) {
+      return el.type === "hidden" ? !el.parentNode.closest("[hidden]") : !el.closest("[hidden]");
+    }
+
+    function two(n) { return ("0" + n).slice(-2); }
+
+    function ageAt(born, on) {
+      var b = new Date(born), d = on ? new Date(on) : new Date();
+      var age = d.getFullYear() - b.getFullYear();
+      if (d.getMonth() < b.getMonth() || (d.getMonth() === b.getMonth() && d.getDate() < b.getDate())) age--;
+      return age >= 0 && age < 130 ? String(age) : "";
+    }
+
+    function skadeData() {
+      var text = {}, checks = [], choices = {};
+      var date = $("s-date").value;
+      skadeEl.querySelectorAll("[data-pdf]").forEach(function (el) {
+        if (!skadeActive(el)) return;
+        var v = el.value.trim();
+        text[el.getAttribute("data-pdf")] = el.hasAttribute("data-upper") ? v.toUpperCase() : v;
+      });
+      skadeEl.querySelectorAll("[data-pdf-select]").forEach(function (el) { text[el.getAttribute("data-pdf-select")] = el.value; });
+      skadeEl.querySelectorAll("[data-pdf-date]").forEach(function (el) {
+        if (!skadeActive(el) || !el.value) return;
+        var p = el.value.split("-"), names = el.getAttribute("data-pdf-date").split(",");
+        text[names[0]] = p[2];
+        text[names[1]] = p[1];
+        text[names[2]] = el.getAttribute("data-year") === "4" ? p[0] : p[0].slice(2);
+        if (el.getAttribute("data-age")) text[el.getAttribute("data-age")] = ageAt(el.value, date);
+      });
+      skadeEl.querySelectorAll("[data-pdf-time]").forEach(function (el) {
+        if (!el.value) return;
+        var p = el.value.split(":"), names = el.getAttribute("data-pdf-time").split(",");
+        text[names[0]] = p[0];
+        text[names[1]] = p[1];
+      });
+      skadeEl.querySelectorAll("[data-pdf-check]").forEach(function (el) {
+        if (el.checked && skadeActive(el)) checks.push(el.getAttribute("data-pdf-check"));
+      });
+      skadeEl.querySelectorAll("[data-pdf-choice]").forEach(function (el) {
+        if (el.value !== "" && skadeActive(el)) choices[el.getAttribute("data-pdf-choice")] = Number(el.value);
+      });
+      if (skadeHasB && $("s-b-same").checked) {
+        [["Text53", "Text74"], ["Text54", "Text75"], ["Text58", "Text80"], ["Text59", "Text81"], ["Text60", "Text83"], ["Text62", "Text84"]]
+          .forEach(function (pair) { text[pair[1]] = text[pair[0]]; });
+      }
+      text.Text51 = String(skadeEl.querySelectorAll("[data-count='a']:checked").length);
+      if (skadeHasB) text.Text52 = String(skadeEl.querySelectorAll("[data-count='b']:checked").length);
+      var today = new Date();
+      text.Text144 = two(today.getDate());
+      text.Text145 = two(today.getMonth() + 1);
+      text.Text146 = String(today.getFullYear()).slice(2);
+
+      var sigA = skadePads["s-sig-a"].png(true);
+      var images = [{ png: sigA, field: "Text96" }, { png: sigA, field: "Text148" }];
+      if (skadeHasB && skadePads["s-sig-b"].ink) images.push({ png: skadePads["s-sig-b"].png(true), field: "Text97" });
+      if (skadePads["s-sketch"].ink) images.push({ png: skadePads["s-sketch"].png(), page: 0, rect: SKADE_SKETCH_RECT });
+      return { text: text, checks: checks, choices: choices, images: images };
+    }
+
+    function validateSkade() {
+      var bad = Array.prototype.find.call(skadeEl.querySelectorAll("[required], [data-b-required]"), function (el) {
+        if (!skadeActive(el)) return false;
+        return el.type === "checkbox" ? !el.checked : !el.value.trim();
+      });
+      if (bad) {
+        bad.focus();
+        return bad.id === "s-confirm" ? "Bekreft at opplysningene er riktige." : "Fyll ut feltet: " + (skadeEl.querySelector("label[for='" + bad.id + "']") || {}).textContent;
+      }
+      if (!/@recover/i.test($("s-leader").value)) return "Skriv inn Recover-e-posten til avdelingsleder eller bilansvarlig.";
+      if (!skadePads["s-sig-a"].ink) return "Fører A må signere.";
+      return "";
+    }
+
+    function loadPdfLib() {
+      if (window.PDFLib) return Promise.resolve();
+      if (!pdfLibLoad) {
+        pdfLibLoad = new Promise(function (resolve, reject) {
+          var s = document.createElement("script");
+          s.src = PDFLIB_SRC;
+          s.integrity = PDFLIB_SRI;
+          s.crossOrigin = "anonymous";
+          s.referrerPolicy = "no-referrer";
+          s.onload = resolve;
+          s.onerror = function () { pdfLibLoad = null; reject(new Error("pdf-lib")); };
+          document.head.appendChild(s);
+        });
+      }
+      return pdfLibLoad;
+    }
+
+    function buildSkadePdf() {
+      var tpl = skadeTemplate || fetch(SKADE_PDF).then(function (r) {
+        if (!r.ok) throw new Error("template");
+        return r.arrayBuffer();
+      }).then(function (b) { skadeTemplate = b; return b; });
+      return Promise.all([loadPdfLib(), tpl]).then(function (r) {
+        return window.fillSkademelding(r[1], skadeData());
+      }).then(function (bytes) { return new Blob([bytes], { type: "application/pdf" }); });
+    }
+
+    function skadeFileName() {
+      return "Skademelding " + ($("s-a-reg").value.trim().toUpperCase() || "bil") + " " + ($("s-date").value || "") + ".pdf";
+    }
+
+    function skadeMail() {
+      var r = skadeRecipients();
+      var reg = $("s-a-reg").value.trim().toUpperCase();
+      var bReg = skadeHasB ? $("s-b-reg").value.trim().toUpperCase() : "";
+      var date = nbDate($("s-date").value);
+      var lines = [
+        "Hei,", "",
+        "Vedlagt er skademelding for vår bil " + reg + ", skadedato " + date + " kl. " + $("s-time").value + ".",
+        "Skadested: " + $("s-place").value.trim() + ($("s-kommune").value.trim() ? ", " + $("s-kommune").value.trim() : "") + ".",
+        bReg ? "Motpartens reg.nr.: " + bReg + "." + (skadePads["s-sig-b"].ink ? " Skjemaet er signert av begge førere." : " Motparten har ikke signert.") : "Ingen motpart.",
+        "Forsikringstaker: Recover AS. Avtale " + $("s-a-policy").value + ".", "",
+        "Med vennlig hilsen", ($("s-a-first").value.trim() + " " + $("s-a-last").value.trim()).trim()
+      ];
+      return { to: r.to, cc: r.cc, subject: "Skademelding " + reg + " – " + date + (bReg ? " – motpart " + bReg : ""), body: lines.join("\n") };
+    }
+
+    function setSkadeStatus(text, kind) {
+      var el = $("s-status");
+      el.textContent = text;
+      el.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function skadeFiles(pdf) {
+      return [new File([pdf], skadeFileName(), { type: "application/pdf" })].concat(Array.prototype.slice.call($("s-photos").files || []));
+    }
+
+    function openSkadeForm() {
+      skadeEl.hidden = false;
+      if (account) {
+        var parts = (account.name || "").trim().split(/\s+/);
+        if (!$("s-a-last").value && parts.length > 1) $("s-a-last").value = parts.pop().toUpperCase();
+        if (!$("s-a-first").value && parts.length) $("s-a-first").value = parts.join(" ");
+        if (!$("s-a-mail").value) $("s-a-mail").value = account.username || "";
+      }
+      if (!$("s-date").value) {
+        var now = new Date();
+        $("s-date").value = now.getFullYear() + "-" + two(now.getMonth() + 1) + "-" + two(now.getDate());
+        $("s-time").value = two(now.getHours()) + ":" + two(now.getMinutes());
+      }
+      setSkadeStatus("");
+      setSkadeB(skadeHasB);
+      updateSkadeWhen();
+      requestAnimationFrame(function () {
+        Object.keys(skadePads).forEach(function (id) { if (!skadePads[id].ink) skadePads[id].clear(); });
+      });
+      loadPdfLib().catch(function () {});
+    }
+
+    function closeSkadeForm() { skadeEl.hidden = true; }
+
+    $("skade-close").addEventListener("click", closeSkadeForm);
+    $("s-b-no").addEventListener("click", function () { setSkadeB(false); });
+    $("s-b-yes").addEventListener("click", function () { setSkadeB(true); });
+    skadeEl.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-clear]");
+      if (btn) skadePads[btn.getAttribute("data-clear")].clear();
+    });
+    skadeEl.addEventListener("change", updateSkadeWhen);
+    $("s-leader").addEventListener("input", updateSkadeWhen);
+    window.addEventListener("resize", function () {
+      if (skadeEl.hidden) return;
+      Object.keys(skadePads).forEach(function (id) { if (!skadePads[id].ink) skadePads[id].clear(); });
+    });
+
+    $("s-preview").addEventListener("click", function () {
+      var err = validateSkade();
+      if (err) return setSkadeStatus(err, "err");
+      setSkadeStatus("Lager PDF …");
+      buildSkadePdf().then(function (pdf) {
+        setSkadeStatus("");
+        window.open(URL.createObjectURL(pdf), "_blank");
+      }).catch(function () { setSkadeStatus("Kunne ikke lage PDF-en. Sjekk nettforbindelsen og prøv igjen.", "err"); });
+    });
+
+    // Mobile: share the PDF and photos straight into the Outlook app; recipients are copied to paste.
+    $("skade-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var err = validateSkade();
+      if (err) return setSkadeStatus(err, "err");
+      var mail = skadeMail();
+      setSkadeStatus("Lager PDF …");
+      buildSkadePdf().then(function (pdf) {
+        var files = skadeFiles(pdf);
+        if (isMobile && navigator.canShare && navigator.canShare({ files: files })) {
+          if (navigator.clipboard) navigator.clipboard.writeText(mail.to.concat(mail.cc).join("; ")).catch(function () {});
+          setSkadeStatus("Velg Outlook. Mottakerne er kopiert – lim dem inn: " + recipientsText(mail), "ok");
+          return navigator.share({ files: files, title: mail.subject, text: mail.body }).catch(function (shareErr) {
+            if (shareErr && shareErr.name === "AbortError") return;
+            setSkadeStatus("Deling virket ikke. Bruk «Åpne ferdig adressert e-post» under.", "err");
+          });
+        }
+        // PC (or no sharing): save the PDF and open a ready-addressed e-mail.
+        saveBlob(pdf, skadeFileName());
+        window.location.href = composeUrl(mail);
+        setSkadeStatus("PDF-en " + skadeFileName() + " er lastet ned. Legg den (og eventuelle bilder) ved e-posten som åpnes, og trykk Send.", "ok");
+      }).catch(function () { setSkadeStatus("Kunne ikke lage PDF-en. Sjekk nettforbindelsen og prøv igjen.", "err"); });
+    });
+
+    $("s-compose").addEventListener("click", function () {
+      var err = validateSkade();
+      if (err) return setSkadeStatus(err, "err");
+      var mail = skadeMail();
+      buildSkadePdf().then(function (pdf) {
+        saveBlob(pdf, skadeFileName());
+        window.location.href = composeUrl(mail);
+        setSkadeStatus("PDF-en er lagret (Filer/Nedlastinger). Legg den og bildene ved i e-posten som åpnes, og trykk Send.", "ok");
+      }).catch(function () { setSkadeStatus("Kunne ikke lage PDF-en. Sjekk nettforbindelsen og prøv igjen.", "err"); });
+    });
+
+    function saveBlob(blob, name) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 30000);
+    }
+
     // ---- Printer order form (Norway): models + delivery → ready e-mail to Iver, Canon on copy ----
     var printerEl = document.getElementById("printer");
     var printerQty = {};
@@ -2829,6 +3536,7 @@
       var btn = e.target.closest("[data-form]");
       if (btn && btn.getAttribute("data-form") === "laan-bil") openLoanForm();
       if (btn && btn.getAttribute("data-form") === "printer") openPrinterForm();
+      if (btn && btn.getAttribute("data-form") === "skademelding") openSkadeForm();
       if (e.target.closest("[data-action='mobility-connect']")) connectMobility();
     });
 
