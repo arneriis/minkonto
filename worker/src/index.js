@@ -318,7 +318,7 @@ async function exchangeMobilityToken(env, body) {
 }
 
 // ---- Suggestion usage (anonymous counts per suggestion id, shared by everyone) ----
-const CHIP_IDS = ["mobile", "loan", "car-damage", "expense", "vacation", "printer", "transfer", "password",
+const CHIP_IDS = ["travel", "mobile", "loan", "car-damage", "expense", "vacation", "printer", "transfer", "password",
   "iphone", "android", "mfa", "meps", "network"];
 
 // Orders actually sent through Arne, counted per product (anonymous) – answers "what is bought most?".
