@@ -11,5 +11,5 @@ ALLOWED_ORIGINS = "https://minkonto.riis.cc,http://minkonto.riis.cc"
 #   npx wrangler secret put ANTHROPIC_API_KEY
 
 # Innlogging med Recover-konto (Microsoft Entra ID). Når begge er satt, krever Spør Arne innlogging.
-# AZURE_TENANT_ID = ""
-# AZURE_CLIENT_ID = ""
+AZURE_TENANT_ID = "3eda027e-8a74-4cb5-96ca-7586478e54fc"
+AZURE_CLIENT_ID = "1d836824-cf57-4a1c-b1a1-ec0fa1b621f6"
