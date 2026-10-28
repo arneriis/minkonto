@@ -4,7 +4,7 @@ compatibility_date = "2026-10-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-FAQ_URL = "https://minkonto.riis.cc/faq.md"
+FAQ_URL = "https://raw.githubusercontent.com/arneriis/minkonto/main/faq.md"
 ALLOWED_ORIGINS = "https://minkonto.riis.cc,http://minkonto.riis.cc"
 
 # API-nøkkelen settes som hemmelighet, ikke her:
