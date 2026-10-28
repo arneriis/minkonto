@@ -9,7 +9,7 @@
 
 ## IFS Cloud og IFS MWO-appen
 
-Recover bruker IFS Cloud som forretningssystem (ERP) og til feltservice. Teknikere i felt bruker mobilappen IFS MWO Service (Mobile Work Order) til arbeidsordrene sine.
+Recover bruker IFS Cloud som forretningssystem (ERP) og til feltservice. Teknikere i felt bruker mobilappen IFS MWO Service (Mobile Work Order) til arbeidsordrene sine. Appen installeres fra Firmaportal (Intune), og du logger inn med Recover-kontoen din.
 
 - IFS Cloud på nett (PC/Mac): https://recover.ifs.cloud
 - Cloud-adressen (server-URL) i MWO-appen: https://recover.ifs.cloud
@@ -23,14 +23,16 @@ Hva MWO-appen brukes til:
 
 Sette opp IFS MWO-appen første gang:
 
-1. Last ned appen «IFS MWO Service» fra IFS Corporation. iPhone/iPad: https://apps.apple.com/app/id6744721354 – Android: søk etter «IFS MWO Service» i Google Play (https://play.google.com/store/search?q=IFS%20MWO%20Service&c=apps).
-2. Åpne appen. Når den spør etter server-URL / cloud-adresse, skriv inn: https://recover.ifs.cloud
-3. Logg inn med IFS-brukeren din – samme innlogging som du bruker i IFS Cloud på nett.
-4. Første gang laster appen ned data, så la den stå åpen til synkroniseringen er ferdig. Gjør det gjerne på wifi.
+1. Sørg for at mobilen er satt opp med Firmaportal (se «Oppsett av ny iPhone/iPad» eller «Oppsett av ny Android mobil/tablet»).
+2. Installer «IFS MWO Service» fra Firmaportal-appen (Intune) – ikke fra App Store eller Google Play. Åpne Firmaportal, finn IFS MWO Service under apper og trykk Installer. Ser du den ikke, kontakt Iver support.
+3. Åpne IFS MWO Service. Når den spør etter server-URL / cloud-adresse, skriv inn: https://recover.ifs.cloud
+4. Logg inn med Recover-kontoen din (samme e-post og passord som ellers på jobb, med Microsoft Authenticator/MFA).
+5. Første gang laster appen ned data, så la den stå åpen til synkroniseringen er ferdig. Gjør det gjerne på wifi.
 
 Hvis du ikke får logget inn i appen:
 
 - Sjekk at server-URL-en er skrevet nøyaktig: https://recover.ifs.cloud
+- Sjekk at du bruker Recover-kontoen din. Har du glemt passordet, se «Tilbakestille passord». Har du ny mobil og Authenticator ikke virker, se «Tilbakestilling av MFA».
 - Test om du kommer inn på https://recover.ifs.cloud i nettleseren. Kommer du inn der, men ikke i appen, mangler brukeren din sannsynligvis tilgang til MWO-appen – kontakt Iver support, så får IFS-ansvarlig gitt deg tilgang.
 
 ## Ferie og fravær (CatalystOne)
