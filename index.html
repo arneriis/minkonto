@@ -395,6 +395,15 @@
     .video-hint { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 400; }
     .video-link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
+    .printer-list { display: grid; gap: 8px; }
+    .printer-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; }
+    .printer-row.is-on { border-color: var(--navy); box-shadow: inset 0 0 0 1px var(--navy); }
+    .printer-row strong { display: block; font-size: 15px; }
+    .printer-row small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; margin-top: 2px; }
+    .printer-row .price { display: block; margin-top: 4px; font-weight: 700; color: var(--navy); font-size: 14px; }
+    .stepper { display: flex; align-items: center; gap: 6px; }
+    .stepper button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); font: inherit; font-size: 18px; font-weight: 600; color: var(--navy); cursor: pointer; }
+    .stepper output { min-width: 18px; text-align: center; font-weight: 700; }
     /* Loan-of-car form (Norway) */
     .form-link { border: 0; width: 100%; font: inherit; cursor: pointer; text-align: left; }
 
@@ -724,6 +733,69 @@
     </form>
   </section>
 
+  <section class="sheet" id="printer" role="dialog" aria-modal="true" aria-labelledby="printer-title" hidden>
+    <div class="chat-head">
+      <div class="chat-title">
+        <strong id="printer-title">Bestille skriver (Canon)</strong>
+        <small>Bestillingsskjema Recover AS – kun Norge</small>
+      </div>
+      <button type="button" class="icon-btn" id="printer-close" aria-label="Lukk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <form class="sheet-inner" id="printer-form" novalidate>
+        <div class="card">
+          <h3>Velg skriver</h3>
+          <div class="printer-list" id="p-models"></div>
+          <p class="hint" id="p-total">Velg minst én skriver.</p>
+        </div>
+
+        <div class="card">
+          <h3>Levering</h3>
+          <div class="field"><label for="p-adresse">Adresse</label><input id="p-adresse" autocomplete="street-address" required></div>
+          <div class="row2">
+            <div class="field"><label for="p-postnr">Postnummer</label><input id="p-postnr" inputmode="numeric" autocomplete="postal-code" required></div>
+            <div class="field"><label for="p-poststed">Poststed</label><input id="p-poststed" autocomplete="address-level2" required></div>
+          </div>
+          <div class="field"><label for="p-etasje">Etasje</label><input id="p-etasje"></div>
+          <div class="row2">
+            <div class="field"><label for="p-kontakt">Kontaktperson</label><input id="p-kontakt" required></div>
+            <div class="field"><label for="p-kontaktinfo">Mobil/e-post</label><input id="p-kontaktinfo" required></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Bestiller</h3>
+          <div class="row2">
+            <div class="field"><label for="p-navn">Navn</label><input id="p-navn" autocomplete="name" required></div>
+            <div class="field"><label for="p-sted">Sted</label><input id="p-sted" required></div>
+          </div>
+          <div class="field"><label for="p-kommentar">Kommentar (valgfritt)</label><input id="p-kommentar"></div>
+        </div>
+
+        <div class="card">
+          <h3>Inkludert i avtalen</h3>
+          <ul class="terms">
+            <li>uniFLOW Online – sikker print og skann, satt opp i Azure</li>
+            <li>Servicepakke – toner, arbeid og deler, og automatisk tonerbestilling (DMS)</li>
+            <li>Sikkerhetsherding, firmware-oppdateringer og sikker datasletting</li>
+            <li>Avtaletid 60 måneder. Sikkerhetspakke «Plus» prises separat.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <p class="hint">Sendes til servicedesk@recovernordic.com, med Canon (geir-arne.hansen@canon.no) på kopi.</p>
+          <div class="sheet-actions">
+            <button type="submit" class="btn primary" id="p-send">Åpne e-post i Outlook</button>
+            <button type="button" class="btn" id="p-copy">Kopier teksten</button>
+          </div>
+          <p class="status" id="p-status" role="status"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+
   <section class="sheet" id="loan" role="dialog" aria-modal="true" aria-labelledby="loan-title" hidden>
     <div class="chat-head">
       <div class="chat-title">
@@ -849,7 +921,7 @@
         placeholder: "Skriv spørsmålet ditt …",
         greeting: "Hei! Jeg er Arne 👋 Jeg kan hjelpe deg med passord, ferie, reiseregning og utlegg, bestilling av mobil og skriver, oppsett av mobil, IFS, MFA, Meps, nettverk og tjenestebil. Hva lurer du på?",
         printerTitle: "Bestille skriver",
-        printerText: "Arne hjelper deg å fylle ut og sende bestillingen",
+        printerText: "Fyll ut bestillingsskjemaet – sendes til Iver og Canon",
         printerAsk: "Jeg vil bestille en skriver",
         orderTitle: "Bestillingen er klar",
         orderTotal: "Sum per måned",
@@ -1179,7 +1251,7 @@
     }
 
     // Forms Arne can open from a [[form:id]] marker (Norway only).
-    var FORMS = { "laan-bil": "Fyll ut og signer: Lån av bil" };
+    var FORMS = { "laan-bil": "Fyll ut og signer: Lån av bil", "printer": "Fyll ut: Bestilling av skriver (Canon)" };
 
     function mobilityConnectCard() {
       return '<button type="button" class="video-link form-link" data-action="mobility-connect">' +
@@ -1240,6 +1312,12 @@
       mfp_liten_a4: { name: "MFP Liten (A4) – Canon imageFORCE C331", price: 966 },
       mfp_medium_a4a3: { name: "MFP Medium (A4/A3) – Canon imageRUNNER ADVANCE DX C3930i", price: 1250 },
       mfp_stor_a4a3: { name: "MFP Stor (A4/A3) – Canon imageFORCE C5140i", price: 1477 }
+    };
+    var PRINTER_DETAILS = {
+      bordmodell: "Liten bordskriver. uniFLOW Online og servicepakke.",
+      mfp_liten_a4: "A4. Single Pass-dokumentmater, kortleser MiCard PLUS.",
+      mfp_medium_a4a3: "A4/A3. Dokumentmater, fire skuffer, kortleser MiCard PLUS.",
+      mfp_stor_a4a3: "A4/A3, høyt volum. Single Pass-dokumentmater, fire skuffer, kortleser."
     };
 
     function kr(n) { return "kr " + n.toLocaleString("nb-NO") + ",-"; }
@@ -1657,8 +1735,8 @@
       var intent = null;
       try { intent = sessionStorage.getItem(INTENT_KEY); sessionStorage.removeItem(INTENT_KEY); } catch (e) {}
       if (!account || !intent) return;
+      if (intent === "printer") return openPrinterForm();
       openChat();
-      if (intent === "printer") send(t("printerAsk"));
       if (intent === "mobile") send(t("mobileAsk"));
     }
 
@@ -1945,8 +2023,7 @@
     document.getElementById("order-printer").addEventListener("click", function (e) {
       e.preventDefault();
       if (isLocked()) return login("printer");
-      openChat();
-      send(t("printerAsk"));
+      openPrinterForm();
     });
     document.getElementById("mobility-disconnect").addEventListener("click", clearMobility);
     document.getElementById("logout").addEventListener("click", function () {
@@ -1960,6 +2037,7 @@
     });
     document.getElementById("ask-close").addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !printerEl.hidden) return closePrinterForm();
       if (e.key === "Escape" && !loanEl.hidden) return closeLoanForm();
       if (e.key === "Escape" && !chatEl.hidden) closeChat();
     });
@@ -2263,9 +2341,91 @@
       setLoanStatus("PDF-en er lagret (Filer/Nedlastinger). Legg den ved i e-posten som åpnes, og trykk Send.", "ok");
     });
 
+
+    // ---- Printer order form (Norway): models + delivery → ready e-mail to Iver, Canon on copy ----
+    var printerEl = document.getElementById("printer");
+    var printerQty = {};
+
+    function renderPrinterModels() {
+      var list = document.getElementById("p-models");
+      list.innerHTML = "";
+      Object.keys(PRINTERS).forEach(function (key) {
+        var info = PRINTERS[key];
+        var row = document.createElement("div");
+        row.className = "printer-row" + (printerQty[key] ? " is-on" : "");
+        var parts = info.name.split(" – ");
+        row.innerHTML = '<div><strong></strong><small></small><span class="price"></span></div>' +
+          '<div class="stepper"><button type="button" aria-label="Færre">−</button><output>0</output><button type="button" aria-label="Flere">+</button></div>';
+        row.querySelector("strong").textContent = parts[0];
+        row.querySelector("small").textContent = (parts[1] || "") + ". " + PRINTER_DETAILS[key];
+        row.querySelector(".price").textContent = kr(info.price) + " per måned";
+        row.querySelector("output").textContent = String(printerQty[key] || 0);
+        var btns = row.querySelectorAll(".stepper button");
+        btns[0].addEventListener("click", function () { printerQty[key] = Math.max(0, (printerQty[key] || 0) - 1); renderPrinterModels(); });
+        btns[1].addEventListener("click", function () { printerQty[key] = (printerQty[key] || 0) + 1; renderPrinterModels(); });
+        list.appendChild(row);
+      });
+      var total = 0, count = 0;
+      Object.keys(printerQty).forEach(function (k) { total += (printerQty[k] || 0) * PRINTERS[k].price; count += printerQty[k] || 0; });
+      document.getElementById("p-total").textContent = count
+        ? count + " skriver" + (count > 1 ? "e" : "") + " – sum " + kr(total) + " per måned (60 mnd avtale)."
+        : "Velg minst én skriver.";
+    }
+
+    function printerOrder() {
+      var val = function (id) { return document.getElementById(id).value.trim(); };
+      return {
+        produkter: Object.keys(printerQty).filter(function (k) { return printerQty[k] > 0; }).map(function (k) { return { modell: k, antall: printerQty[k] }; }),
+        adresse: val("p-adresse"), postnummer: val("p-postnr"), poststed: val("p-poststed"), etasje: val("p-etasje"),
+        kontaktperson: val("p-kontakt"), kontakt_mobil_epost: val("p-kontaktinfo"),
+        bestiller_navn: val("p-navn"), sted: val("p-sted"), kommentar: val("p-kommentar")
+      };
+    }
+
+    function validatePrinter() {
+      var o = printerOrder();
+      if (!o.produkter.length) return "Velg minst én skriver.";
+      var bad = Array.prototype.find.call(document.querySelectorAll("#printer-form input[required]"), function (i) { return !i.value.trim(); });
+      if (bad) { bad.focus(); return "Fyll ut alle feltene."; }
+      return "";
+    }
+
+    function setPrinterStatus(text, kind) {
+      var el = document.getElementById("p-status");
+      el.textContent = text;
+      el.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function openPrinterForm() {
+      printerEl.hidden = false;
+      if (account && !document.getElementById("p-navn").value) document.getElementById("p-navn").value = account.name || "";
+      setPrinterStatus("");
+      renderPrinterModels();
+    }
+
+    function closePrinterForm() { printerEl.hidden = true; }
+
+    document.getElementById("printer-close").addEventListener("click", closePrinterForm);
+    document.getElementById("printer-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var err = validatePrinter();
+      if (err) return setPrinterStatus(err, "err");
+      var mail = buildOrderEmail(printerOrder());
+      window.location.href = composeUrl({ to: [ORDER_TO], cc: [ORDER_CC], subject: mail.subject, body: mail.body });
+      setPrinterStatus("E-posten er åpnet med bestillingen ferdig utfylt. Se over og trykk Send.", "ok");
+    });
+    document.getElementById("p-copy").addEventListener("click", function () {
+      var err = validatePrinter();
+      if (err) return setPrinterStatus(err, "err");
+      var mail = buildOrderEmail(printerOrder());
+      var text = "Til: " + ORDER_TO + "\nKopi: " + ORDER_CC + "\nEmne: " + mail.subject + "\n\n" + mail.body;
+      navigator.clipboard.writeText(text).then(function () { setPrinterStatus("Kopiert! Lim inn i en ny e-post.", "ok"); });
+    });
+
     logEl.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-form]");
       if (btn && btn.getAttribute("data-form") === "laan-bil") openLoanForm();
+      if (btn && btn.getAttribute("data-form") === "printer") openPrinterForm();
       if (e.target.closest("[data-action='mobility-connect']")) connectMobility();
     });
 

@@ -71,7 +71,7 @@ Videoer:
 
 Bestilling av skriver (kun Norge):
 - Printerbestillingen gjelder foreløpig bare Norge. Skal skriveren til et annet land, eller skriver brukeren på et annet språk enn norsk og det er uklart hvilket land det gjelder, spør om landet. Gjelder det ikke Norge, si at bestilling for andre land kommer senere, og henvis til Iver support.
-- Når noen vil bestille skriver/printer, tilby å fylle ut bestillingen for dem («Skal jeg gjøre dette for deg?»).
+- Når noen vil bestille skriver/printer, gi en kort oversikt over modellene og prisene og tilby skjemaet med markøren [[form:printer]] alene på egen linje. Vil brukeren heller at du fyller ut i chatten, gjør det.
 - Samle inn det som trengs (se FAQ-en), noen få spørsmål om gangen. Start med modell og antall – hjelp brukeren å velge ut fra behov (A3 eller bare A4, volum, kortleser) og nevn månedsprisen.
 - Ikke gjett verdier. Er noe uklart, spør. Ikke spør om fakturainformasjon – den håndteres av Iver.
 - Når alt er samlet inn, vis en kort oppsummering og spør om den stemmer. Kall verktøyet lag_printerbestilling først når brukeren har bekreftet.
