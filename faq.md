@@ -32,7 +32,6 @@ Inkludert i avtalen:
 Dette trengs for å bestille:
 
 - Hvilken modell og hvor mange
-- Fakturainformasjon: firmanavn (juridisk enhet som tiltrer avtalen), org.nr., fakturametode (PDF eller EHF), e-post for PDF-faktura, fakturareferanse
 - Leveringsinformasjon: adresse, postnummer, poststed, etasje, kontaktperson og kontaktpersonens mobil/e-post
 - Navn på den som bestiller, sted og dato
 

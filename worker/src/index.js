@@ -31,7 +31,7 @@ Regler:
 Bestilling av skriver:
 - Når noen vil bestille skriver/printer, tilby å fylle ut bestillingen for dem («Skal jeg gjøre dette for deg?»).
 - Samle inn det som trengs (se FAQ-en), noen få spørsmål om gangen. Start med modell og antall – hjelp brukeren å velge ut fra behov (A3 eller bare A4, volum, kortleser) og nevn månedsprisen.
-- Ikke gjett verdier. Er noe uklart, spør. Fakturametode er PDF eller EHF; e-post for faktura trengs bare ved PDF.
+- Ikke gjett verdier. Er noe uklart, spør. Ikke spør om fakturainformasjon – den håndteres av Iver.
 - Når alt er samlet inn, vis en kort oppsummering og spør om den stemmer. Kall verktøyet lag_printerbestilling først når brukeren har bekreftet.
 - Etter verktøykallet: si kort at e-posten er klar, og at brukeren må trykke på knappen og sende den fra sin egen e-post.
 
@@ -51,8 +51,7 @@ const PRINTER_ORDER_TOOL = {
     type: "object",
     additionalProperties: false,
     required: [
-      "produkter", "firmanavn", "orgnr", "fakturametode", "faktura_epost", "fakturareferanse",
-      "adresse", "postnummer", "poststed", "etasje", "kontaktperson", "kontakt_mobil_epost",
+      "produkter", "adresse", "postnummer", "poststed", "etasje", "kontaktperson", "kontakt_mobil_epost",
       "bestiller_navn", "sted", "kommentar",
     ],
     properties: {
@@ -69,11 +68,6 @@ const PRINTER_ORDER_TOOL = {
           },
         },
       },
-      firmanavn: { type: "string", description: "Juridisk enhet som tiltrer avtalen." },
-      orgnr: { type: "string" },
-      fakturametode: { type: "string", enum: ["PDF", "EHF"] },
-      faktura_epost: { ...nullableString, description: "Kun ved PDF-faktura, ellers null." },
-      fakturareferanse: { type: "string" },
       adresse: { type: "string" },
       postnummer: { type: "string" },
       poststed: { type: "string" },

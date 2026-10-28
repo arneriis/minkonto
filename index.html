@@ -871,13 +871,6 @@
         "Sum per måned: " + kr(total),
         "Avtaletid: 60 mnd",
         "",
-        "FAKTURAINFORMASJON",
-        "Firmanavn (juridisk enhet): " + v(o.firmanavn),
-        "Org.nr.: " + v(o.orgnr),
-        "Fakturametode: " + v(o.fakturametode),
-        "E-post for PDF-faktura: " + v(o.faktura_epost),
-        "Fakturareferanse: " + v(o.fakturareferanse),
-        "",
         "LEVERINGSINFORMASJON",
         "Adresse: " + v(o.adresse),
         "Postnummer: " + v(o.postnummer),
@@ -893,7 +886,7 @@
       if (o.kommentar) body.push("", "KOMMENTAR", o.kommentar);
       body.push("", "Bestillingen er laget med Spør Arne på minkonto.riis.cc.", "", "Med vennlig hilsen", v(o.bestiller_navn));
       return {
-        subject: "Bestilling av Canon-skriver – " + v(o.firmanavn),
+        subject: "Bestilling av Canon-skriver – " + v(o.poststed),
         body: body.join("\n"),
         total: total,
         lines: lines
