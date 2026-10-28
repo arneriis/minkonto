@@ -1,0 +1,11 @@
+name = "spor-arne"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+FAQ_URL = "https://minkonto.riis.cc/faq.md"
+ALLOWED_ORIGINS = "https://minkonto.riis.cc,http://minkonto.riis.cc"
+
+# API-nøkkelen settes som hemmelighet, ikke her:
+#   npx wrangler secret put ANTHROPIC_API_KEY

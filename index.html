@@ -188,6 +188,197 @@
       padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 20px);
     }
 
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+
+    .ask-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 14px 0 10px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--navy-dark);
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .ask-btn svg { width: 18px; height: 18px; }
+    .ask-btn:hover { background: var(--accent-hover); }
+    .ask-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+    @media (max-width: 400px) {
+      .brand span { display: none; }
+    }
+
+    /* Chat */
+    .chat {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    .chat[hidden] { display: none; }
+
+    .chat-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 12px 16px;
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .avatar {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--navy-dark);
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .chat-title { flex: 1; min-width: 0; }
+    .chat-title strong { display: block; font-size: 17px; }
+    .chat-title small { display: block; color: #ffffffb8; font-size: 13px; }
+
+    .icon-btn {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .icon-btn svg { width: 22px; height: 22px; }
+    .icon-btn:hover { background: #ffffff17; }
+    .icon-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+    .chat-log {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msg {
+      max-width: 88%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 15px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .msg.bot { align-self: flex-start; background: var(--surface); box-shadow: var(--shadow); border-bottom-left-radius: 4px; }
+    .msg.user { align-self: flex-end; background: var(--navy); color: #fff; border-bottom-right-radius: 4px; }
+    .msg p { margin: 0 0 8px; }
+    .msg p:last-child, .msg ol:last-child, .msg ul:last-child { margin-bottom: 0; }
+    .msg ol, .msg ul { margin: 0 0 8px; padding-left: 20px; }
+    .msg li { margin: 2px 0; }
+    .msg a { color: var(--focus); font-weight: 500; }
+    .msg.user a { color: #fff; }
+
+    .typing { display: inline-flex; gap: 4px; padding: 4px 0; }
+    .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite ease-in-out; }
+    .typing span:nth-child(2) { animation-delay: .15s; }
+    .typing span:nth-child(3) { animation-delay: .3s; }
+    @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 8px; }
+    .chips[hidden] { display: none; }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--navy);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .chip:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+    .chat-form {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 10px);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    .chat-form textarea {
+      flex: 1;
+      min-width: 0;
+      resize: none;
+      max-height: 120px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font: inherit;
+      font-size: 16px; /* 16px stops iOS from zooming on focus */
+      line-height: 1.35;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .chat-form textarea:focus { outline: 2px solid var(--focus); outline-offset: 0; }
+
+    .send-btn {
+      flex: none;
+      align-self: flex-end;
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .send-btn svg { width: 20px; height: 20px; }
+    .send-btn:disabled { opacity: .5; cursor: default; }
+    .send-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+    @media (min-width: 640px) {
+      .chat {
+        inset: auto 24px 24px auto;
+        width: 400px;
+        height: min(640px, calc(100vh - 48px));
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px #0a1d2c2e, 0 0 0 1px #0f2c430f;
+      }
+      .chat-head { padding-top: 12px; }
+      .chat-form { padding-bottom: 10px; }
+    }
+
     @media (min-width: 640px) {
       header { padding-top: 32px; padding-bottom: 72px; }
       .hero h1 { font-size: 34px; }
@@ -204,6 +395,7 @@
         </svg>
         <span data-i18n="brand">Min konto</span>
       </div>
+      <div class="top-actions">
       <label class="lang">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10" />
@@ -217,6 +409,13 @@
           <option value="en">English</option>
         </select>
       </label>
+      <button type="button" class="ask-btn" id="ask-open" aria-haspopup="dialog" aria-controls="chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <span data-i18n="askBtn">Spør Arne</span>
+      </button>
+      </div>
     </div>
     <div class="hero">
       <h1 data-i18n="title">Hva trenger du hjelp med?</h1>
@@ -295,6 +494,27 @@
 
   <footer>minkonto.riis.cc</footer>
 
+  <section class="chat" id="chat" role="dialog" aria-modal="true" aria-labelledby="chat-title" hidden>
+    <div class="chat-head">
+      <span class="avatar" aria-hidden="true">A</span>
+      <div class="chat-title">
+        <strong id="chat-title" data-i18n="askBtn">Spør Arne</strong>
+        <small data-i18n="chatSub">AI-assistent for IT-spørsmål</small>
+      </div>
+      <button type="button" class="icon-btn" id="ask-close" data-i18n-label="close" aria-label="Lukk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="chat-log" id="chat-log" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form class="chat-form" id="chat-form">
+      <textarea id="chat-input" rows="1" data-i18n-placeholder="placeholder" placeholder="Skriv spørsmålet ditt …" aria-label="Melding"></textarea>
+      <button type="submit" class="send-btn" id="chat-send" data-i18n-label="send" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
+      </button>
+    </form>
+  </section>
+
   <script>
     var STRINGS = {
       nb: {
@@ -308,7 +528,17 @@
         gearTitle: "Utstyret mitt",
         gearText: "Alt som er handlet på mitt navn, og bestilling av utstyr",
         cpTitle: "Oppsett av mobilen",
-        cpText: "Sett opp mobilen for firmaet med Firmaportal"
+        cpText: "Sett opp mobilen for firmaet med Firmaportal",
+        askBtn: "Spør Arne",
+        chatSub: "AI-assistent for IT-spørsmål",
+        close: "Lukk",
+        send: "Send",
+        placeholder: "Skriv spørsmålet ditt …",
+        greeting: "Hei! Jeg er Arne 👋 Jeg kan hjelpe deg med passord, oppsett av mobil, MFA, Meps og nettverk. Hva lurer du på?",
+        chips: ["Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
+        fromFaq: "Dette fant jeg i FAQ-en:",
+        notFound: "Jeg fant dessverre ikke noe om det i FAQ-en. Prøv å spørre på en annen måte, eller kontakt Iver support.",
+        error: "Noe gikk galt. Prøv igjen om litt, eller kontakt Iver support."
       },
       sv: {
         brand: "Mitt konto",
@@ -321,7 +551,17 @@
         gearTitle: "Min utrustning",
         gearText: "Allt som är köpt i mitt namn, och beställning av utrustning",
         cpTitle: "Konfigurera mobilen",
-        cpText: "Konfigurera mobilen för företaget med Företagsportal"
+        cpText: "Konfigurera mobilen för företaget med Företagsportal",
+        askBtn: "Fråga Arne",
+        chatSub: "AI-assistent för IT-frågor",
+        close: "Stäng",
+        send: "Skicka",
+        placeholder: "Skriv din fråga …",
+        greeting: "Hej! Jag är Arne 👋 Jag kan hjälpa dig med lösenord, konfigurering av mobil, MFA, Meps och nätverk. Vad undrar du?",
+        chips: ["Jag har glömt lösenordet", "Konfigurera ny iPhone", "Konfigurera ny Android", "Authenticator på ny mobil", "Meps fungerar inte", "Problem med nätverket"],
+        fromFaq: "Det här hittade jag i FAQ:n (på norska):",
+        notFound: "Jag hittade tyvärr inget om det i FAQ:n. Försök fråga på ett annat sätt, eller kontakta Iver support.",
+        error: "Något gick fel. Försök igen om en stund, eller kontakta Iver support."
       },
       da: {
         brand: "Min konto",
@@ -334,7 +574,17 @@
         gearTitle: "Mit udstyr",
         gearText: "Alt der er købt i mit navn, og bestilling af udstyr",
         cpTitle: "Opsætning af mobilen",
-        cpText: "Opsæt mobilen til firmaet med Firmaportal"
+        cpText: "Opsæt mobilen til firmaet med Firmaportal",
+        askBtn: "Spørg Arne",
+        chatSub: "AI-assistent til IT-spørgsmål",
+        close: "Luk",
+        send: "Send",
+        placeholder: "Skriv dit spørgsmål …",
+        greeting: "Hej! Jeg er Arne 👋 Jeg kan hjælpe dig med adgangskode, opsætning af mobil, MFA, Meps og netværk. Hvad vil du vide?",
+        chips: ["Jeg har glemt min adgangskode", "Opsæt ny iPhone", "Opsæt ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med netværket"],
+        fromFaq: "Det her fandt jeg i FAQ'en (på norsk):",
+        notFound: "Jeg fandt desværre ikke noget om det i FAQ'en. Prøv at spørge på en anden måde, eller kontakt Iver support.",
+        error: "Noget gik galt. Prøv igen om lidt, eller kontakt Iver support."
       },
       en: {
         brand: "My account",
@@ -347,9 +597,22 @@
         gearTitle: "My equipment",
         gearText: "Everything purchased in my name, and ordering equipment",
         cpTitle: "Set up your phone",
-        cpText: "Set up your phone for work with Company Portal"
+        cpText: "Set up your phone for work with Company Portal",
+        askBtn: "Ask Arne",
+        chatSub: "AI assistant for IT questions",
+        close: "Close",
+        send: "Send",
+        placeholder: "Type your question …",
+        greeting: "Hi! I'm Arne 👋 I can help with passwords, phone setup, MFA, Meps and network issues. What do you need?",
+        chips: ["I forgot my password", "Set up a new iPhone", "Set up a new Android", "Authenticator on a new phone", "Meps isn't working", "Network problems"],
+        fromFaq: "Here's what I found in the FAQ (in Norwegian):",
+        notFound: "Sorry, I couldn't find anything about that in the FAQ. Try asking another way, or contact Iver support.",
+        error: "Something went wrong. Please try again shortly, or contact Iver support."
       }
     };
+
+    // URL of the "Spør Arne" Cloudflare Worker (see worker/). Empty = answer from the FAQ only.
+    var CHAT_API_URL = "";
 
     var STORAGE_KEY = "minkonto.lang";
 
@@ -374,9 +637,19 @@
         var key = el.getAttribute("data-i18n");
         if (t[key]) el.textContent = t[key];
       });
+      document.querySelectorAll("[data-i18n-label]").forEach(function (el) {
+        el.setAttribute("aria-label", t[el.getAttribute("data-i18n-label")]);
+      });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+        el.setAttribute("placeholder", t[el.getAttribute("data-i18n-placeholder")]);
+      });
       document.title = t.brand;
       document.getElementById("lang").value = lang;
+      currentLang = lang;
+      renderChips();
     }
+
+    var currentLang = "nb";
 
     var initial = savedLanguage();
     if (!STRINGS[initial]) initial = detectLanguage();
@@ -415,6 +688,231 @@
         }, 1500);
       });
     }
+
+    // ---- Spør Arne (chat) ----
+    var chatHistory = [];
+    var faqSections = null;
+    var busy = false;
+    var chatEl = document.getElementById("chat");
+    var logEl = document.getElementById("chat-log");
+    var chipsEl = document.getElementById("chips");
+    var inputEl = document.getElementById("chat-input");
+    var sendEl = document.getElementById("chat-send");
+    var openEl = document.getElementById("ask-open");
+
+    function t(key) { return (STRINGS[currentLang] || STRINGS.en)[key]; }
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+
+    function inline(s) {
+      var out = escapeHtml(s);
+      out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      out = out.replace(/(^|[\s(])(https?:\/\/[^\s<]+?)([.,;:!?)]?)(?=\s|$)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>$3');
+      out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      return out;
+    }
+
+    // Small, safe Markdown subset: paragraphs, headings, numbered/bulleted lists, bold, links.
+    function renderMarkdown(text) {
+      var html = "", list = null, para = [];
+      function flushPara() { if (para.length) { html += "<p>" + para.join("<br>") + "</p>"; para = []; } }
+      function flushList() { if (list) { html += "</" + list + ">"; list = null; } }
+      text.split("\n").forEach(function (raw) {
+        var line = raw.trim(), m;
+        if (!line) { flushPara(); flushList(); return; }
+        if ((m = line.match(/^#{1,4}\s+(.*)$/))) { flushPara(); flushList(); html += "<p><strong>" + inline(m[1]) + "</strong></p>"; return; }
+        if ((m = line.match(/^\d+[.)]\s+(.*)$/))) { flushPara(); if (list !== "ol") { flushList(); html += "<ol>"; list = "ol"; } html += "<li>" + inline(m[1]) + "</li>"; return; }
+        if ((m = line.match(/^[-*•]\s+(.*)$/))) { flushPara(); if (list !== "ul") { flushList(); html += "<ul>"; list = "ul"; } html += "<li>" + inline(m[1]) + "</li>"; return; }
+        flushList();
+        para.push(inline(line));
+      });
+      flushPara(); flushList();
+      return html;
+    }
+
+    function addMessage(role, text) {
+      var div = document.createElement("div");
+      div.className = "msg " + (role === "user" ? "user" : "bot");
+      if (role === "user") div.textContent = text;
+      else div.innerHTML = renderMarkdown(text);
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+      return div;
+    }
+
+    function showTyping() {
+      var div = document.createElement("div");
+      div.className = "msg bot";
+      div.innerHTML = '<span class="typing" aria-label="…"><span></span><span></span><span></span></span>';
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+      return div;
+    }
+
+    function renderChips() {
+      if (!chipsEl) return;
+      chipsEl.innerHTML = "";
+      var started = chatHistory && chatHistory.length > 0;
+      chipsEl.hidden = started;
+      if (started) return;
+      t("chips").forEach(function (label) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "chip";
+        b.textContent = label;
+        b.addEventListener("click", function () { send(label); });
+        chipsEl.appendChild(b);
+      });
+    }
+
+    // ---- Local FAQ search (used when the AI worker isn't configured or fails) ----
+    var SYNONYMS = {
+      passord: ["passord", "password", "lösenord", "losenord", "adgangskode", "sspr", "glemt", "glömt", "forgot", "reset", "tilbakestill", "nulstil", "återställ"],
+      iphone: ["iphone", "ipad", "ios", "apple", "appstore"],
+      android: ["android", "samsung", "google", "play"],
+      firmaportal: ["firmaportal", "företagsportal", "company", "portal", "intune", "oppsett", "sette", "konfigurera", "opsæt", "opsætning", "setup", "mobil", "telefon", "phone", "tablet"],
+      authenticator: ["authenticator", "mfa", "2fa", "tofaktor", "totrinn", "kode", "code", "verifisering"],
+      meps: ["meps", "nettleser", "nettlesar", "webbläsare", "browser", "chrome", "edge", "cookies", "tilgjengelig"],
+      nettverk: ["nettverk", "nätverk", "netværk", "network", "wifi", "wi-fi", "internett", "internet", "trådløst", "trådlöst", "kablet", "speedtest", "nett"],
+      utstyr: ["utstyr", "utrustning", "udstyr", "equipment", "mobility", "bestille", "bestilling", "beställa", "order", "handlet"],
+      field: ["field", "worker"]
+    };
+
+    // Map a word to its topic key; long synonyms also match inflected forms ("nettverket", "passordet").
+    function normalize(word) {
+      for (var key in SYNONYMS) {
+        var list = SYNONYMS[key];
+        for (var i = 0; i < list.length; i++) {
+          if (word === list[i] || (list[i].length >= 5 && word.indexOf(list[i]) === 0)) return key;
+        }
+      }
+      return word;
+    }
+
+    function tokens(text) {
+      return text.toLowerCase().split(/[^a-z0-9æøåäöü-]+/i).filter(function (w) { return w.length >= 3; }).map(normalize);
+    }
+
+    function loadFaq() {
+      if (faqSections) return Promise.resolve(faqSections);
+      return fetch("faq.md", { cache: "no-cache" }).then(function (r) {
+        if (!r.ok) throw new Error("faq " + r.status);
+        return r.text();
+      }).then(function (md) {
+        faqSections = [];
+        var current = null;
+        md.split("\n").forEach(function (line) {
+          var m = line.match(/^##\s+(.*)$/);
+          if (m) { current = { title: m[1], body: "" }; faqSections.push(current); }
+          else if (current) current.body += line + "\n";
+        });
+        faqSections.forEach(function (s) {
+          s.titleTokens = tokens(s.title);
+          s.bodyTokens = tokens(s.body);
+        });
+        return faqSections;
+      });
+    }
+
+    function searchFaq(question) {
+      return loadFaq().then(function (sections) {
+        var q = tokens(question);
+        var best = null, bestScore = 0;
+        sections.forEach(function (s) {
+          var score = 0;
+          // Topic words decide the match; other words only break ties.
+          q.forEach(function (w) {
+            var topic = SYNONYMS.hasOwnProperty(w);
+            if (s.titleTokens.indexOf(w) !== -1) score += topic ? 4 : 1;
+            if (s.bodyTokens.indexOf(w) !== -1) score += topic ? 2 : 0;
+          });
+          if (score > bestScore) { best = s; bestScore = score; }
+        });
+        if (!best || bestScore < 2) return t("notFound");
+        return t("fromFaq") + "\n\n## " + best.title + "\n" + best.body.trim();
+      });
+    }
+
+    function askAi() {
+      return fetch(CHAT_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: chatHistory, lang: currentLang })
+      }).then(function (r) {
+        if (!r.ok) throw new Error("chat " + r.status);
+        return r.json();
+      }).then(function (data) {
+        if (!data.reply) throw new Error("empty reply");
+        return data.reply;
+      });
+    }
+
+    function send(text) {
+      text = (text || "").trim();
+      if (!text || busy) return;
+      busy = true;
+      sendEl.disabled = true;
+      inputEl.value = "";
+      autoGrow();
+      chatHistory.push({ role: "user", content: text });
+      addMessage("user", text);
+      renderChips();
+      var typing = showTyping();
+
+      var question = text;
+      var answer = CHAT_API_URL
+        ? askAi().catch(function () { return searchFaq(question); })
+        : searchFaq(question);
+
+      answer.catch(function () { return t("error"); }).then(function (reply) {
+        typing.remove();
+        chatHistory.push({ role: "assistant", content: reply });
+        addMessage("bot", reply);
+        busy = false;
+        sendEl.disabled = false;
+      });
+    }
+
+    function autoGrow() {
+      inputEl.style.height = "auto";
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+    }
+
+    function openChat() {
+      chatEl.hidden = false;
+      document.body.style.overflow = "hidden";
+      if (!logEl.children.length) addMessage("bot", t("greeting"));
+      renderChips();
+      if (window.matchMedia("(hover: hover)").matches) inputEl.focus();
+      loadFaq().catch(function () {});
+    }
+
+    function closeChat() {
+      chatEl.hidden = true;
+      document.body.style.overflow = "";
+      openEl.focus();
+    }
+
+    openEl.addEventListener("click", openChat);
+    document.getElementById("ask-close").addEventListener("click", closeChat);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !chatEl.hidden) closeChat();
+    });
+    document.getElementById("chat-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      send(inputEl.value);
+    });
+    inputEl.addEventListener("input", autoGrow);
+    inputEl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        send(inputEl.value);
+      }
+    });
   </script>
 </body>
 </html>
