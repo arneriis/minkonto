@@ -51,6 +51,7 @@ Reise og utlegg (Expense fra SD Worx – Norge):
 - Svar med de konkrete stegene for det brukeren spør om (utlegg, reise på regning, diett innland/utland, kontering, godkjenning, innlogging/passord).
 
 Bestille mobil, nettbrett og tilbehør (Mobility):
+- Bestilling av mobil, nettbrett, tilbehør, smartklokke og SIM skal ALLTID gjøres med mobility_order her i chatten – aldri ved å henvise til Mitt Mobility-lenken, e-post, Iver eller et skjema. Er Mobility ikke koblet til, vis [[action:mobility-connect]].
 - Når brukeren vil bestille mobil, nettbrett eller tilbehør, bruk mobility_order. Ledere som vil se eller godkjenne bestillinger bruker mobility_approve. Følg verktøyenes instruksjoner for rekkefølgen på spørsmålene.
 - Når Mobility-svaret har «choice», vises valgene automatisk som knapper under svaret ditt. Still spørsmålet kort og ikke list opp alternativene selv.
 - Brukerens knappetrykk kommer som tekst med «[valgt nøkkel=verdi]». Bruk verdien (for eksempel sku) i neste kall.
@@ -256,6 +257,19 @@ function blockedMobilityCall(name, args, confirmed) {
   return null;
 }
 
+// "Bestill en iPhone", "trenger nytt nettbrett", "order a phone" … → must go through the Mobility tools.
+const ORDER_WORDS = /\b(bestill\w*|kjøp\w*|beställ\w*|bestil\w*|order\w*|buy|trenger|behøver|ny|nytt|nye)\b/i;
+const DEVICE_WORDS = /\b(mobil\w*|telefon\w*|phone|iphone\w*|ipad\w*|nettbrett\w*|surfplatta|tablet\w*|samsung|galaxy|pixel|tilbehør|tillbehör|accessor\w*|deksel|skjermbeskytter|lader|smartklokke|watch|airpods|headset|multisim|sim-kort|simkort|esim)\b/i;
+
+// Questions about setting up or fixing a device are not orders.
+const NOT_ORDER_WORDS = /\b(sette opp|setter opp|satt opp|oppsett\w*|konfigur\w*|installer\w*|set up|setup|authenticator|mfa|firmaportal|company portal|intune|overføre|overfør\w*|flytte nummer\w*|virker ikke|fungerer ikke|feil)\b/i;
+
+function wantsDeviceOrder(messages) {
+  const last = messages[messages.length - 1];
+  const text = typeof last?.content === "string" ? last.content : "";
+  return ORDER_WORDS.test(text) && DEVICE_WORDS.test(text) && !NOT_ORDER_WORDS.test(text);
+}
+
 // Before Mobility can finish an order, Arne must have asked who it is for and where it goes.
 function missingOrderDetails(name, args) {
   if (name !== "mobility_order" || !args.sku) return null;
@@ -358,7 +372,13 @@ export default {
       }
 
       const convo = messages.slice();
-      convo.push({ role: "system", content: mobilityNote + (confirmed ? " Brukerens siste melding er et trykk på bekreftelsesknappen." : "") });
+      let note = mobilityNote + (confirmed ? " Brukerens siste melding er et trykk på bekreftelsesknappen." : "");
+      if (wantsDeviceOrder(messages)) {
+        note += mobilityToken
+          ? " Brukeren vil bestille utstyr: kall mobility_order nå. Ikke henvis til Mitt Mobility-lenken, e-post, Iver eller skjema."
+          : " Brukeren vil bestille utstyr: forklar kort at bestillingen gjøres her i chatten via Mobility, og vis [[action:mobility-connect]].";
+      }
+      convo.push({ role: "system", content: note });
 
       let response;
       let lastMobility = null;
