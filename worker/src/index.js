@@ -55,7 +55,7 @@ Bestille mobil, nettbrett og tilbehør (Mobility):
 - Når Mobility-svaret har «choice», vises valgene automatisk som knapper under svaret ditt. Still spørsmålet kort og ikke list opp alternativene selv.
 - Brukerens knappetrykk kommer som tekst med «[valgt nøkkel=verdi]». Bruk verdien (for eksempel sku) i neste kall.
 - Tidligere Mobility-steg står i «[Mobility: …]» i dine egne meldinger. Send alle verdier som allerede er valgt med på nytt i hvert kall.
-- Send confirmation YES, eller decision approve/reject, BARE når brukerens siste melding er et trykk på bekreftelsesknappen. Systemet blokkerer det ellers.
+- Send confirmation (JA/YES), eller decision approve/reject, BARE når brukerens siste melding er et trykk på bekreftelsesknappen. Systemet blokkerer det ellers.
 - Bestillingen går til godkjenneren (som regel lederen) før Mobility behandler den. Spør om godkjenner når Mobility ber om det.
 - Når brukeren har valgt produkt, spør (i én melding) før bestillingen gjøres klar: er den til deg selv eller til en annen ansatt (da navn og mobilnummer), og hvor skal den leveres (mottaker, gateadresse, postnummer, sted). Man kan bestille for andre ansatte – det avgjør Mobility ut fra brukerens tilgang. Gjenta adressen og mottakeren i oppsummeringen før «Send bestilling».
 - «[Mobility: …]» er et internt notat som legges til automatisk. Skriv det aldri selv i svaret.
@@ -244,8 +244,11 @@ async function loadMobilityTools(token) {
 }
 
 // Sending an order or approving/rejecting one needs a real button press from the user.
+const CANCEL_VALUES = ["", "NO", "NEI", "CANCEL", "AVBRYT"];
+
 function blockedMobilityCall(name, args, confirmed) {
-  const sends = name === "mobility_order" && String(args.confirmation || "").toUpperCase() === "YES";
+  // Mobility's own buttons use JA/NEI (the tool text says YES/NO) – treat any non-cancel value as sending.
+  const sends = name === "mobility_order" && !CANCEL_VALUES.includes(String(args.confirmation ?? "").trim().toUpperCase());
   const decides = name === "mobility_approve" && ["approve", "reject"].includes(String(args.decision || "").toLowerCase());
   if ((sends || decides) && !confirmed) {
     return "Blokkert: brukeren har ikke trykket på bekreftelsesknappen i chatten ennå. Vis bestillingen/ordren og la brukeren velge med knappene.";

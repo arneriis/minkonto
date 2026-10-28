@@ -446,6 +446,28 @@
 
     .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 8px; }
     .choices { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; max-width: 100%; }
+    .picker, .option-list { display: grid; gap: 8px; align-self: stretch; }
+    .picker-card { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; }
+    .picker-model { font-weight: 700; font-size: 15px; margin-bottom: 8px; color: var(--navy); }
+    .picker-variants { display: flex; flex-wrap: wrap; gap: 6px; }
+    .variant {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text);
+      border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+    }
+    .variant .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #0000002a; flex: none; }
+    .variant:hover { border-color: var(--navy); }
+    .option-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+      background: var(--surface); border: 0; border-radius: 12px; box-shadow: var(--shadow);
+      padding: 13px 14px; font: inherit; font-size: 15px; font-weight: 600; color: var(--text); text-align: left; cursor: pointer;
+    }
+    .option-row svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+    .confirm-bar { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; align-self: stretch; }
+    .btn.big { min-height: 50px; font-size: 16px; border-radius: 14px; }
+    .is-chosen { outline: 2px solid var(--focus); outline-offset: 2px; }
+    .picker button:disabled, .option-list button:disabled, .confirm-bar button:disabled { opacity: .5; cursor: default; }
+    .picker button.is-chosen:disabled, .option-list button.is-chosen:disabled, .confirm-bar button.is-chosen:disabled { opacity: 1; }
     .chip-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
     .chip-chosen { outline: 2px solid var(--focus); }
     .chip:disabled { opacity: .55; cursor: default; }
@@ -648,6 +670,23 @@
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
         </a>
       </li>
+      <li>
+        <a class="action" id="order-mobile" href="#">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="12" height="17" rx="2" />
+              <rect x="15" y="8" width="7" height="13" rx="1.5" />
+              <path d="M8 17.5h.01" />
+              <path d="M18.5 18h.01" />
+            </svg>
+          </span>
+          <span class="label">
+            <strong><span data-i18n="mobileTitle">Bestille mobil eller nettbrett</span><svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg></strong>
+            <small data-i18n="mobileText">Bestill via Mobility – Arne hjelper deg gjennom bestillingen</small>
+          </span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </a>
+      </li>
     </ul>
   </main>
 
@@ -791,6 +830,10 @@
         askBtn: "Spør Arne",
         chatSub: "AI-assistent for IT-spørsmål",
         close: "Lukk",
+        choose: "Velg",
+        mobileTitle: "Bestille mobil eller nettbrett",
+        mobileText: "Bestill via Mobility – Arne hjelper deg gjennom bestillingen",
+        mobileAsk: "Jeg vil bestille mobil eller nettbrett",
         mobilityConnect: "Koble til Mobility",
         mobilityConnected: "Mobility er koblet til ✓ Hva vil du bestille?",
         mobilityFailed: "Kunne ikke koble til Mobility. Prøv igjen.",
@@ -844,6 +887,10 @@
         askBtn: "Fråga Arne",
         chatSub: "AI-assistent för IT-frågor",
         close: "Stäng",
+        choose: "Välj",
+        mobileTitle: "Beställa mobil eller surfplatta",
+        mobileText: "Beställ via Mobility – Arne hjälper dig",
+        mobileAsk: "Jag vill beställa mobil eller surfplatta",
         mobilityConnect: "Anslut Mobility",
         mobilityConnected: "Mobility är anslutet ✓ Vad vill du beställa?",
         mobilityFailed: "Kunde inte ansluta Mobility. Försök igen.",
@@ -897,6 +944,10 @@
         askBtn: "Spørg Arne",
         chatSub: "AI-assistent til IT-spørgsmål",
         close: "Luk",
+        choose: "Vælg",
+        mobileTitle: "Bestil mobil eller tablet",
+        mobileText: "Bestil via Mobility – Arne hjælper dig",
+        mobileAsk: "Jeg vil bestille mobil eller tablet",
         mobilityConnect: "Forbind Mobility",
         mobilityConnected: "Mobility er forbundet ✓ Hvad vil du bestille?",
         mobilityFailed: "Kunne ikke forbinde Mobility. Prøv igen.",
@@ -950,6 +1001,10 @@
         askBtn: "Ask Arne",
         chatSub: "AI assistant for IT questions",
         close: "Close",
+        choose: "Choose",
+        mobileTitle: "Order a phone or tablet",
+        mobileText: "Order via Mobility – Arne guides you",
+        mobileAsk: "I want to order a phone or tablet",
         mobilityConnect: "Connect Mobility",
         mobilityConnected: "Mobility is connected ✓ What would you like to order?",
         mobilityFailed: "Could not connect Mobility. Please try again.",
@@ -1027,6 +1082,7 @@
       currentLang = lang;
       // Printer ordering is only set up for Norway so far.
       document.getElementById("order-printer").parentNode.hidden = lang !== "nb";
+      document.getElementById("order-mobile").parentNode.hidden = lang !== "nb";
       renderChips();
     }
 
@@ -1603,6 +1659,7 @@
       if (!account || !intent) return;
       openChat();
       if (intent === "printer") send(t("printerAsk"));
+      if (intent === "mobile") send(t("mobileAsk"));
     }
 
     function askAi(confirmed) {
@@ -1673,24 +1730,89 @@
     var CONFIRM_KEYS = ["confirmation", "decision"];
     var CANCEL_VALUES = ["no", "nei", "cancel", "avbryt"];
 
+    var COLOR_DOTS = {
+      sort: "#1d1d1f", svart: "#1d1d1f", black: "#1d1d1f", hvit: "#f4f4f4", white: "#f4f4f4", "blå": "#4a72b0", blue: "#4a72b0",
+      "grønn": "#5f8f63", green: "#5f8f63", lilla: "#a48ac9", purple: "#a48ac9", orange: "#e07a2f", "sølv": "#c8ccd2", silver: "#c8ccd2",
+      gull: "#d8b46a", gold: "#d8b46a", rosa: "#e8a3b5", pink: "#e8a3b5", "grå": "#8a8f96", grey: "#8a8f96", gray: "#8a8f96", titan: "#a39c92"
+    };
+
+    // "iPhone 17 Pro 256GB Blå" → { model: "iPhone 17 Pro", variant: "256GB Blå", color: "blå" }
+    function splitProduct(label) {
+      var m = label.match(/^(.*?)\s+(\d+\s?(?:GB|TB))\b\s*(.*)$/i);
+      var words = label.split(/\s+/);
+      var last = words[words.length - 1].toLowerCase();
+      if (m) return { model: m[1], variant: (m[2] + " " + m[3]).trim(), color: (m[3] || "").toLowerCase().split(/\s+/).pop() };
+      if (COLOR_DOTS[last] && words.length > 1) return { model: words.slice(0, -1).join(" "), variant: words[words.length - 1], color: last };
+      return { model: label, variant: "", color: "" };
+    }
+
+    function choiceButton(className, html, onPick) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = className;
+      b.innerHTML = html;
+      b.addEventListener("click", function () { onPick(b); });
+      return b;
+    }
+
     function addChoiceButtons(choice) {
       var wrap = document.createElement("div");
-      wrap.className = "choices";
-      (choice.options || []).forEach(function (opt) {
-        var b = document.createElement("button");
-        b.type = "button";
+      var options = choice.options || [];
+      function pick(opt, isConfirm, btn) {
+        if (busy) return;
+        Array.prototype.forEach.call(wrap.querySelectorAll("button"), function (x) { x.disabled = true; });
+        btn.classList.add("is-chosen");
         var value = String(opt.value != null ? opt.value : opt.label);
-        var isConfirm = CONFIRM_KEYS.indexOf(choice.key) !== -1 && CANCEL_VALUES.indexOf(value.toLowerCase()) === -1;
-        b.className = "chip" + (isConfirm ? " chip-primary" : "");
-        b.textContent = opt.label || value;
-        b.addEventListener("click", function () {
-          if (busy) return;
-          Array.prototype.forEach.call(wrap.querySelectorAll("button"), function (x) { x.disabled = true; });
-          b.classList.add("chip-chosen");
-          send((opt.label || value) + " [valgt " + choice.key + "=" + value + "]", { display: opt.label || value, confirmed: isConfirm });
+        send((opt.label || value) + " [valgt " + choice.key + "=" + value + "]", { display: opt.label || value, confirmed: isConfirm });
+      }
+
+      if (CONFIRM_KEYS.indexOf(choice.key) !== -1) {
+        // Final step: one big send button, cancel beside it.
+        wrap.className = "confirm-bar";
+        options.forEach(function (opt) {
+          var value = String(opt.value != null ? opt.value : opt.label);
+          var isConfirm = CANCEL_VALUES.indexOf(value.toLowerCase()) === -1;
+          wrap.appendChild(choiceButton(isConfirm ? "btn primary big" : "btn big", escapeHtml(opt.label || value), function (b) { pick(opt, isConfirm, b); }));
         });
-        wrap.appendChild(b);
-      });
+      } else if (choice.key === "sku" && options.length > 1) {
+        // Product picker: one card per model, storage/colour as pills.
+        wrap.className = "picker";
+        var groups = [], byModel = {};
+        options.forEach(function (opt) {
+          var p = splitProduct(opt.label || String(opt.value));
+          if (!byModel[p.model]) { byModel[p.model] = { model: p.model, items: [] }; groups.push(byModel[p.model]); }
+          byModel[p.model].items.push({ opt: opt, p: p });
+        });
+        groups.forEach(function (g) {
+          var card = document.createElement("div");
+          card.className = "picker-card";
+          var h = document.createElement("div");
+          h.className = "picker-model";
+          h.textContent = g.model;
+          card.appendChild(h);
+          var row = document.createElement("div");
+          row.className = "picker-variants";
+          g.items.forEach(function (it) {
+            var dot = COLOR_DOTS[it.p.color] ? '<span class="dot" style="background:' + COLOR_DOTS[it.p.color] + '"></span>' : "";
+            row.appendChild(choiceButton("variant", dot + escapeHtml(it.p.variant || t("choose")), function (b) { pick(it.opt, false, b); }));
+          });
+          card.appendChild(row);
+          wrap.appendChild(card);
+        });
+      } else if (options.length <= 6) {
+        // Few options (shop, shipping, who it is for …): full-width rows.
+        wrap.className = "option-list";
+        options.forEach(function (opt) {
+          wrap.appendChild(choiceButton("option-row", "<span>" + escapeHtml(opt.label || String(opt.value)) + "</span>" +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>',
+            function (b) { pick(opt, false, b); }));
+        });
+      } else {
+        wrap.className = "choices";
+        options.forEach(function (opt) {
+          wrap.appendChild(choiceButton("chip", escapeHtml(opt.label || String(opt.value)), function (b) { pick(opt, false, b); }));
+        });
+      }
       logEl.appendChild(wrap);
       logEl.scrollTop = logEl.scrollHeight;
     }
@@ -1813,6 +1935,12 @@
     document.getElementById("new-chat").addEventListener("click", function () {
       resetChat();
       if (window.matchMedia("(hover: hover)").matches) inputEl.focus();
+    });
+    document.getElementById("order-mobile").addEventListener("click", function (e) {
+      e.preventDefault();
+      if (isLocked()) return login("mobile");
+      openChat();
+      send(t("mobileAsk"));
     });
     document.getElementById("order-printer").addEventListener("click", function (e) {
       e.preventDefault();
