@@ -306,6 +306,36 @@
     .typing span:nth-child(3) { animation-delay: .3s; }
     @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
 
+    .table-wrap { overflow-x: auto; margin: 0 0 8px; }
+    .msg table { border-collapse: collapse; font-size: 13px; min-width: 100%; }
+    .msg th, .msg td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    .msg th { color: var(--muted); font-weight: 600; }
+
+    .msg.order { border: 2px solid var(--accent); }
+    .order-title { display: block; font-size: 16px; margin-bottom: 6px; }
+    .order-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 8px; }
+    .order-note { display: block; color: var(--muted); font-size: 13px; line-height: 1.35; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--navy);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .msg .btn.primary, .btn.primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
     .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 8px; }
     .chips[hidden] { display: none; }
 
@@ -489,6 +519,22 @@
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
         </a>
       </li>
+      <li>
+        <a class="action" id="order-printer" href="#">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9V2h12v7" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+          </span>
+          <span class="label">
+            <strong data-i18n="printerTitle">Bestille skriver</strong>
+            <small data-i18n="printerText">Arne hjelper deg å fylle ut og sende bestillingen</small>
+          </span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </a>
+      </li>
     </ul>
   </main>
 
@@ -535,7 +581,18 @@
         send: "Send",
         placeholder: "Skriv spørsmålet ditt …",
         greeting: "Hei! Jeg er Arne 👋 Jeg kan hjelpe deg med passord, oppsett av mobil, MFA, Meps og nettverk. Hva lurer du på?",
-        chips: ["Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
+        printerTitle: "Bestille skriver",
+        printerText: "Arne hjelper deg å fylle ut og sende bestillingen",
+        printerAsk: "Jeg vil bestille en skriver",
+        orderTitle: "Bestillingen er klar",
+        orderTotal: "Sum per måned",
+        orderDeliver: "Leveres til",
+        orderBtn: "Åpne e-post til Iver",
+        copyBtn: "Kopier teksten",
+        copied: "Kopiert!",
+        orderNote: "E-posten åpnes i e-postprogrammet ditt med Iver som mottaker og Canon på kopi. Se over og trykk Send.",
+        orderDone: "Bestillingen er klar. Trykk på knappen for å åpne e-posten, og send den fra din egen e-post.",
+        chips: ["Bestille skriver", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
         fromFaq: "Dette fant jeg i FAQ-en:",
         notFound: "Jeg fant dessverre ikke noe om det i FAQ-en. Prøv å spørre på en annen måte, eller kontakt Iver support.",
         error: "Noe gikk galt. Prøv igjen om litt, eller kontakt Iver support."
@@ -558,7 +615,18 @@
         send: "Skicka",
         placeholder: "Skriv din fråga …",
         greeting: "Hej! Jag är Arne 👋 Jag kan hjälpa dig med lösenord, konfigurering av mobil, MFA, Meps och nätverk. Vad undrar du?",
-        chips: ["Jag har glömt lösenordet", "Konfigurera ny iPhone", "Konfigurera ny Android", "Authenticator på ny mobil", "Meps fungerar inte", "Problem med nätverket"],
+        printerTitle: "Beställa skrivare",
+        printerText: "Arne hjälper dig att fylla i och skicka beställningen",
+        printerAsk: "Jag vill beställa en skrivare",
+        orderTitle: "Beställningen är klar",
+        orderTotal: "Summa per månad",
+        orderDeliver: "Levereras till",
+        orderBtn: "Öppna e-post till Iver",
+        copyBtn: "Kopiera texten",
+        copied: "Kopierat!",
+        orderNote: "E-posten öppnas i ditt e-postprogram med Iver som mottagare och Canon på kopia. Kontrollera och tryck Skicka.",
+        orderDone: "Beställningen är klar. Tryck på knappen för att öppna e-posten och skicka den från din egen e-post.",
+        chips: ["Beställa skrivare", "Jag har glömt lösenordet", "Konfigurera ny iPhone", "Konfigurera ny Android", "Authenticator på ny mobil", "Meps fungerar inte", "Problem med nätverket"],
         fromFaq: "Det här hittade jag i FAQ:n (på norska):",
         notFound: "Jag hittade tyvärr inget om det i FAQ:n. Försök fråga på ett annat sätt, eller kontakta Iver support.",
         error: "Något gick fel. Försök igen om en stund, eller kontakta Iver support."
@@ -581,7 +649,18 @@
         send: "Send",
         placeholder: "Skriv dit spørgsmål …",
         greeting: "Hej! Jeg er Arne 👋 Jeg kan hjælpe dig med adgangskode, opsætning af mobil, MFA, Meps og netværk. Hvad vil du vide?",
-        chips: ["Jeg har glemt min adgangskode", "Opsæt ny iPhone", "Opsæt ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med netværket"],
+        printerTitle: "Bestil printer",
+        printerText: "Arne hjælper dig med at udfylde og sende bestillingen",
+        printerAsk: "Jeg vil bestille en printer",
+        orderTitle: "Bestillingen er klar",
+        orderTotal: "Sum pr. måned",
+        orderDeliver: "Leveres til",
+        orderBtn: "Åbn e-mail til Iver",
+        copyBtn: "Kopiér teksten",
+        copied: "Kopieret!",
+        orderNote: "E-mailen åbnes i dit mailprogram med Iver som modtager og Canon på kopi. Tjek den og tryk Send.",
+        orderDone: "Bestillingen er klar. Tryk på knappen for at åbne e-mailen, og send den fra din egen e-mail.",
+        chips: ["Bestil printer", "Jeg har glemt min adgangskode", "Opsæt ny iPhone", "Opsæt ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med netværket"],
         fromFaq: "Det her fandt jeg i FAQ'en (på norsk):",
         notFound: "Jeg fandt desværre ikke noget om det i FAQ'en. Prøv at spørge på en anden måde, eller kontakt Iver support.",
         error: "Noget gik galt. Prøv igen om lidt, eller kontakt Iver support."
@@ -604,7 +683,18 @@
         send: "Send",
         placeholder: "Type your question …",
         greeting: "Hi! I'm Arne 👋 I can help with passwords, phone setup, MFA, Meps and network issues. What do you need?",
-        chips: ["I forgot my password", "Set up a new iPhone", "Set up a new Android", "Authenticator on a new phone", "Meps isn't working", "Network problems"],
+        printerTitle: "Order a printer",
+        printerText: "Arne helps you fill in and send the order",
+        printerAsk: "I want to order a printer",
+        orderTitle: "Your order is ready",
+        orderTotal: "Total per month",
+        orderDeliver: "Deliver to",
+        orderBtn: "Open e-mail to Iver",
+        copyBtn: "Copy text",
+        copied: "Copied!",
+        orderNote: "The e-mail opens in your mail app with Iver as recipient and Canon on CC. Check it and press Send.",
+        orderDone: "Your order is ready. Press the button to open the e-mail and send it from your own account.",
+        chips: ["Order a printer", "I forgot my password", "Set up a new iPhone", "Set up a new Android", "Authenticator on a new phone", "Meps isn't working", "Network problems"],
         fromFaq: "Here's what I found in the FAQ (in Norwegian):",
         notFound: "Sorry, I couldn't find anything about that in the FAQ. Try asking another way, or contact Iver support.",
         error: "Something went wrong. Please try again shortly, or contact Iver support."
@@ -716,13 +806,28 @@
       return out;
     }
 
-    // Small, safe Markdown subset: paragraphs, headings, numbered/bulleted lists, bold, links.
+    // Small, safe Markdown subset: paragraphs, headings, numbered/bulleted lists, tables, bold, links.
     function renderMarkdown(text) {
-      var html = "", list = null, para = [];
+      var html = "", list = null, para = [], table = null;
       function flushPara() { if (para.length) { html += "<p>" + para.join("<br>") + "</p>"; para = []; } }
       function flushList() { if (list) { html += "</" + list + ">"; list = null; } }
+      function flushTable() {
+        if (!table) return;
+        html += '<div class="table-wrap"><table>' + table.map(function (cells, i) {
+          var tag = i === 0 ? "th" : "td";
+          return "<tr>" + cells.map(function (c) { return "<" + tag + ">" + inline(c) + "</" + tag + ">"; }).join("") + "</tr>";
+        }).join("") + "</table></div>";
+        table = null;
+      }
       text.split("\n").forEach(function (raw) {
         var line = raw.trim(), m;
+        if (/^\|.*\|$/.test(line)) {
+          flushPara(); flushList();
+          if (/^\|[\s:|-]+\|$/.test(line)) return;
+          (table = table || []).push(line.slice(1, -1).split("|").map(function (c) { return c.trim(); }));
+          return;
+        }
+        flushTable();
         if (!line) { flushPara(); flushList(); return; }
         if ((m = line.match(/^#{1,4}\s+(.*)$/))) { flushPara(); flushList(); html += "<p><strong>" + inline(m[1]) + "</strong></p>"; return; }
         if ((m = line.match(/^\d+[.)]\s+(.*)$/))) { flushPara(); if (list !== "ol") { flushList(); html += "<ol>"; list = "ol"; } html += "<li>" + inline(m[1]) + "</li>"; return; }
@@ -730,8 +835,127 @@
         flushList();
         para.push(inline(line));
       });
-      flushPara(); flushList();
+      flushPara(); flushList(); flushTable();
       return html;
+    }
+
+    // ---- Printer order → ready-to-send e-mail ----
+    var ORDER_TO = "servicedesk@recovernordic.com";
+    var ORDER_CC = "geir-arne.hansen@canon.no";
+    var PRINTERS = {
+      bordmodell: { name: "MFP Bordmodell (A4) – Canon i-SENSYS X C1333i", price: 758 },
+      mfp_liten_a4: { name: "MFP Liten (A4) – Canon imageFORCE C331", price: 966 },
+      mfp_medium_a4a3: { name: "MFP Medium (A4/A3) – Canon imageRUNNER ADVANCE DX C3930i", price: 1250 },
+      mfp_stor_a4a3: { name: "MFP Stor (A4/A3) – Canon imageFORCE C5140i", price: 1477 }
+    };
+
+    function kr(n) { return "kr " + n.toLocaleString("nb-NO") + ",-"; }
+
+    function buildOrderEmail(o) {
+      var lines = [], total = 0;
+      (o.produkter || []).forEach(function (p) {
+        var info = PRINTERS[p.modell];
+        if (!info || !(p.antall > 0)) return;
+        total += info.price * p.antall;
+        lines.push("- " + p.antall + " stk " + info.name + " – " + kr(info.price) + " per mnd per maskin");
+      });
+      var today = new Date().toLocaleDateString("nb-NO");
+      var v = function (x) { return x ? String(x) : "–"; };
+      var body = [
+        "Hei,",
+        "",
+        "Her er en bestilling av skriver etter Canon-bestillingsskjemaet for Recover.",
+        "",
+        "BESTILLING",
+        lines.join("\n"),
+        "Sum per måned: " + kr(total),
+        "Avtaletid: 60 mnd",
+        "",
+        "FAKTURAINFORMASJON",
+        "Firmanavn (juridisk enhet): " + v(o.firmanavn),
+        "Org.nr.: " + v(o.orgnr),
+        "Fakturametode: " + v(o.fakturametode),
+        "E-post for PDF-faktura: " + v(o.faktura_epost),
+        "Fakturareferanse: " + v(o.fakturareferanse),
+        "",
+        "LEVERINGSINFORMASJON",
+        "Adresse: " + v(o.adresse),
+        "Postnummer: " + v(o.postnummer),
+        "Poststed: " + v(o.poststed),
+        "Etasje: " + v(o.etasje),
+        "Kontaktperson: " + v(o.kontaktperson),
+        "Mobil/e-post: " + v(o.kontakt_mobil_epost),
+        "",
+        "UNDERSKRIFT",
+        "Navn (blokkbokstaver): " + v(o.bestiller_navn).toUpperCase(),
+        "Sted/dato: " + v(o.sted) + ", " + today
+      ];
+      if (o.kommentar) body.push("", "KOMMENTAR", o.kommentar);
+      body.push("", "Bestillingen er laget med Spør Arne på minkonto.riis.cc.", "", "Med vennlig hilsen", v(o.bestiller_navn));
+      return {
+        subject: "Bestilling av Canon-skriver – " + v(o.firmanavn),
+        body: body.join("\n"),
+        total: total,
+        lines: lines
+      };
+    }
+
+    function addOrderCard(order) {
+      var mail = buildOrderEmail(order);
+      var href = "mailto:" + ORDER_TO +
+        "?cc=" + encodeURIComponent(ORDER_CC) +
+        "&subject=" + encodeURIComponent(mail.subject) +
+        "&body=" + encodeURIComponent(mail.body.replace(/\n/g, "\r\n"));
+
+      var card = document.createElement("div");
+      card.className = "msg bot order";
+
+      var title = document.createElement("strong");
+      title.className = "order-title";
+      title.textContent = t("orderTitle");
+      card.appendChild(title);
+
+      var ul = document.createElement("ul");
+      mail.lines.forEach(function (l) {
+        var li = document.createElement("li");
+        li.textContent = l.replace(/^- /, "");
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+
+      var meta = document.createElement("p");
+      meta.innerHTML = "<strong></strong> <span></span><br><strong></strong> <span></span>";
+      meta.children[0].textContent = t("orderTotal") + ":";
+      meta.children[1].textContent = kr(mail.total);
+      meta.children[3].textContent = t("orderDeliver") + ":";
+      meta.children[4].textContent = [order.adresse, [order.postnummer, order.poststed].join(" ")].filter(Boolean).join(", ");
+      card.appendChild(meta);
+
+      var actions = document.createElement("div");
+      actions.className = "order-actions";
+      var mailBtn = document.createElement("a");
+      mailBtn.className = "btn primary";
+      mailBtn.href = href;
+      mailBtn.textContent = t("orderBtn");
+      var copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "btn";
+      copyBtn.textContent = t("copyBtn");
+      copyBtn.addEventListener("click", function () {
+        var text = "Til: " + ORDER_TO + "\nKopi: " + ORDER_CC + "\nEmne: " + mail.subject + "\n\n" + mail.body;
+        navigator.clipboard.writeText(text).then(function () { copyBtn.textContent = t("copied"); });
+      });
+      actions.appendChild(mailBtn);
+      actions.appendChild(copyBtn);
+      card.appendChild(actions);
+
+      var note = document.createElement("small");
+      note.className = "order-note";
+      note.textContent = t("orderNote");
+      card.appendChild(note);
+
+      logEl.appendChild(card);
+      logEl.scrollTop = logEl.scrollHeight;
     }
 
     function addMessage(role, text) {
@@ -779,7 +1003,8 @@
       meps: ["meps", "nettleser", "nettlesar", "webbläsare", "browser", "chrome", "edge", "cookies", "tilgjengelig"],
       nettverk: ["nettverk", "nätverk", "netværk", "network", "wifi", "wi-fi", "internett", "internet", "trådløst", "trådlöst", "kablet", "speedtest", "nett"],
       utstyr: ["utstyr", "utrustning", "udstyr", "equipment", "mobility", "bestille", "bestilling", "beställa", "order", "handlet"],
-      field: ["field", "worker"]
+      field: ["field", "worker"],
+      printer: ["printer", "skriver", "skrivare", "printeren", "skriveren", "canon", "mfp", "toner", "skanner", "scanner"]
     };
 
     // Map a word to its topic key; long synonyms also match inflected forms ("nettverket", "passordet").
@@ -846,8 +1071,8 @@
         if (!r.ok) throw new Error("chat " + r.status);
         return r.json();
       }).then(function (data) {
-        if (!data.reply) throw new Error("empty reply");
-        return data.reply;
+        if (!data.reply && !data.order) throw new Error("empty reply");
+        return data;
       });
     }
 
@@ -868,10 +1093,13 @@
         ? askAi().catch(function () { return searchFaq(question); })
         : searchFaq(question);
 
-      answer.catch(function () { return t("error"); }).then(function (reply) {
+      answer.catch(function () { return t("error"); }).then(function (result) {
         typing.remove();
+        var data = typeof result === "string" ? { reply: result } : result;
+        var reply = data.reply || (data.order ? t("orderDone") : t("error"));
         chatHistory.push({ role: "assistant", content: reply });
         addMessage("bot", reply);
+        if (data.order) addOrderCard(data.order);
         busy = false;
         sendEl.disabled = false;
       });
@@ -898,6 +1126,11 @@
     }
 
     openEl.addEventListener("click", openChat);
+    document.getElementById("order-printer").addEventListener("click", function (e) {
+      e.preventDefault();
+      openChat();
+      send(t("printerAsk"));
+    });
     document.getElementById("ask-close").addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !chatEl.hidden) closeChat();

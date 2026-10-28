@@ -28,10 +28,64 @@ Regler:
 - Svar på samme språk som brukeren skriver på. Er det uklart, svar på ${LANG_NAMES[lang] || LANG_NAMES.nb}. Navn på knapper i skjermbilder (som «Next» og «Finish») skal stå som de er.
 - Be aldri om passord, koder eller annen sensitiv informasjon.
 
+Bestilling av skriver:
+- Når noen vil bestille skriver/printer, tilby å fylle ut bestillingen for dem («Skal jeg gjøre dette for deg?»).
+- Samle inn det som trengs (se FAQ-en), noen få spørsmål om gangen. Start med modell og antall – hjelp brukeren å velge ut fra behov (A3 eller bare A4, volum, kortleser) og nevn månedsprisen.
+- Ikke gjett verdier. Er noe uklart, spør. Fakturametode er PDF eller EHF; e-post for faktura trengs bare ved PDF.
+- Når alt er samlet inn, vis en kort oppsummering og spør om den stemmer. Kall verktøyet lag_printerbestilling først når brukeren har bekreftet.
+- Etter verktøykallet: si kort at e-posten er klar, og at brukeren må trykke på knappen og sende den fra sin egen e-post.
+
 <faq>
 ${faq}
 </faq>`;
 }
+
+const nullableString = { type: ["string", "null"] };
+
+const PRINTER_ORDER_TOOL = {
+  name: "lag_printerbestilling",
+  description:
+    "Lager en ferdig utfylt printerbestilling (Canon-bestillingsskjema for Recover) som brukeren kan sende på e-post til Iver servicedesk. Kall kun når all informasjon er samlet inn og brukeren har bekreftet oppsummeringen.",
+  strict: true,
+  input_schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "produkter", "firmanavn", "orgnr", "fakturametode", "faktura_epost", "fakturareferanse",
+      "adresse", "postnummer", "poststed", "etasje", "kontaktperson", "kontakt_mobil_epost",
+      "bestiller_navn", "sted", "kommentar",
+    ],
+    properties: {
+      produkter: {
+        type: "array",
+        description: "Modellene som bestilles, med antall.",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["modell", "antall"],
+          properties: {
+            modell: { type: "string", enum: ["bordmodell", "mfp_liten_a4", "mfp_medium_a4a3", "mfp_stor_a4a3"] },
+            antall: { type: "integer" },
+          },
+        },
+      },
+      firmanavn: { type: "string", description: "Juridisk enhet som tiltrer avtalen." },
+      orgnr: { type: "string" },
+      fakturametode: { type: "string", enum: ["PDF", "EHF"] },
+      faktura_epost: { ...nullableString, description: "Kun ved PDF-faktura, ellers null." },
+      fakturareferanse: { type: "string" },
+      adresse: { type: "string" },
+      postnummer: { type: "string" },
+      poststed: { type: "string" },
+      etasje: nullableString,
+      kontaktperson: { type: "string" },
+      kontakt_mobil_epost: { type: "string" },
+      bestiller_navn: { type: "string", description: "Navnet til den som bestiller, med blokkbokstaver." },
+      sted: { type: "string", description: "Sted for underskrift." },
+      kommentar: nullableString,
+    },
+  },
+};
 
 function corsHeaders(origin, env) {
   const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
@@ -94,6 +148,7 @@ export default {
         betas: ["server-side-fallback-2026-07-01"],
         fallbacks: "default",
         system: systemPrompt(faq, lang),
+        tools: [PRINTER_ORDER_TOOL],
         messages,
       });
 
@@ -107,7 +162,12 @@ export default {
         .join("\n")
         .trim();
 
-      return json({ reply }, 200, cors);
+      // The page turns the order into a ready-to-send e-mail; no tool_result round trip is needed.
+      const toolUse = response.content.find(
+        (block) => block.type === "tool_use" && block.name === PRINTER_ORDER_TOOL.name,
+      );
+
+      return json({ reply, order: toolUse ? toolUse.input : null }, 200, cors);
     } catch (err) {
       if (err instanceof Anthropic.RateLimitError) {
         return json({ error: "busy" }, 429, cors);

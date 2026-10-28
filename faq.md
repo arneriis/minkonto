@@ -7,6 +7,37 @@
 - **Utstyret mitt** – alt som er handlet på ditt navn, og bestilling av utstyr (Mitt Mobility): https://mitt.mobility.no/login/59051448604ee7bc4a40df12216414c4/
 - **Oppsett av mobilen** – Firmaportal / Intune Company Portal. iPhone/iPad: https://apps.apple.com/app/id719171358 – Android: https://play.google.com/store/apps/details?id=com.microsoft.windowsintune.companyportal
 
+## Bestille skriver / printer (Canon)
+
+Recover har avtale med Canon om multifunksjonsskrivere (MFP). Alle priser er månedssum per maskin.
+
+| Modell | Maskin | Utstyr | Månedssum |
+|---|---|---|---|
+| MFP Bordmodell (A4) | Canon i-SENSYS X C1333i | uniFLOW Online, servicepakke | kr 758,- |
+| MFP Liten (A4) | Canon imageFORCE C331 | Single Pass-dokumentmater, kortleser MiCard PLUS, uniFLOW Online, servicepakke | kr 966,- |
+| MFP Medium (A4/A3) | Canon imageRUNNER ADVANCE DX C3930i | DADF-C1-dokumentmater, Cassette Feeding Unit-AW1 (totalt fire skuffer), kortleser MiCard PLUS, uniFLOW Online, servicepakke | kr 1 250,- |
+| MFP Stor (A4/A3) | Canon imageFORCE C5140i | Single Pass-dokumentmater, Cassette Feeding Unit-AQ1 (totalt fire skuffer), kortleser MiCard PLUS, uniFLOW Online, servicepakke | kr 1 477,- |
+
+Inkludert i avtalen:
+
+- uniFLOW Online – skybasert sikker print og skann, satt opp i Azure, og tilkobling av skriveren
+- Månedlig lisenskost per maskin
+- Servicepakke – toner, arbeid og deler
+- DMS – automatisk tonerbestilling og levering, overvåking, webtjenester og optimalisering
+- Sikkerhetsherding før og under bruk, automatisk firmware-oppdatering og sikkerhetspatching
+- Sikker datasletting etter bruk
+- Sikkerhetspakke (enkel eller utvidet «Plus») prises separat
+- Avtaletid: 60 måneder
+
+Dette trengs for å bestille:
+
+- Hvilken modell og hvor mange
+- Fakturainformasjon: firmanavn (juridisk enhet som tiltrer avtalen), org.nr., fakturametode (PDF eller EHF), e-post for PDF-faktura, fakturareferanse
+- Leveringsinformasjon: adresse, postnummer, poststed, etasje, kontaktperson og kontaktpersonens mobil/e-post
+- Navn på den som bestiller, sted og dato
+
+Bestillingen sendes til Iver servicedesk på servicedesk@recovernordic.com, med Canon-kontakten Geir Arne Hansen (geir-arne.hansen@canon.no, +47 413 62 726) på kopi. Arne kan fylle ut bestillingen for deg og lage e-posten – du trenger bare å trykke send.
+
 ## Tilbakestille passord
 
 1. Åpne nettleseren og gå til https://aka.ms/sspr
