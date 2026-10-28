@@ -58,7 +58,8 @@ Bestille mobil, nettbrett og tilbehør (Mobility):
 - Tidligere Mobility-steg står i «[Mobility: …]» i dine egne meldinger. Send alle verdier som allerede er valgt med på nytt i hvert kall.
 - Send confirmation (JA/YES), eller decision approve/reject, BARE når brukerens siste melding er et trykk på bekreftelsesknappen. Systemet blokkerer det ellers.
 - Bestillingen går til godkjenneren (som regel lederen) før Mobility behandler den. Spør om godkjenner når Mobility ber om det.
-- Når brukeren har valgt produkt, spør (i én melding) før bestillingen gjøres klar: er den til deg selv eller til en annen ansatt (da navn og mobilnummer), og hvor skal den leveres (mottaker, gateadresse, postnummer, sted). Man kan bestille for andre ansatte – det avgjør Mobility ut fra brukerens tilgang. Gjenta adressen og mottakeren i oppsummeringen før «Send bestilling».
+- Når brukeren har valgt produkt, spør først: er bestillingen til deg selv eller til en annen ansatt (da navn og mobilnummer)? Man kan bestille for andre ansatte – det avgjør Mobility ut fra brukerens tilgang.
+- Kall så mobility_order med sku og mottaker. Mobility foreslår leveringsadressen der den ansatte jobber. Vis den adressen tydelig og spør: «Skal den leveres hit, eller til en annen adresse?» Oppgir brukeren en annen adresse, send den som delivery_name, delivery_address, delivery_postal_code og delivery_city i neste kall. Gjenta mottaker og adresse i oppsummeringen før «Send bestilling».
 - «[Mobility: …]» er et internt notat som legges til automatisk. Skriv det aldri selv i svaret.
 
 Tjenestebil, bilforsikring og bilordninger (Norge):
@@ -270,17 +271,16 @@ function wantsDeviceOrder(messages) {
   return ORDER_WORDS.test(text) && DEVICE_WORDS.test(text) && !NOT_ORDER_WORDS.test(text);
 }
 
-// Before Mobility can finish an order, Arne must have asked who it is for and where it goes.
+// Before Mobility prepares an order, Arne must have asked who it is for. Mobility then proposes the delivery
+// address where that employee works; Arne shows it and lets the user keep it or give another one.
 function missingOrderDetails(name, args) {
   if (name !== "mobility_order" || !args.sku) return null;
-  const hasAddress = args.delivery_address && args.delivery_postal_code && args.delivery_city;
   const hasRecipient = typeof args.ordered_for_name === "string" || args.ordered_for || args.recipient;
-  if (hasAddress && hasRecipient) return null;
-  return "Ikke sendt til Mobility ennå. Spør brukeren først (i én melding): " +
-    (hasRecipient ? "" : "1) Er bestillingen til deg selv eller til en annen ansatt? Er den til en annen, trengs navn og mobilnummer. ") +
-    (hasAddress ? "" : "2) Hvor skal den leveres? Navn/mottaker, gateadresse, postnummer og sted. ") +
-    "Kall deretter mobility_order igjen med sku og alle tidligere valg, pluss delivery_name, delivery_address, delivery_postal_code, delivery_city, " +
-    "og ordered_for_name + ordered_for_phone hvis den er til en annen (ordered_for_name tom streng \"\" hvis den er til brukeren selv).";
+  if (hasRecipient) return null;
+  return "Ikke sendt til Mobility ennå. Spør brukeren først: Er bestillingen til deg selv eller til en annen ansatt? " +
+    "Er den til en annen, trengs navn og mobilnummer. Kall deretter mobility_order igjen med sku og alle tidligere valg, " +
+    "pluss ordered_for_name + ordered_for_phone (ordered_for_name tom streng \"\" hvis den er til brukeren selv). " +
+    "Ikke spør om leveringsadresse før Mobility har foreslått en.";
 }
 
 async function callMobilityTool(token, name, args) {
@@ -316,6 +316,25 @@ async function exchangeMobilityToken(env, body) {
 // ---- Suggestion usage (anonymous counts per suggestion id, shared by everyone) ----
 const CHIP_IDS = ["mobile", "loan", "car-damage", "expense", "vacation", "printer", "transfer", "password",
   "iphone", "android", "mfa", "meps", "network"];
+
+// Orders actually sent through Arne, counted per product (anonymous) – answers "what is bought most?".
+async function countSubmittedOrder(env, result, args) {
+  const lines = Array.isArray(result?.lines) && result.lines.length ? result.lines : [{ name: args.product || args.sku }];
+  const counts = (await env.STATS.get("orders", "json")) || {};
+  for (const line of lines) {
+    const name = String(line.name || "").trim();
+    if (!name || /ordrenummer|frakt|shipping/i.test(name)) continue;
+    counts[name] = (counts[name] || 0) + (Number(line.quantity) || 1);
+  }
+  await env.STATS.put("orders", JSON.stringify(counts));
+}
+
+async function topOrdered(env, n = 8) {
+  const counts = (await env.STATS.get("orders", "json")) || {};
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, n);
+}
+
+const POPULAR_WORDS = /\b(mest\s+(kjøpt|bestilt|brukt|populær\w*)|populær\w*|mest\s+köpt|most\s+(bought|ordered|popular)|bestselger\w*|mest solgt)\b/i;
 
 async function readChipCounts(env) {
   return (await env.STATS.get("chips", "json")) || {};
@@ -397,6 +416,13 @@ export default {
           ? " Brukeren vil bestille utstyr: kall mobility_order nå. Ikke henvis til Mitt Mobility-lenken, e-post, Iver eller skjema."
           : " Brukeren vil bestille utstyr: forklar kort at bestillingen gjøres her i chatten via Mobility, og vis [[action:mobility-connect]].";
       }
+      const lastText = typeof messages[messages.length - 1]?.content === "string" ? messages[messages.length - 1].content : "";
+      if (POPULAR_WORDS.test(lastText)) {
+        const top = await topOrdered(env).catch(() => []);
+        note += top.length
+          ? " Mest bestilt via Arne (antall): " + top.map(([name, c]) => `${name} (${c})`).join(", ") + ". Si at tallene gjelder bestillinger gjort via Arne."
+          : " Det er ennå ikke registrert bestillinger via Arne, så du kan ikke si hva som er mest kjøpt. Si det, og nevn heller anbefalt standardtelefon.";
+      }
       convo.push({ role: "system", content: note });
 
       let response;
@@ -431,6 +457,9 @@ export default {
           try {
             const r = await callMobilityTool(mobilityToken, call.name, call.input || {});
             lastMobility = { tool: call.name, args: call.input || {}, result: r.structured };
+            if (call.name === "mobility_order" && r.structured?.submitted === true) {
+              await countSubmittedOrder(env, r.structured, call.input || {}).catch((e) => console.error("order count", e));
+            }
             results.push({ type: "tool_result", tool_use_id: call.id, content: r.structured ? JSON.stringify(r.structured) : r.text, is_error: r.isError });
           } catch (err) {
             if (err.mobilityAuth) return json({ error: "mobility_unauthorized" }, 401, cors);
