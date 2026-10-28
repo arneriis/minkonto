@@ -2549,7 +2549,22 @@
       if (document.visibilityState !== "visible") return;
       renderAuth(); // Android finishes the login in a browser tab that shares storage with the app
       watchMobilityLogin();
+      checkForUpdate();
     });
+
+    // The home-screen app keeps an old copy of the page for a long time. When it comes back to the front,
+    // reload if the site has been updated, but never while a form or the chat is open.
+    var loadedAt = new Date(document.lastModified).getTime();
+    var lastUpdateCheck = Date.now();
+    function checkForUpdate() {
+      if (Date.now() - lastUpdateCheck < 60000 || isNaN(loadedAt)) return;
+      lastUpdateCheck = Date.now();
+      fetch(location.pathname, { method: "HEAD", cache: "no-store" }).then(function (r) {
+        var modified = new Date(r.headers.get("Last-Modified")).getTime();
+        var busyNow = document.querySelector(".sheet:not([hidden]), .chat:not([hidden])");
+        if (modified - loadedAt > 1000 && !busyNow) location.reload();
+      }).catch(function () {});
+    }
 
     function autoGrow() {
       inputEl.style.height = "auto";
