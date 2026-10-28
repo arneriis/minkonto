@@ -38,7 +38,7 @@ Dette trengs (feltene i Mobility-skjemaet):
 - Ekstra SIM-kort: antall tvillingsim, og antall datasim (datasim må bestilles for bruk i nettbrett)
 - Andre tjenester: Fri Tale EU og/eller Fri Tale Skandinavia (valgfritt)
 - SIM-kort: beholde eksisterende SIM-kort, få nytt SIM-kort tilsendt i posten, ny eSIM, eller oppgi hovedsim-nummer (20 siffer) for et nytt SIM-kort du allerede har
-- Bruker og betaler: navn, mobilnummer, fødselsdato (ddmmåååå), avd.nr/7000/ansattnummer og fakturakonto hos Telenor (vanligvis «Standard»)
+- Bruker og betaler: navn, mobilnummer, fødselsdato (ddmmåååå), avd.nr/7000/ansattnummer (ett felt – skriv det nummeret brukeren oppgir, for eksempel ansattnummer) og fakturakonto hos Telenor (vanligvis «Standard»)
 - Tidligere eier: org.nr (9 siffer) eller fødselsdato, og firmanavn eller fullt navn
 - Ønsket dato for gjennomføring
 

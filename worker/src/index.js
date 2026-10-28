@@ -118,7 +118,7 @@ const NUMBER_TRANSFER_TOOL = {
       hovedsim_nummer: { ...nullableString, description: "SIM-kortnummer (20 siffer) ved har_nytt_simkort, ellers null." },
       navn: { type: "string" },
       mobilnummer: { type: "string" },
-      ansattnummer: { type: "string", description: "Avd.nr/7000/ansattnummer." },
+      ansattnummer: { type: "string", description: "Feltet «Avd.nr/7000/Ansattnummer» – ett felt; bruk det nummeret brukeren oppgir." },
       fakturakonto: { type: "string", description: "Fakturakonto hos Telenor. «Standard» hvis brukeren ikke vet." },
       tidligere_eier_type: { type: "string", enum: ["meg_selv", "privatperson", "firma"] },
       tidligere_eier_navn: { ...nullableString, description: "Fullt navn eller firmanavn til tidligere eier. Null hvis meg_selv." },
