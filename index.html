@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#143B59" />
-  <meta name="description" content="Snarveier for kontoen din: tilbakestill passord og åpne Field." />
+  <meta name="description" content="Snarveier for kontoen din: passord, Field, utstyr og oppsett av mobil." />
   <title>Min konto</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -49,16 +49,56 @@
       padding: calc(env(safe-area-inset-top, 0px) + 20px) 20px 56px;
     }
 
-    .brand {
+    .topbar {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
+      gap: 12px;
       max-width: 480px;
       margin: 0 auto;
     }
 
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .brand svg { width: 28px; height: 28px; fill: #fff; flex: none; }
     .brand span { font-weight: 600; font-size: 17px; letter-spacing: .01em; }
+
+    .lang {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .lang svg {
+      position: absolute;
+      left: 10px;
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+      color: #ffffffb8;
+    }
+
+    .lang select {
+      appearance: none;
+      -webkit-appearance: none;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      color: #fff;
+      background: #ffffff17;
+      border: 1px solid #ffffff3d;
+      border-radius: 999px;
+      height: 36px;
+      padding: 0 14px 0 32px;
+      cursor: pointer;
+    }
+
+    .lang select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .lang option { color: var(--text); }
 
     .hero {
       max-width: 480px;
@@ -157,15 +197,30 @@
 </head>
 <body>
   <header>
-    <div class="brand">
-      <svg viewBox="0.711 -0.012 30.653 30.653" aria-hidden="true">
-        <path d="M11.9157 2.8034 11.5083.908 18.9754 4.2569 13.5059 10.3443 13.1169 8.5055A8 8 90 1019.4 8.7L23.2154 4.1904A13.7747 13.7747 90 1111.9157 2.8034Z" />
-      </svg>
-      <span>Min konto</span>
+    <div class="topbar">
+      <div class="brand">
+        <svg viewBox="0.711 -0.012 30.653 30.653" aria-hidden="true">
+          <path d="M11.9157 2.8034 11.5083.908 18.9754 4.2569 13.5059 10.3443 13.1169 8.5055A8 8 90 1019.4 8.7L23.2154 4.1904A13.7747 13.7747 90 1111.9157 2.8034Z" />
+        </svg>
+        <span data-i18n="brand">Min konto</span>
+      </div>
+      <label class="lang">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+        <select id="lang" aria-label="Språk / Language">
+          <option value="nb">Norsk</option>
+          <option value="sv">Svenska</option>
+          <option value="da">Dansk</option>
+          <option value="en">English</option>
+        </select>
+      </label>
     </div>
     <div class="hero">
-      <h1>Hva trenger du hjelp med?</h1>
-      <p>Velg en snarvei under.</p>
+      <h1 data-i18n="title">Hva trenger du hjelp med?</h1>
+      <p data-i18n="subtitle">Velg en snarvei under.</p>
     </div>
   </header>
 
@@ -182,8 +237,8 @@
             </svg>
           </span>
           <span class="label">
-            <strong>Glemt passord</strong>
-            <small>Tilbakestill passordet ditt selv</small>
+            <strong data-i18n="pwTitle">Glemt passord</strong>
+            <small data-i18n="pwText">Tilbakestill passordet ditt selv</small>
           </span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
         </a>
@@ -196,8 +251,41 @@
             </svg>
           </span>
           <span class="label">
-            <strong>Field worker</strong>
-            <small>Åpne Field-portalen</small>
+            <strong data-i18n="fieldTitle">Field worker</strong>
+            <small data-i18n="fieldText">Åpne Field-portalen</small>
+          </span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </a>
+      </li>
+      <li>
+        <a class="action" href="https://mitt.mobility.no/login/59051448604ee7bc4a40df12216414c4/">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="14" height="10" rx="2" />
+              <path d="M5 18h8" />
+              <rect x="16" y="8" width="6" height="12" rx="1.5" />
+              <path d="M19 17h.01" />
+            </svg>
+          </span>
+          <span class="label">
+            <strong data-i18n="gearTitle">Utstyret mitt</strong>
+            <small data-i18n="gearText">Alt som er handlet på mitt navn, og bestilling av utstyr</small>
+          </span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </a>
+      </li>
+      <li>
+        <a class="action" id="company-portal" href="https://portal.manage.microsoft.com/">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2.5" />
+              <path d="M12 18h.01" />
+              <path d="m9.5 10 2 2 3.5-3.5" />
+            </svg>
+          </span>
+          <span class="label">
+            <strong data-i18n="cpTitle">Oppsett av mobilen</strong>
+            <small data-i18n="cpText">Sett opp mobilen for firmaet med Firmaportal</small>
           </span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
         </a>
@@ -206,5 +294,127 @@
   </main>
 
   <footer>minkonto.riis.cc</footer>
+
+  <script>
+    var STRINGS = {
+      nb: {
+        brand: "Min konto",
+        title: "Hva trenger du hjelp med?",
+        subtitle: "Velg en snarvei under.",
+        pwTitle: "Glemt passord",
+        pwText: "Tilbakestill passordet ditt selv",
+        fieldTitle: "Field worker",
+        fieldText: "Åpne Field-portalen",
+        gearTitle: "Utstyret mitt",
+        gearText: "Alt som er handlet på mitt navn, og bestilling av utstyr",
+        cpTitle: "Oppsett av mobilen",
+        cpText: "Sett opp mobilen for firmaet med Firmaportal"
+      },
+      sv: {
+        brand: "Mitt konto",
+        title: "Vad behöver du hjälp med?",
+        subtitle: "Välj en genväg nedan.",
+        pwTitle: "Glömt lösenord",
+        pwText: "Återställ ditt lösenord själv",
+        fieldTitle: "Field worker",
+        fieldText: "Öppna Field-portalen",
+        gearTitle: "Min utrustning",
+        gearText: "Allt som är köpt i mitt namn, och beställning av utrustning",
+        cpTitle: "Konfigurera mobilen",
+        cpText: "Konfigurera mobilen för företaget med Företagsportal"
+      },
+      da: {
+        brand: "Min konto",
+        title: "Hvad har du brug for hjælp til?",
+        subtitle: "Vælg en genvej nedenfor.",
+        pwTitle: "Glemt adgangskode",
+        pwText: "Nulstil din adgangskode selv",
+        fieldTitle: "Field worker",
+        fieldText: "Åbn Field-portalen",
+        gearTitle: "Mit udstyr",
+        gearText: "Alt der er købt i mit navn, og bestilling af udstyr",
+        cpTitle: "Opsætning af mobilen",
+        cpText: "Opsæt mobilen til firmaet med Firmaportal"
+      },
+      en: {
+        brand: "My account",
+        title: "What do you need help with?",
+        subtitle: "Choose a shortcut below.",
+        pwTitle: "Forgot password",
+        pwText: "Reset your password yourself",
+        fieldTitle: "Field worker",
+        fieldText: "Open the Field portal",
+        gearTitle: "My equipment",
+        gearText: "Everything purchased in my name, and ordering equipment",
+        cpTitle: "Set up your phone",
+        cpText: "Set up your phone for work with Company Portal"
+      }
+    };
+
+    var STORAGE_KEY = "minkonto.lang";
+
+    function detectLanguage() {
+      var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"];
+      for (var i = 0; i < langs.length; i++) {
+        var code = String(langs[i]).toLowerCase().split("-")[0];
+        if (code === "nb" || code === "nn" || code === "no") return "nb";
+        if (code === "sv" || code === "da" || code === "en") return code;
+      }
+      return "en";
+    }
+
+    function savedLanguage() {
+      try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; }
+    }
+
+    function applyLanguage(lang) {
+      var t = STRINGS[lang] || STRINGS.en;
+      document.documentElement.lang = lang;
+      document.querySelectorAll("[data-i18n]").forEach(function (el) {
+        var key = el.getAttribute("data-i18n");
+        if (t[key]) el.textContent = t[key];
+      });
+      document.title = t.brand;
+      document.getElementById("lang").value = lang;
+    }
+
+    var initial = savedLanguage();
+    if (!STRINGS[initial]) initial = detectLanguage();
+    applyLanguage(initial);
+
+    document.getElementById("lang").addEventListener("change", function (e) {
+      var lang = e.target.value;
+      try { localStorage.setItem(STORAGE_KEY, lang); } catch (err) {}
+      applyLanguage(lang);
+    });
+
+    // Firmaportal (Microsoft Intune Company Portal): open the app if installed, else the store.
+    var ua = navigator.userAgent || "";
+    var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    var isAndroid = /Android/i.test(ua);
+    var APP_STORE = "https://apps.apple.com/app/id719171358";
+    var PLAY_PACKAGE = "com.microsoft.windowsintune.companyportal";
+    var PLAY_STORE = "https://play.google.com/store/apps/details?id=" + PLAY_PACKAGE;
+    var cp = document.getElementById("company-portal");
+
+    if (isAndroid) {
+      // Chrome launches the app if installed, otherwise opens the fallback (Play Store).
+      cp.href = "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=" +
+        PLAY_PACKAGE + ";S.browser_fallback_url=" + encodeURIComponent(PLAY_STORE) + ";end";
+    } else if (isIOS) {
+      cp.href = APP_STORE;
+      cp.addEventListener("click", function (e) {
+        e.preventDefault();
+        var opened = false;
+        function onHide() { if (document.hidden) opened = true; }
+        document.addEventListener("visibilitychange", onHide);
+        window.location.href = "companyportal://";
+        setTimeout(function () {
+          document.removeEventListener("visibilitychange", onHide);
+          if (!opened && !document.hidden) window.location.href = APP_STORE;
+        }, 1500);
+      });
+    }
+  </script>
 </body>
 </html>
