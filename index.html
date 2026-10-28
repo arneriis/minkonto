@@ -1151,6 +1151,8 @@
         }).join("") + "</table></div>";
         table = null;
       }
+      // Put [[video:…]], [[form:…]] and [[action:…]] markers on their own line, wherever Arne wrote them.
+      text = text.replace(/\s*(\[\[(?:video|form|action):[a-z-]+\]\])\s*/g, "\n$1\n");
       text.split("\n").forEach(function (raw) {
         var line = raw.trim(), m;
         if (/^\|.*\|$/.test(line)) {
