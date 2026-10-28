@@ -395,6 +395,55 @@
     .video-hint { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 400; }
     .video-link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
+    /* Loan-of-car form (Norway) */
+    .form-link { border: 0; width: 100%; font: inherit; cursor: pointer; text-align: left; }
+
+    .sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      height: 100vh;
+      height: 100dvh;
+    }
+    .sheet[hidden] { display: none; }
+    .sheet-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 24px); }
+    .sheet-inner { max-width: 560px; margin: 0 auto; display: grid; gap: 14px; }
+    .card { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; display: grid; gap: 12px; }
+    .card h3 { margin: 0; font-size: 15px; color: var(--navy); }
+    .field { display: grid; gap: 4px; }
+    .field label { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .field input {
+      font: inherit;
+      font-size: 16px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      min-width: 0;
+    }
+    .field input:focus { outline: 2px solid var(--focus); outline-offset: 0; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg); padding: 4px; border-radius: 12px; }
+    .seg button { border: 0; border-radius: 9px; padding: 10px 8px; font: inherit; font-size: 14px; font-weight: 600; background: transparent; color: var(--muted); cursor: pointer; }
+    .seg button[aria-pressed="true"] { background: var(--surface); color: var(--navy); box-shadow: var(--shadow); }
+    .hint { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.4; }
+    .warn { margin: 0; font-size: 13px; color: #8a5a00; background: #fff4d6; border-radius: 10px; padding: 8px 10px; }
+    .warn[hidden] { display: none; }
+    .terms { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.45; color: var(--text); }
+    .check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+    .check input { width: 20px; height: 20px; margin: 0; flex: none; }
+    .sigpad { position: relative; border: 1px dashed var(--muted); border-radius: 12px; background: #fff; height: 170px; touch-action: none; }
+    .sigpad canvas { width: 100%; height: 100%; display: block; border-radius: 12px; }
+    .sigpad span { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
+    .sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .status { margin: 0; font-size: 14px; }
+    .status.ok { color: #1b6b3a; }
+    .status.err { color: #a12a2a; }
+
     .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 8px; }
     .chips[hidden] { display: none; }
 
@@ -631,6 +680,86 @@
     </form>
   </section>
 
+  <section class="sheet" id="loan" role="dialog" aria-modal="true" aria-labelledby="loan-title" hidden>
+    <div class="chat-head">
+      <div class="chat-title">
+        <strong id="loan-title">Lån av bil – tilfeldig transport</strong>
+        <small>Avtale om lån av bil (Recover Norge)</small>
+      </div>
+      <button type="button" class="icon-btn" id="loan-close" aria-label="Lukk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <form class="sheet-inner" id="loan-form" novalidate>
+        <div class="card">
+          <div class="seg" role="group" aria-label="Når sendes skjemaet">
+            <button type="button" id="loan-before" aria-pressed="true">Før turen</button>
+            <button type="button" id="loan-after" aria-pressed="false">Etter turen</button>
+          </div>
+          <p class="hint" id="loan-mode-hint"></p>
+        </div>
+
+        <div class="card">
+          <h3>Bil og tur</h3>
+          <div class="field"><label for="l-reg">Registreringsnummer</label><input id="l-reg" autocomplete="off" autocapitalize="characters" required></div>
+          <div class="row2">
+            <div class="field"><label for="l-from">Dato fra</label><input id="l-from" type="date" required></div>
+            <div class="field"><label for="l-to">Dato til</label><input id="l-to" type="date" required></div>
+          </div>
+          <div class="field"><label for="l-purpose">Formål</label><input id="l-purpose" required></div>
+          <div class="row2">
+            <div class="field"><label for="l-kmstart">Km-stand ved start</label><input id="l-kmstart" type="number" inputmode="numeric" min="0" required></div>
+            <div class="field"><label for="l-kmstop">Km-stand ved stopp</label><input id="l-kmstop" type="number" inputmode="numeric" min="0"></div>
+          </div>
+          <p class="hint" id="l-total"></p>
+          <p class="warn" id="l-warn" hidden></p>
+        </div>
+
+        <div class="card">
+          <h3>Deg og leder</h3>
+          <div class="row2">
+            <div class="field"><label for="l-empid">Ansatt-ID</label><input id="l-empid" inputmode="numeric" autocomplete="off" required></div>
+            <div class="field"><label for="l-name">Navn</label><input id="l-name" autocomplete="name" required></div>
+          </div>
+          <div class="field"><label for="l-leader">Avdelingsleders e-post</label><input id="l-leader" type="email" autocomplete="off" placeholder="fornavn.etternavn@recover.no" required></div>
+          <div class="field"><label for="l-place">Sted</label><input id="l-place" required></div>
+        </div>
+
+        <div class="card">
+          <h3>Vilkår</h3>
+          <ul class="terms">
+            <li>Det betales kr 3,50 per kjørte kilometer (trekkes i lønn).</li>
+            <li>Du står økonomisk ansvarlig for inntil 30 % av egenandelen ved skade fra uaktsom kjøring, og fullt ut ved kjøring i beruset tilstand.</li>
+            <li>Recover kan trekke økonomisk ansvar i lønn, og holde tilbake i lønn/feriepenger ved fratredelse.</li>
+            <li>Maks 10 kalenderdager eller 1 000 km per kalenderår (det som kommer først).</li>
+            <li>Bilen kjøres bare av deg, med gyldig førerkort.</li>
+            <li>Det signerte skjemaet skal være med i bilen under turen.</li>
+          </ul>
+          <label class="check"><input type="checkbox" id="l-accept" required> <span>Jeg har lest og godtar vilkårene</span></label>
+        </div>
+
+        <div class="card">
+          <h3>Signatur</h3>
+          <div class="sigpad" id="l-sigpad"><canvas id="l-sig"></canvas><span>Signer med fingeren her</span></div>
+          <div class="sheet-actions"><button type="button" class="btn" id="l-sigclear">Tøm signatur</button></div>
+        </div>
+
+        <div class="card">
+          <p class="hint" id="l-sendto"></p>
+          <div class="sheet-actions">
+            <button type="button" class="btn" id="l-preview">Se PDF</button>
+            <button type="submit" class="btn primary" id="l-send">Send fra min e-post</button>
+          </div>
+          <p class="status" id="l-status" role="status"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"
+    integrity="sha512-plOdviVmws4Y3JAvbnpfKb2hVxKM1lCwsi3vmElYRj+tiDLffZ4FVUj5a8vyKJ9pIgl8JCAHEJ4D1iUKBecswg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.30.0/lib/msal-browser.min.js"
     integrity="sha384-RGxxfG5yRS8DLU7ZJ8OoLhbV/BsJFHyPuMVHrTLbpj3t5Z15LnviJmaznKY/a7LZ"
     crossorigin="anonymous"></script>
@@ -684,7 +813,7 @@
         transferNote: "E-posten åpnes med ordre@mobility.no som mottaker. Fyll inn fødselsdato der det står ________, se over og trykk Send.",
         transferPdf: "Husk å legge ved signert overdragelsesskjema (PDF) fra tidligere eier.",
         transferDone: "Overdragelsen er klar. Trykk på knappen for å åpne e-posten, fyll inn fødselsdato og send den.",
-        chips: ["Skade på tjenestebil", "Reiseregning og utlegg", "Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
+        chips: ["Låne bil privat", "Skade på tjenestebil", "Reiseregning og utlegg", "Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
         fromFaq: "Dette fant jeg i FAQ-en:",
         notFound: "Jeg fant dessverre ikke noe om det i FAQ-en. Prøv å spørre på en annen måte, eller kontakt Iver support.",
         error: "Noe gikk galt. Prøv igjen om litt, eller kontakt Iver support."
@@ -967,6 +1096,16 @@
         "<span>" + escapeHtml(t("watchVideo")) + ": " + escapeHtml(v.title) + hint + "</span></a>";
     }
 
+    // Forms Arne can open from a [[form:id]] marker (Norway only).
+    var FORMS = { "laan-bil": "Fyll ut og signer: Lån av bil" };
+
+    function formCard(id) {
+      if (!FORMS[id]) return "";
+      return '<button type="button" class="video-link form-link" data-form="' + id + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>' +
+        "<span>" + escapeHtml(FORMS[id]) + "</span></button>";
+    }
+
     // Small, safe Markdown subset: paragraphs, headings, numbered/bulleted lists, tables, bold, links.
     function renderMarkdown(text) {
       var html = "", list = null, para = [], table = null;
@@ -990,6 +1129,7 @@
         }
         flushTable();
         if ((m = line.match(/^\[\[video:([a-z-]+)\]\]$/))) { flushPara(); flushList(); html += videoCard(m[1]); return; }
+        if ((m = line.match(/^\[\[form:([a-z-]+)\]\]$/))) { flushPara(); flushList(); html += formCard(m[1]); return; }
         if (!line) { flushPara(); flushList(); return; }
         if ((m = line.match(/^#{1,4}\s+(.*)$/))) { flushPara(); flushList(); html += "<p><strong>" + inline(m[1]) + "</strong></p>"; return; }
         if ((m = line.match(/^\d+[.)]\s+(.*)$/))) { flushPara(); if (list !== "ol") { flushList(); html += "<ol>"; list = "ol"; } html += "<li>" + inline(m[1]) + "</li>"; return; }
@@ -1536,12 +1676,310 @@
     });
     document.getElementById("ask-close").addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !loanEl.hidden) return closeLoanForm();
       if (e.key === "Escape" && !chatEl.hidden) closeChat();
     });
     document.getElementById("chat-form").addEventListener("submit", function (e) {
       e.preventDefault();
       send(inputEl.value);
     });
+
+    // ---- Loan of car for occasional private transport (Norway): form → signed PDF → Outlook ----
+    var LOAN_TO_AFTER = ["bil@recover.no", "lonn@recover.no"];
+    var LOAN_CC_BEFORE = ["bil@recover.no"];
+    var loanEl = document.getElementById("loan");
+    var loanMode = "before";
+    var sigCanvas = document.getElementById("l-sig");
+    var sigCtx = sigCanvas.getContext("2d");
+    var sigHasInk = false;
+    var lastLoanPdf = null;
+
+    function $(id) { return document.getElementById(id); }
+
+    function sizeSignature() {
+      var r = sigCanvas.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      sigCanvas.width = Math.round(r.width * dpr);
+      sigCanvas.height = Math.round(r.height * dpr);
+      sigCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sigCtx.lineWidth = 2.4;
+      sigCtx.lineCap = "round";
+      sigCtx.lineJoin = "round";
+      sigCtx.strokeStyle = "#0f2c43";
+      sigHasInk = false;
+    }
+
+    (function () {
+      var drawing = false;
+      function pos(e) {
+        var r = sigCanvas.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+      sigCanvas.addEventListener("pointerdown", function (e) {
+        e.preventDefault();
+        drawing = true;
+        sigCanvas.setPointerCapture(e.pointerId);
+        var p = pos(e);
+        sigCtx.beginPath();
+        sigCtx.moveTo(p.x, p.y);
+        sigCtx.lineTo(p.x + 0.1, p.y + 0.1);
+        sigCtx.stroke();
+        sigHasInk = true;
+      });
+      sigCanvas.addEventListener("pointermove", function (e) {
+        if (!drawing) return;
+        var p = pos(e);
+        sigCtx.lineTo(p.x, p.y);
+        sigCtx.stroke();
+      });
+      ["pointerup", "pointercancel", "pointerleave"].forEach(function (ev) {
+        sigCanvas.addEventListener(ev, function () { drawing = false; });
+      });
+    })();
+
+    function setLoanMode(mode) {
+      loanMode = mode;
+      $("loan-before").setAttribute("aria-pressed", String(mode === "before"));
+      $("loan-after").setAttribute("aria-pressed", String(mode === "after"));
+      $("l-kmstop").required = mode === "after";
+      $("loan-mode-hint").textContent = mode === "before"
+        ? "Send søknaden til lederen din for godkjenning før turen. Ha den signerte avtalen med i bilen."
+        : "Etter turen: fyll inn km-stand ved stopp. Skjemaet sendes til bil og lønn (senest innen 7 dager).";
+      updateLoanInfo();
+    }
+
+    function loanRecipients() {
+      var leader = $("l-leader").value.trim();
+      return loanMode === "before"
+        ? { to: [leader], cc: LOAN_CC_BEFORE }
+        : { to: LOAN_TO_AFTER, cc: leader ? [leader] : [] };
+    }
+
+    function updateLoanInfo() {
+      var start = parseInt($("l-kmstart").value, 10);
+      var stop = parseInt($("l-kmstop").value, 10);
+      var total = !isNaN(start) && !isNaN(stop) ? stop - start : null;
+      $("l-total").textContent = total !== null && total >= 0
+        ? "Totalt " + total.toLocaleString("nb-NO") + " km – kr " + (total * 3.5).toLocaleString("nb-NO", { minimumFractionDigits: 2 }) + " trekkes i lønn."
+        : "";
+      var warns = [];
+      if (total !== null && total < 0) warns.push("Km-stand ved stopp er lavere enn ved start.");
+      if (total !== null && total > 1000) warns.push("Over 1 000 km – grensen for tilfeldig transport per kalenderår.");
+      var from = $("l-from").value, to = $("l-to").value;
+      if (from && to) {
+        var days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+        if (days < 1) warns.push("Dato til er før dato fra.");
+        else if (days > 10) warns.push("Over 10 kalenderdager – grensen for tilfeldig transport per kalenderår.");
+      }
+      $("l-warn").hidden = !warns.length;
+      $("l-warn").textContent = warns.join(" ");
+      var r = loanRecipients();
+      $("l-sendto").textContent = "Sendes til: " + (r.to.filter(Boolean).join(", ") || "leders e-post") +
+        (r.cc.length ? " – kopi: " + r.cc.join(", ") : "") + ". PDF-en legges ved.";
+    }
+
+    function loanData() {
+      var start = parseInt($("l-kmstart").value, 10), stop = parseInt($("l-kmstop").value, 10);
+      return {
+        reg: $("l-reg").value.trim().toUpperCase(),
+        empId: $("l-empid").value.trim(),
+        name: $("l-name").value.trim(),
+        from: $("l-from").value,
+        to: $("l-to").value,
+        purpose: $("l-purpose").value.trim(),
+        kmStart: isNaN(start) ? "" : String(start),
+        kmStop: isNaN(stop) ? "" : String(stop),
+        total: !isNaN(start) && !isNaN(stop) ? String(stop - start) : "",
+        leader: $("l-leader").value.trim(),
+        place: $("l-place").value.trim()
+      };
+    }
+
+    function nbDate(iso) {
+      if (!iso) return "";
+      var p = iso.split("-");
+      return p[2] + "." + p[1] + "." + p[0];
+    }
+
+    function validateLoan() {
+      var form = $("loan-form");
+      var bad = Array.prototype.find.call(form.querySelectorAll("input"), function (i) { return !i.checkValidity(); });
+      if (bad) { bad.focus(); bad.reportValidity && bad.reportValidity(); return "Fyll ut alle feltene."; }
+      var d = loanData();
+      if (d.total && parseInt(d.total, 10) < 0) return "Km-stand ved stopp kan ikke være lavere enn ved start.";
+      if (d.from && d.to && d.to < d.from) return "Dato til kan ikke være før dato fra.";
+      if (!/@recover/i.test(d.leader)) return "Skriv inn lederens Recover-e-post.";
+      if (!sigHasInk) return "Signer i signaturfeltet.";
+      return "";
+    }
+
+    // Build the agreement as a PDF with the user's signature.
+    function buildLoanPdf(d) {
+      var doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+      var x = 20, y = 22, w = 170;
+      doc.setTextColor(20, 59, 89);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(20);
+      doc.text("RECOVER", x, y);
+      doc.setTextColor(25, 35, 38);
+      y += 14; doc.setFontSize(13);
+      doc.text("AVTALE OM LÅN AV BIL FOR TILFELDIG TRANSPORT", 105, y, { align: "center" });
+      y += 12; doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+      doc.text("Undertegnede søker herved om lån av bil.", x, y);
+      y += 9;
+      [
+        ["Registreringsnummer:", d.reg],
+        ["AnsattID + Navn:", d.empId + " – " + d.name],
+        ["Dato fra:", nbDate(d.from)],
+        ["Dato til:", nbDate(d.to)],
+        ["Formål:", d.purpose],
+        ["Kilometerstand ved start:", d.kmStart],
+        ["Kilometerstand ved stopp:", d.kmStop || "Fylles inn etter turen"],
+        ["Totalt antall kilometer:", d.total || "–"]
+      ].forEach(function (row) {
+        doc.setFont("helvetica", "normal"); doc.text(row[0], x, y);
+        doc.setFont("helvetica", "bold"); doc.text(doc.splitTextToSize(String(row[1]), 110), x + 58, y);
+        y += 7;
+      });
+      y += 2; doc.setDrawColor(120); doc.line(x, y, x + w, y); y += 8;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      [
+        "Det skal betales kr. 3,50 per kjørte kilometer. Låntaker står økonomisk ansvarlig med inntil 30% av egenandelen for skader som måtte bli forvoldt ved uaktsom kjøring. Ved kjøring i beruset tilstand er sjåføren fullt ut ansvarlig for alle skader som måtte oppstå.",
+        "For eventuelt økonomisk ansvar som låntakeren måtte pådra seg, gis Recover rett til å trekke avdrag i låntakerens lønn.",
+        "Hvis låntakeren slutter i selskapet før beløpet er tilbakebetalt, har selskapet rett til ved fratredelsen å holde tilbake dekning for resten av gjelden i opptjent lønn eller feriepenger.",
+        "Skulle det ikke være dekning ved fratredelsen, erklærer jeg herved at beløpet kan holdes tilbake i utbetaling av tilgodehavende lønn og feriepenger på et hvilket som helst arbeidssted jeg måtte være beskjeftiget.",
+        "Tilfeldig transport er begrenset til maks 10 kalenderdager eller 1.000 kjørte kilometer per kalenderår per bruker (det som inntreffer først).",
+        "Bilen vil kun bli kjørt av undertegnede som har gyldig sertifikat."
+      ].forEach(function (p) {
+        var lines = doc.splitTextToSize(p, w);
+        doc.text(lines, x, y);
+        y += lines.length * 4.6 + 3;
+      });
+      y += 1; doc.line(x, y, x + w, y); y += 10;
+      doc.setFontSize(11);
+      doc.text("Søknad innvilget", x, y);
+      doc.rect(x + 33, y - 4.2, 5, 5);
+      y += 9;
+      var today = new Date().toLocaleDateString("nb-NO");
+      doc.text("Sted, dato: " + d.place + ", " + today, x, y);
+      doc.text("Sted, dato:", x + 95, y);
+      y += 4;
+      doc.addImage(sigCanvas.toDataURL("image/png"), "PNG", x, y, 70, 70 * sigCanvas.height / sigCanvas.width);
+      y += 70 * sigCanvas.height / sigCanvas.width + 1;
+      doc.line(x, y, x + 75, y); doc.line(x + 95, y, x + 170, y);
+      y += 5; doc.setFontSize(10);
+      doc.text("Bruker: " + d.name, x, y);
+      doc.text("Avdelingsleder", x + 95, y);
+      y += 10; doc.setFontSize(9); doc.setTextColor(90);
+      doc.text(doc.splitTextToSize("Undertegnet skjema oppbevares i bilen under bilturen som dokumentasjon på godkjent utlån. Skjema leveres til bilansvarlig og Lønn så snart som mulig etter at turen er gjort.", w), x, y);
+      y += 10;
+      doc.text("Signert elektronisk " + new Date().toLocaleString("nb-NO") + " via minkonto.riis.cc" + (account ? " av " + (account.username || "") : "") + ".", x, y);
+      return doc;
+    }
+
+    function loanFileName(d) { return "Lan-av-bil-" + (d.reg || "bil") + "-" + (d.from || "") + ".pdf"; }
+
+    function loanMail(d) {
+      var r = loanRecipients();
+      var subject = (loanMode === "before" ? "Søknad om lån av bil" : "Lån av bil – etter tur") + " – " + d.reg + " – " + d.name + " (" + nbDate(d.from) + "–" + nbDate(d.to) + ")";
+      var lines = loanMode === "before"
+        ? ["Hei,", "", "Jeg søker om lån av bil for tilfeldig transport. Signert avtale ligger vedlagt.", "",
+           "Bil: " + d.reg, "Periode: " + nbDate(d.from) + "–" + nbDate(d.to), "Formål: " + d.purpose, "Km-stand ved start: " + d.kmStart, "",
+           "Svar på denne e-posten for å godkjenne lånet.", "", "Med vennlig hilsen", d.name]
+        : ["Hei,", "", "Vedlagt er signert avtale om lån av bil for tilfeldig transport, etter turen.", "",
+           "Bil: " + d.reg, "Ansatt-ID: " + d.empId, "Periode: " + nbDate(d.from) + "–" + nbDate(d.to), "Formål: " + d.purpose,
+           "Km-stand: " + d.kmStart + " – " + d.kmStop + " (" + d.total + " km, kr " + (parseInt(d.total, 10) * 3.5).toLocaleString("nb-NO", { minimumFractionDigits: 2 }) + " til trekk i lønn)", "",
+           "Med vennlig hilsen", d.name];
+      return { to: r.to, cc: r.cc, subject: subject, body: lines.join("\n") };
+    }
+
+    // Sends from the user's own mailbox via Microsoft Graph (delegated Mail.Send).
+    function sendViaGraph(mail, pdfBase64, fileName) {
+      var req = { scopes: ["Mail.Send"], account: account };
+      return msalApp.acquireTokenSilent(req).catch(function () {
+        return msalApp.acquireTokenPopup(req);
+      }).then(function (res) {
+        var rcpt = function (list) { return list.filter(Boolean).map(function (a) { return { emailAddress: { address: a } }; }); };
+        return fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + res.accessToken, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: {
+              subject: mail.subject,
+              body: { contentType: "Text", content: mail.body },
+              toRecipients: rcpt(mail.to),
+              ccRecipients: rcpt(mail.cc),
+              attachments: [{ "@odata.type": "#microsoft.graph.fileAttachment", name: fileName, contentType: "application/pdf", contentBytes: pdfBase64 }]
+            },
+            saveToSentItems: true
+          })
+        });
+      }).then(function (r) {
+        if (r.status !== 202) throw new Error("graph " + r.status);
+      });
+    }
+
+    function setLoanStatus(text, kind) {
+      var el = $("l-status");
+      el.textContent = text;
+      el.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function openLoanForm() {
+      loanEl.hidden = false;
+      if (account && !$("l-name").value) $("l-name").value = account.name || "";
+      if (!$("l-from").value) $("l-from").value = new Date().toISOString().slice(0, 10);
+      setLoanStatus("");
+      setLoanMode(loanMode);
+      requestAnimationFrame(sizeSignature);
+    }
+
+    function closeLoanForm() { loanEl.hidden = true; }
+
+    $("loan-before").addEventListener("click", function () { setLoanMode("before"); });
+    $("loan-after").addEventListener("click", function () { setLoanMode("after"); });
+    $("loan-close").addEventListener("click", closeLoanForm);
+    $("l-sigclear").addEventListener("click", sizeSignature);
+    ["l-kmstart", "l-kmstop", "l-from", "l-to", "l-leader"].forEach(function (id) {
+      $(id).addEventListener("input", updateLoanInfo);
+    });
+    window.addEventListener("resize", function () { if (!loanEl.hidden && !sigHasInk) sizeSignature(); });
+
+    $("l-preview").addEventListener("click", function () {
+      var err = validateLoan();
+      if (err) return setLoanStatus(err, "err");
+      var doc = buildLoanPdf(loanData());
+      window.open(doc.output("bloburl"), "_blank");
+    });
+
+    $("loan-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var err = validateLoan();
+      if (err) return setLoanStatus(err, "err");
+      var d = loanData();
+      var doc = buildLoanPdf(d);
+      var fileName = loanFileName(d);
+      var mail = loanMail(d);
+      var base64 = doc.output("datauristring").split(",")[1];
+      $("l-send").disabled = true;
+      setLoanStatus("Sender …");
+      sendViaGraph(mail, base64, fileName).then(function () {
+        setLoanStatus("Sendt fra din e-post til " + mail.to.join(", ") + ". Du finner den i Sendte elementer.", "ok");
+      }).catch(function () {
+        // Fallback: save the PDF and open a ready-addressed e-mail; the user attaches the PDF.
+        doc.save(fileName);
+        window.location.href = "mailto:" + mail.to.join(",") +
+          "?cc=" + encodeURIComponent(mail.cc.join(",")) +
+          "&subject=" + encodeURIComponent(mail.subject) +
+          "&body=" + encodeURIComponent((mail.body + "\n\n(Legg ved PDF-en " + fileName + " som ble lastet ned.)").replace(/\n/g, "\r\n"));
+        setLoanStatus("Kunne ikke sende automatisk. PDF-en er lastet ned og e-posten er åpnet – legg ved PDF-en og trykk Send.", "err");
+      }).then(function () { $("l-send").disabled = false; });
+    });
+
+    logEl.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-form]");
+      if (btn && btn.getAttribute("data-form") === "laan-bil") openLoanForm();
+    });
+
     inputEl.addEventListener("input", autoGrow);
     inputEl.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
