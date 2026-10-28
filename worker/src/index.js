@@ -338,6 +338,28 @@ async function writeLog(env, entry) {
   await env.STATS.put(key, JSON.stringify(entry), { expirationTtl: LOG_TTL_SECONDS });
 }
 
+// Daily usage totals for the admin's cost overview (all requests, not just the visible log page).
+async function addUsage(env, entry) {
+  const day = new Date(entry.time).toISOString().slice(0, 10);
+  const key = `usage:${day}`;
+  const u = (await env.STATS.get(key, "json")) || { day, requests: 0, errors: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, models: {} };
+  u.requests += 1;
+  if (entry.error) u.errors += 1;
+  for (const k of ["input", "output", "cacheRead", "cacheWrite"]) u[k] += entry.usage?.[k] || 0;
+  if (entry.model) {
+    const m = (u.models[entry.model] ||= { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
+    for (const k of ["input", "output", "cacheRead", "cacheWrite"]) m[k] += entry.usage?.[k] || 0;
+  }
+  await env.STATS.put(key, JSON.stringify(u), { expirationTtl: 400 * 24 * 3600 });
+}
+
+async function readUsage(env, days) {
+  const keys = [];
+  for (let i = 0; i < days; i++) keys.push(`usage:${new Date(Date.now() - i * 86400000).toISOString().slice(0, 10)}`);
+  const rows = await Promise.all(keys.map((k) => env.STATS.get(k, "json")));
+  return rows.filter(Boolean);
+}
+
 async function readLogs(env, cursor) {
   const list = await env.STATS.list({ prefix: "log:", limit: LOG_PAGE, cursor: cursor || undefined });
   const entries = await Promise.all(list.keys.map((k) => env.STATS.get(k.name, "json")));
@@ -422,6 +444,10 @@ export default {
     if (request.method === "GET" && path === "/stats/chips") {
       return json({ counts: await readChipCounts(env) }, 200, { ...cors, "Cache-Control": "private, max-age=60" });
     }
+    if (request.method === "GET" && path === "/admin/usage") {
+      if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
+      return json({ days: await readUsage(env, 60) }, 200, { ...cors, "Cache-Control": "private, no-store" });
+    }
     if (request.method === "GET" && path === "/admin/logs") {
       if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
       const cursor = new URL(request.url).searchParams.get("cursor");
@@ -471,7 +497,7 @@ export default {
       usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     };
     const saveLog = () => {
-      const job = writeLog(env, log).catch((e) => console.error("log", e));
+      const job = Promise.all([writeLog(env, log), addUsage(env, log)]).catch((e) => console.error("log", e));
       if (ctx?.waitUntil) ctx.waitUntil(job);
     };
 

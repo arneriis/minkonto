@@ -404,6 +404,16 @@
     .stepper { display: flex; align-items: center; gap: 6px; }
     .stepper button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); font: inherit; font-size: 18px; font-weight: 600; color: var(--navy); cursor: pointer; }
     .stepper output { min-width: 18px; text-align: center; font-weight: 700; }
+    .usage-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .usage-tile { background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+    .usage-tile .label { font-size: 12px; color: var(--muted); }
+    .usage-tile .value { font-size: 20px; font-weight: 700; color: var(--navy); margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .usage-tile .sub { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .usage-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .usage-table th, .usage-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    .usage-table th:first-child, .usage-table td:first-child { text-align: left; }
+    .usage-table th { color: var(--muted); font-weight: 600; }
+    #usage-card details summary { cursor: pointer; font-size: 13px; color: var(--navy); font-weight: 600; }
     .chat-notice { margin: 0; padding: 4px 16px 0; font-size: 11.5px; color: var(--muted); text-align: center; background: var(--surface); }
     .log-list { display: grid; gap: 10px; }
     .log-item { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; display: grid; gap: 6px; font-size: 14px; }
@@ -772,6 +782,16 @@
     </div>
     <div class="sheet-body">
       <div class="sheet-inner">
+        <div class="card" id="usage-card">
+          <h3>AI-forbruk</h3>
+          <div class="usage-tiles" id="usage-tiles"></div>
+          <details>
+            <summary>Per dag (siste 30 dager)</summary>
+            <div class="table-wrap"><table class="usage-table" id="usage-table"></table></div>
+          </details>
+          <p class="hint" id="usage-note"></p>
+        </div>
+
         <div class="card">
           <div class="field"><label for="logs-search">Søk i spørsmål, svar eller bruker</label><input id="logs-search" type="search" autocomplete="off"></div>
           <div class="sheet-actions">
@@ -2651,9 +2671,82 @@
       a.click();
     }
 
-    document.getElementById("open-logs").addEventListener("click", function () { logsEl.hidden = false; fetchLogs(false); });
+
+    // ---- AI usage and estimated cost (admin) ----
+    // Anthropic list prices in USD per million tokens; cache reads cost 10 % and cache writes 125 % of input.
+    var MODEL_PRICES = {
+      "claude-haiku-5-5": { input: 0.10, output: 0.50 },
+      "claude-opus-5-5": { input: 4.00, output: 20.00 }
+    };
+    var USD_TO_NOK = 11;
+
+    function usageCost(models) {
+      var usd = 0;
+      Object.keys(models || {}).forEach(function (m) {
+        var p = MODEL_PRICES[m] || MODEL_PRICES["claude-haiku-5-5"], u = models[m];
+        usd += (u.input * p.input + u.cacheRead * p.input * 0.1 + u.cacheWrite * p.input * 1.25 + u.output * p.output) / 1e6;
+      });
+      return usd;
+    }
+
+    function sumUsage(rows) {
+      var t = { requests: 0, errors: 0, tokens: 0, usd: 0 };
+      rows.forEach(function (r) {
+        t.requests += r.requests; t.errors += r.errors;
+        t.tokens += r.input + r.output + r.cacheRead + r.cacheWrite;
+        t.usd += usageCost(r.models);
+      });
+      return t;
+    }
+
+    function fmtUsd(usd) { return "$" + (usd < 1 ? usd.toFixed(3) : usd.toFixed(2)); }
+    function fmtNok(usd) { return "≈ kr " + (usd * USD_TO_NOK).toLocaleString("nb-NO", { maximumFractionDigits: usd * USD_TO_NOK < 10 ? 2 : 0 }); }
+    function fmtTokens(n) { return n >= 1e6 ? (n / 1e6).toLocaleString("nb-NO", { maximumFractionDigits: 1 }) + " mill." : Math.round(n / 1000).toLocaleString("nb-NO") + " k"; }
+
+    function fetchUsage() {
+      getIdToken().then(function (token) {
+        return fetch(CHAT_API_URL + "/admin/usage", { headers: token ? { Authorization: "Bearer " + token } : {} });
+      }).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
+        if (!data) return;
+        var rows = data.days || [];
+        var today = new Date().toISOString().slice(0, 10), month = today.slice(0, 7);
+        var since = function (days) { var d = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10); return rows.filter(function (r) { return r.day >= d; }); };
+        var tiles = [
+          ["I dag", rows.filter(function (r) { return r.day === today; })],
+          ["Siste 7 dager", since(7)],
+          ["Denne måneden", rows.filter(function (r) { return r.day.slice(0, 7) === month; })],
+          ["Siste 30 dager", since(30)]
+        ];
+        var box = document.getElementById("usage-tiles");
+        box.innerHTML = "";
+        tiles.forEach(function (tl) {
+          var s = sumUsage(tl[1]);
+          var d = document.createElement("div");
+          d.className = "usage-tile";
+          d.innerHTML = '<div class="label"></div><div class="value"></div><div class="sub"></div><div class="sub"></div>';
+          d.children[0].textContent = tl[0];
+          d.children[1].textContent = fmtUsd(s.usd);
+          d.children[2].textContent = fmtNok(s.usd);
+          d.children[3].textContent = s.requests + " forespørsler" + (s.errors ? " · " + s.errors + " feil" : "") + " · " + fmtTokens(s.tokens) + " tokens";
+          box.appendChild(d);
+        });
+        var table = document.getElementById("usage-table");
+        table.innerHTML = "<tr><th>Dag</th><th>Forespørsler</th><th>Feil</th><th>Tokens</th><th>Kostnad</th></tr>";
+        since(30).sort(function (a, b) { return a.day < b.day ? 1 : -1; }).forEach(function (r) {
+          var tr = document.createElement("tr");
+          var tokens = r.input + r.output + r.cacheRead + r.cacheWrite;
+          [r.day.split("-").reverse().join("."), r.requests, r.errors || "", fmtTokens(tokens), fmtUsd(usageCost(r.models))].forEach(function (v) {
+            var td = document.createElement("td"); td.textContent = String(v); tr.appendChild(td);
+          });
+          table.appendChild(tr);
+        });
+        document.getElementById("usage-note").textContent = "Beregnet ut fra Anthropics listepriser (Haiku 5.5: $0,10 inn / $0,50 ut per million tokens) og kurs 1 USD ≈ " + USD_TO_NOK +
+          " kr. Faktisk faktura ser du i console.anthropic.com. Forbruk telles fra " + (rows.length ? rows[rows.length - 1].day.split("-").reverse().join(".") : "i dag") + ".";
+      }).catch(function () {});
+    }
+    document.getElementById("open-logs").addEventListener("click", function () { logsEl.hidden = false; fetchLogs(false); fetchUsage(); });
     document.getElementById("logs-close").addEventListener("click", function () { logsEl.hidden = true; });
-    document.getElementById("logs-refresh").addEventListener("click", function () { fetchLogs(false); });
+    document.getElementById("logs-refresh").addEventListener("click", function () { fetchLogs(false); fetchUsage(); });
     document.getElementById("logs-more").addEventListener("click", function () { fetchLogs(true); });
     document.getElementById("logs-csv").addEventListener("click", exportLogsCsv);
     document.getElementById("logs-search").addEventListener("input", renderLogs);
