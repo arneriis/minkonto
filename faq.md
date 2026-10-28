@@ -24,11 +24,31 @@ Søke om ferie:
 4. Velg hvilke datoer du skal ha ferie, og velg årsak – som regel det som passer til fraværstypen du valgte (her: ferie).
 5. Send inn registreringen. Ferie krever godkjenning fra leder, så søknaden går til lederen din, som må godkjenne den.
 
+## Overføre mobilnummer til Recover (kun Norge)
+
+Skal et norsk mobilnummer overføres fra tidligere eier (for eksempel privat abonnement eller et annet firma) til Recovers bedriftsavtale hos Telenor via Mobility, sendes en overdragelse til ordre@mobility.no. Dette gjelder kun Norge.
+
+- Er tidligere eier en annen enn deg selv (privatperson eller firma), trengs aksept fra tidligere eier: et signert overdragelsesskjema (PDF) som legges ved e-posten. Skjemaet lastes ned i Mitt Mobility (https://mitt.mobility.no/login/59051448604ee7bc4a40df12216414c4/).
+- Er du personlig eier av mobilabonnementet i dag, trenger du ikke overdragelsesskjemaet.
+
+Dette trengs (feltene i Mobility-skjemaet):
+
+- Abonnement – for eksempel Bedrift Total A (15GB)
+- Avtaletjenester: Mobilt Bedriftsnett og Fakturakontroll Pluss er alltid med
+- Ekstra SIM-kort: antall tvillingsim, og antall datasim (datasim må bestilles for bruk i nettbrett)
+- Andre tjenester: Fri Tale EU og/eller Fri Tale Skandinavia (valgfritt)
+- SIM-kort: beholde eksisterende SIM-kort, få nytt SIM-kort tilsendt i posten, ny eSIM, eller oppgi hovedsim-nummer (20 siffer) for et nytt SIM-kort du allerede har
+- Bruker og betaler: navn, mobilnummer, fødselsdato (ddmmåååå), avd.nr/7000/ansattnummer og fakturakonto hos Telenor (vanligvis «Standard»)
+- Tidligere eier: org.nr (9 siffer) eller fødselsdato, og firmanavn eller fullt navn
+- Ønsket dato for gjennomføring
+
+Arne kan fylle ut overdragelsen og lage e-posten til ordre@mobility.no for deg. Fødselsdato skriver du selv inn i e-posten før du sender – den skal ikke skrives i chatten.
+
 ## Bestille skriver / printer (Canon)
 
 Recover har avtale med Canon om multifunksjonsskrivere (MFP). Alle priser er månedssum per maskin.
 
-| Modell | Maskin | Utstyr | Månedssum |
+| Modell | Maskin | Inkludert | Månedssum |
 |---|---|---|---|
 | MFP Bordmodell (A4) | Canon i-SENSYS X C1333i | uniFLOW Online, servicepakke | kr 758,- |
 | MFP Liten (A4) | Canon imageFORCE C331 | Single Pass-dokumentmater, kortleser MiCard PLUS, uniFLOW Online, servicepakke | kr 966,- |

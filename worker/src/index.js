@@ -35,6 +35,14 @@ Bestilling av skriver:
 - Når alt er samlet inn, vis en kort oppsummering og spør om den stemmer. Kall verktøyet lag_printerbestilling først når brukeren har bekreftet.
 - Etter verktøykallet: si kort at e-posten er klar, og at brukeren må trykke på knappen og sende den fra sin egen e-post.
 
+Overføre mobilnummer / overdragelse av abonnement (kun Norge):
+- Gjelder kun norske mobilnumre. Spør om nummeret er norsk hvis det er uklart; er det ikke norsk, si at dette bare gjelder Norge og henvis til Iver support.
+- Tilby å fylle ut overdragelsen for brukeren og lage e-posten til Mobility («Skal jeg gjøre dette for deg?»).
+- Samle inn feltene i skjemaet (se FAQ-en), noen få spørsmål om gangen. Ikke gjett verdier.
+- Spør IKKE om fødselsdato – verken brukerens eller tidligere eiers. Brukeren fyller den inn selv i e-posten. Er tidligere eier et firma, spør om org.nr.
+- Når alt er samlet inn, vis en kort oppsummering og spør om den stemmer. Kall verktøyet lag_nummeroverforing først når brukeren har bekreftet.
+- Etter verktøykallet: si kort at e-posten er klar, at brukeren må fylle inn fødselsdato der det står ________, og at signert overdragelsesskjema må legges ved hvis brukeren ikke selv eier abonnementet i dag.
+
 <faq>
 ${faq}
 </faq>`;
@@ -76,6 +84,46 @@ const PRINTER_ORDER_TOOL = {
       kontakt_mobil_epost: { type: "string" },
       bestiller_navn: { type: "string", description: "Navnet til den som bestiller, med blokkbokstaver." },
       sted: { type: "string", description: "Sted for underskrift." },
+      kommentar: nullableString,
+    },
+  },
+};
+
+const nullableInt = { type: ["integer", "null"] };
+
+const NUMBER_TRANSFER_TOOL = {
+  name: "lag_nummeroverforing",
+  description:
+    "Lager en ferdig utfylt overdragelse av mobilabonnement fra tidligere eier til Recover (Mobility, kun Norge) som brukeren kan sende på e-post til ordre@mobility.no. Kall kun når all informasjon er samlet inn og brukeren har bekreftet oppsummeringen.",
+  strict: true,
+  input_schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "abonnement", "tvillingsim_antall", "datasim_antall", "fri_tale_eu", "fri_tale_skandinavia",
+      "simkort", "hovedsim_nummer", "navn", "mobilnummer", "ansattnummer", "fakturakonto",
+      "tidligere_eier_type", "tidligere_eier_navn", "tidligere_eier_orgnr", "dato_gjennomforing", "kommentar",
+    ],
+    properties: {
+      abonnement: { type: "string", description: "Abonnementet som ønskes, f.eks. «Bedrift Total A (15GB)»." },
+      tvillingsim_antall: { type: "integer" },
+      datasim_antall: { type: "integer", description: "Datasim trengs for bruk i nettbrett." },
+      fri_tale_eu: { type: "boolean" },
+      fri_tale_skandinavia: { type: "boolean" },
+      simkort: {
+        type: "string",
+        enum: ["behold_eksisterende", "nytt_i_posten", "ny_esim", "har_nytt_simkort"],
+        description: "har_nytt_simkort = brukeren har allerede et nytt SIM-kort og oppgir hovedsim-nummeret.",
+      },
+      hovedsim_nummer: { ...nullableString, description: "SIM-kortnummer (20 siffer) ved har_nytt_simkort, ellers null." },
+      navn: { type: "string" },
+      mobilnummer: { type: "string" },
+      ansattnummer: { type: "string", description: "Avd.nr/7000/ansattnummer." },
+      fakturakonto: { type: "string", description: "Fakturakonto hos Telenor. «Standard» hvis brukeren ikke vet." },
+      tidligere_eier_type: { type: "string", enum: ["meg_selv", "privatperson", "firma"] },
+      tidligere_eier_navn: { ...nullableString, description: "Fullt navn eller firmanavn til tidligere eier. Null hvis meg_selv." },
+      tidligere_eier_orgnr: { ...nullableString, description: "Org.nr (9 siffer) hvis tidligere eier er firma, ellers null." },
+      dato_gjennomforing: { type: "string", description: "Ønsket dato for gjennomføring, format dd.mm.åååå." },
       kommentar: nullableString,
     },
   },
@@ -142,7 +190,7 @@ export default {
         betas: ["server-side-fallback-2026-07-01"],
         fallbacks: "default",
         system: systemPrompt(faq, lang),
-        tools: [PRINTER_ORDER_TOOL],
+        tools: [PRINTER_ORDER_TOOL, NUMBER_TRANSFER_TOOL],
         messages,
       });
 
@@ -157,11 +205,16 @@ export default {
         .trim();
 
       // The page turns the order into a ready-to-send e-mail; no tool_result round trip is needed.
-      const toolUse = response.content.find(
-        (block) => block.type === "tool_use" && block.name === PRINTER_ORDER_TOOL.name,
-      );
+      const toolInput = (name) => {
+        const block = response.content.find((b) => b.type === "tool_use" && b.name === name);
+        return block ? block.input : null;
+      };
 
-      return json({ reply, order: toolUse ? toolUse.input : null }, 200, cors);
+      return json({
+        reply,
+        order: toolInput(PRINTER_ORDER_TOOL.name),
+        transfer: toolInput(NUMBER_TRANSFER_TOOL.name),
+      }, 200, cors);
     } catch (err) {
       if (err instanceof Anthropic.RateLimitError) {
         return json({ error: "busy" }, 429, cors);
