@@ -337,7 +337,7 @@ async function mobilityCallback(env, body) {
   return true;
 }
 
-// ---- Menu cards hidden per job title (Entra jobTitle): the admin sets the rules, every page reads them ----
+// ---- Menu cards per country, plus cards shown to extra job titles (Entra jobTitle): the admin sets the rules ----
 const MENU_CARDS = ["password", "field", "equipment", "company-portal", "printer", "skade", "mobile"];
 const MAX_TITLES = 300;
 
@@ -354,21 +354,21 @@ const DEFAULT_VISIBLE = {
 
 async function readMenu(env) {
   const menu = (await env.STATS.get("menu", "json")) || {};
-  return { hidden: menu.hidden || {}, visible: { ...DEFAULT_VISIBLE, ...menu.visible } };
+  return { shown: menu.shown || {}, visible: { ...DEFAULT_VISIBLE, ...menu.visible } };
 }
 
 function cleanMenu(body) {
-  const hidden = {};
+  const shown = {};
   for (const id of MENU_CARDS) {
-    const list = body?.hidden?.[id];
-    if (Array.isArray(list) && list.length) hidden[id] = [...new Set(list.map(cleanTitle))].slice(0, MAX_TITLES);
+    const list = body?.shown?.[id];
+    if (Array.isArray(list) && list.length) shown[id] = [...new Set(list.map(cleanTitle))].slice(0, MAX_TITLES);
   }
   const visible = {};
   for (const c of ["no", "dk", "se"]) {
     const list = body?.visible?.[c];
     visible[c] = Array.isArray(list) ? MENU_CARDS.filter((id) => list.includes(id)) : DEFAULT_VISIBLE[c];
   }
-  return { hidden, visible };
+  return { shown, visible };
 }
 
 // Job titles seen at sign-in or fetched from Entra by the admin, so the admin can pick from real ones.

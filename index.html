@@ -951,8 +951,8 @@
           <div id="menu-countries"></div>
         </div>
         <div class="card">
-          <h3>Skjul per stilling</h3>
-          <p class="hint">Kryss av stillingene som <strong>ikke</strong> skal se et menyvalg. Stillingen hentes fra Entra (feltet «Job title») når noen logger inn, og listen fylles opp etter hvert som folk logger inn. Spør Arne og skjemaene han tilbyr påvirkes ikke.</p>
+          <h3>Synlig for stilling</h3>
+          <p class="hint">Kryss av stillingene som <strong>også</strong> skal se et menyvalg, selv om det ikke er slått på for landet deres over. Stillingen hentes fra Entra (feltet «Job title») når noen logger inn, og listen fylles opp etter hvert som folk logger inn. Spør Arne og skjemaene han tilbyr påvirkes ikke.</p>
           <p class="hint" id="menu-own-title"></p>
           <div class="sheet-actions">
             <button type="button" class="btn" id="menu-consent" hidden>Gi tilgang til stilling i Entra</button>
@@ -3700,8 +3700,8 @@
     });
 
 
-    // ---- Menu cards hidden per job title (Entra jobTitle via Microsoft Graph /me, permission User.Read) ----
-    // Only hides cards on the page; the admin sets the rules under «Menyvalg».
+    // ---- Menu cards per country and job title (Entra jobTitle via Microsoft Graph /me, permission User.Read) ----
+    // Only shows or hides cards on the page; the admin sets the rules under «Menyvalg».
     var MENU_CARDS = [
       { id: "password", label: "Glemt passord" }, { id: "field", label: "Field worker" }, { id: "equipment", label: "Utstyret mitt" },
       { id: "company-portal", label: "Oppsett av mobilen" }, { id: "printer", label: "Bestille skriver" },
@@ -3711,7 +3711,7 @@
     var MENU_CACHE = "minkonto.menu";
     var jobTitle = null; // null = unknown (not signed in or Graph not allowed), "" = no title in Entra
     var jobTitleError = "";
-    var menuRules = { hidden: {} };
+    var menuRules = { shown: {} };
 
     function titleKey() { return "minkonto.jobtitle." + (account ? account.homeAccountId : ""); }
 
@@ -3744,18 +3744,19 @@
     }
 
     // Signed out: only «Glemt passord» and «Oppsett av mobilen».
-    // Signed in: the country's visible cards minus those hidden for the job title
+    // Signed in: the country's visible cards plus those shown for the job title
     // (until the country is known, the Norway-only cards follow the language).
     function applyMenu() {
-      var rules = menuRules || { hidden: {} }; // applyLanguage runs before the rules are set up
+      var rules = menuRules || { shown: {} }; // applyLanguage runs before the rules are set up
       var country = menuCountry();
       var visible = country && rules.visible ? rules.visible[country] : null;
       if (!account && window.msal) visible = ["password", "company-portal"]; // signed out
       document.querySelectorAll("[data-card]").forEach(function (li) {
         var id = li.getAttribute("data-card");
-        var hiddenFor = rules.hidden[id] || [];
+        var shownFor = (rules.shown && rules.shown[id]) || [];
         var hide = visible ? visible.indexOf(id) === -1 : ["printer", "skade", "mobile"].indexOf(id) !== -1 && currentLang !== "nb";
-        li.classList.toggle("menu-hidden", hide || (jobTitle !== null && hiddenFor.indexOf(jobTitle) !== -1));
+        if (account && jobTitle != null && shownFor.indexOf(jobTitle) !== -1) hide = false;
+        li.classList.toggle("menu-hidden", hide);
       });
     }
 
@@ -3841,14 +3842,14 @@
       var wrap = document.getElementById("menu-cards");
       wrap.innerHTML = "";
       MENU_CARDS.forEach(function (card) {
-        var hiddenFor = menuRules.hidden[card.id] || [];
+        var shownFor = (menuRules.shown && menuRules.shown[card.id]) || [];
         var box = document.createElement("div");
         box.className = "card";
         var html = "<h3>" + escapeHtml(card.label) + "</h3>";
-        html += '<fieldset class="opts"><legend>Skjul for</legend>';
+        html += '<fieldset class="opts"><legend>Også synlig for</legend>';
         [NO_TITLE].concat(titles).forEach(function (title) {
           html += '<label><input type="checkbox" data-menu-card="' + card.id + '" value="' + escapeHtml(title) + '"' +
-            (hiddenFor.indexOf(title) !== -1 ? " checked" : "") + "> " + escapeHtml(title || "(ingen stilling)") + "</label>";
+            (shownFor.indexOf(title) !== -1 ? " checked" : "") + "> " + escapeHtml(title || "(ingen stilling)") + "</label>";
         });
         box.innerHTML = html + "</fieldset>";
         wrap.appendChild(box);
@@ -3856,21 +3857,21 @@
     }
 
     function collectMenuSettings() {
-      var hidden = {};
+      var shown = {};
       document.querySelectorAll("[data-menu-card]:checked").forEach(function (cb) {
         var id = cb.getAttribute("data-menu-card");
-        (hidden[id] = hidden[id] || []).push(cb.value);
+        (shown[id] = shown[id] || []).push(cb.value);
       });
       var visible = { no: [], dk: [], se: [] };
       document.querySelectorAll("[data-menu-visible]:checked").forEach(function (cb) {
         visible[cb.getAttribute("data-menu-visible")].push(cb.value);
       });
-      return { hidden: hidden, visible: visible };
+      return { shown: shown, visible: visible };
     }
 
     // The saved rules plus this user's own flags from the last /menu answer.
     function mergeMenuRules(rules) {
-      return { hidden: rules.hidden, visible: rules.visible, canUpload: menuRules.canUpload, isAdmin: menuRules.isAdmin, user: menuRules.user };
+      return { shown: rules.shown, visible: rules.visible, canUpload: menuRules.canUpload, isAdmin: menuRules.isAdmin, user: menuRules.user };
     }
 
     function openMenuSettings() {
@@ -3883,7 +3884,7 @@
         if (!r.ok) throw new Error("Kunne ikke hente menyvalg (" + r.status + ").");
         return r.json();
       }).then(function (data) {
-        menuRules = mergeMenuRules(data.menu || { hidden: {} });
+        menuRules = mergeMenuRules(data.menu || { shown: {} });
         menuAdmins = data.admins || [];
         menuPermanentAdmins = data.permanentAdmins || [];
         renderMenuAdmins();
