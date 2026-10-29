@@ -446,6 +446,14 @@
     .sheet-inner { max-width: 560px; margin: 0 auto; display: grid; gap: 14px; }
     .card { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; display: grid; gap: 12px; }
     .card h3 { margin: 0; font-size: 15px; color: var(--navy); }
+    .menu-card:not([open]) { gap: 0; }
+    .menu-card > summary { display: flex; align-items: center; gap: 12px; cursor: pointer; list-style: none; }
+    .menu-card > summary::-webkit-details-marker { display: none; }
+    .menu-card > summary h3 { flex: 1; }
+    .menu-card > summary small { color: var(--muted); font-size: 13px; }
+    .menu-card > summary .chevron { transition: transform .16s ease; }
+    .menu-card[open] > summary .chevron { transform: rotate(90deg); }
+    .opts label.is-off { opacity: .45; }
     .field { display: grid; gap: 4px; }
     .field label { font-size: 13px; font-weight: 600; color: var(--muted); }
     .field input {
@@ -3710,6 +3718,7 @@
       { id: "skade", label: "Skademelding bil" }, { id: "mobile", label: "Bestille mobil eller nettbrett" }
     ];
     var NO_TITLE = "";
+    var ALL_TITLES = "*"; // «Alle»: every signed-in user, whatever the job title
     var MENU_CACHE = "minkonto.menu";
     var jobTitle = null; // null = unknown (not signed in or Graph not allowed), "" = no title in Entra
     var jobTitleError = "";
@@ -3757,7 +3766,7 @@
         var id = li.getAttribute("data-card");
         var shownFor = (rules.shown && rules.shown[id]) || [];
         var hide = visible ? visible.indexOf(id) === -1 : ["printer", "skade", "mobile"].indexOf(id) !== -1 && currentLang !== "nb";
-        if (account && jobTitle != null && shownFor.indexOf(jobTitle) !== -1) hide = false;
+        if (account && (shownFor.indexOf("*") !== -1 || (jobTitle != null && shownFor.indexOf(jobTitle) !== -1))) hide = false;
         li.classList.toggle("menu-hidden", hide);
       });
     }
@@ -3846,26 +3855,51 @@
       var titles = menuTitles.slice().sort(function (a, b) { return a.localeCompare(b, "nb"); });
       var wrap = document.getElementById("menu-cards");
       wrap.innerHTML = "";
+      var open = {};
+      wrap.querySelectorAll("details[open]").forEach(function (d) { open[d.getAttribute("data-card-box")] = true; });
+      wrap.innerHTML = "";
       MENU_CARDS.forEach(function (card) {
         var shownFor = (menuRules.shown && menuRules.shown[card.id]) || [];
-        var box = document.createElement("div");
-        box.className = "card";
-        var html = "<h3>" + escapeHtml(card.label) + "</h3>";
+        var all = shownFor.indexOf(ALL_TITLES) !== -1;
+        var box = document.createElement("details");
+        box.className = "card menu-card";
+        box.setAttribute("data-card-box", card.id);
+        box.open = Boolean(open[card.id]);
+        var html = "<summary><h3>" + escapeHtml(card.label) + '</h3><small data-menu-summary></small>' +
+          '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></summary>';
         html += '<fieldset class="opts"><legend>Også synlig for</legend>';
+        html += '<label><input type="checkbox" data-menu-all="' + card.id + '"' + (all ? " checked" : "") + "> <strong>Alle</strong></label>";
         [NO_TITLE].concat(titles).forEach(function (title) {
           html += '<label><input type="checkbox" data-menu-card="' + card.id + '" value="' + escapeHtml(title) + '"' +
             (shownFor.indexOf(title) !== -1 ? " checked" : "") + "> " + escapeHtml(title || "(ingen stilling)") + "</label>";
         });
         box.innerHTML = html + "</fieldset>";
         wrap.appendChild(box);
+        updateMenuCardBox(box);
       });
+    }
+
+    // «Alle» overrides the job titles under it: they are greyed out and not saved.
+    function updateMenuCardBox(box) {
+      var all = box.querySelector("[data-menu-all]").checked;
+      var titles = box.querySelectorAll("[data-menu-card]");
+      var picked = 0;
+      titles.forEach(function (cb) {
+        cb.disabled = all;
+        cb.parentNode.classList.toggle("is-off", all);
+        if (cb.checked) picked++;
+      });
+      box.querySelector("[data-menu-summary]").textContent = all ? "Alle" : picked ? picked + (picked === 1 ? " stilling" : " stillinger") : "Ingen ekstra";
     }
 
     function collectMenuSettings() {
       var shown = {};
-      document.querySelectorAll("[data-menu-card]:checked").forEach(function (cb) {
+      document.querySelectorAll("[data-menu-card]:checked:not(:disabled)").forEach(function (cb) {
         var id = cb.getAttribute("data-menu-card");
         (shown[id] = shown[id] || []).push(cb.value);
+      });
+      document.querySelectorAll("[data-menu-all]:checked").forEach(function (cb) {
+        shown[cb.getAttribute("data-menu-all")] = [ALL_TITLES];
       });
       var visible = { no: [], dk: [], se: [] };
       document.querySelectorAll("[data-menu-visible]:checked").forEach(function (cb) {
@@ -3901,6 +3935,10 @@
     }
 
     document.getElementById("open-menu-settings").addEventListener("click", openMenuSettings);
+    document.getElementById("menu-cards").addEventListener("change", function (e) {
+      var box = e.target.closest("details");
+      if (box) updateMenuCardBox(box);
+    });
     document.getElementById("menu-settings-close").addEventListener("click", function () { menuSettingsEl.hidden = true; });
     document.getElementById("menu-consent").addEventListener("click", function () {
       msalApp.acquireTokenRedirect({ scopes: ["User.Read"], account: account });
