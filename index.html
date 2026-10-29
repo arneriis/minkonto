@@ -495,6 +495,12 @@
     .opts label { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 14px; cursor: pointer; }
     .opts label:has(input:checked) { border-color: var(--navy); background: #e8f0f5; color: var(--navy); }
     .opts input { width: 16px; height: 16px; margin: 0; }
+    .doc-list { display: grid; gap: 8px; }
+    .doc-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
+    .doc-item .log-meta { grid-column: 1; }
+    .doc-item button { grid-row: 1 / span 2; grid-column: 2; }
+    .usage-bar { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+    .usage-bar span { display: block; height: 100%; background: var(--navy); }
     .circ { display: grid; grid-template-columns: 44px 1fr 44px; gap: 4px 8px; align-items: center; font-size: 14px; }
     .circ .head { font-size: 13px; font-weight: 700; color: var(--navy); text-align: center; }
     .circ input { width: 22px; height: 22px; margin: 0 auto; display: block; }
@@ -786,7 +792,7 @@
     <span class="auth-status" id="auth-status" hidden>
       <span id="auth-name"></span>
       · <button type="button" class="link-btn" id="logout" data-i18n="logout">Logg ut</button>
-      <span id="admin-status" hidden> · <button type="button" class="link-btn" id="open-logs">AI-logg</button> · <button type="button" class="link-btn" id="open-menu-settings">Menyvalg</button></span>
+      <span id="docs-status" hidden> · <button type="button" class="link-btn" id="open-docs">Dokumenter</button></span><span id="admin-status" hidden> · <button type="button" class="link-btn" id="open-logs">AI-logg</button> · <button type="button" class="link-btn" id="open-menu-settings">Menyvalg</button></span>
       <span id="mobility-status" hidden> · <button type="button" class="link-btn" id="mobility-disconnect" data-i18n="mobilityDisconnect">Koble fra Mobility</button></span>
     </span>
     minkonto.riis.cc
@@ -859,6 +865,49 @@
         </div>
         <div id="logs-list" class="log-list"></div>
         <div class="sheet-actions"><button type="button" class="btn" id="logs-more" hidden>Last flere</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet" id="docs" role="dialog" aria-modal="true" aria-labelledby="docs-title" hidden>
+    <div class="chat-head">
+      <div class="chat-title">
+        <strong id="docs-title">Dokumenter for Spør Arne</strong>
+        <small id="docs-sub">Gjelder brukere i ditt land</small>
+      </div>
+      <button type="button" class="icon-btn" id="docs-close" aria-label="Lukk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="sheet-inner">
+        <div class="card">
+          <p class="hint">Arne bruker dokumentene når han svarer brukere i samme land. Landet bestemmes av kontoen de er logget inn med (recover.no = Norge, recover.dk = Danmark, recover.se = Sverige), ikke av valgt språk. Last opp PDF eller tekstfiler. Skannede PDF-er uten tekst kan ikke leses. Et dokument med samme navn erstatter det gamle.</p>
+          <div class="field" id="docs-country-field" hidden>
+            <label for="docs-country">Land</label>
+            <select id="docs-country"><option value="no">Norge (recover.no)</option><option value="dk">Danmark (recover.dk)</option><option value="se">Sverige (recover.se)</option></select>
+          </div>
+          <div class="field"><label for="docs-files">Velg dokumenter</label><input id="docs-files" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain" multiple></div>
+          <div class="sheet-actions"><button type="button" class="btn primary" id="docs-upload">Last opp</button></div>
+          <p class="status" id="docs-status-msg" role="status"></p>
+        </div>
+        <div class="card">
+          <h3 id="docs-list-title">Dokumenter</h3>
+          <div class="usage-bar" aria-hidden="true"><span id="docs-usage-bar" style="width:0"></span></div>
+          <p class="hint" id="docs-usage"></p>
+          <div class="doc-list" id="docs-list"></div>
+        </div>
+        <div class="card" id="docs-access" hidden>
+          <h3>Hvem kan laste opp</h3>
+          <p class="hint">Kryss av dem som skal kunne laste opp dokumenter. Hver person laster opp for landet til kontoen sin. Ingen har tilgang før du krysser av. Listen viser alle som har logget inn på siden.</p>
+          <div id="docs-users"></div>
+          <div class="row-add">
+            <div class="field"><label for="docs-new-user">Legg til e-post som ikke står i listen</label><input id="docs-new-user" type="email" autocomplete="off" placeholder="navn@recover.dk"></div>
+            <button type="button" class="btn" id="docs-add-user">Legg til</button>
+          </div>
+          <div class="sheet-actions"><button type="button" class="btn primary" id="docs-save-access">Lagre tilgang</button></div>
+          <p class="status" id="docs-access-status" role="status"></p>
+        </div>
       </div>
     </div>
   </section>
@@ -2243,6 +2292,8 @@
       status.hidden = !(authEnabled() && account);
       var as = document.getElementById("admin-status");
       if (as) as.hidden = !isAdminUser();
+      var ds = document.getElementById("docs-status");
+      if (ds) ds.hidden = !(account && (isAdminUser() || (menuRules && menuRules.canUpload)));
       var ms = document.getElementById("mobility-status");
       if (ms) ms.hidden = !readMobility();
       if (account) {
@@ -2687,6 +2738,7 @@
     });
     document.getElementById("ask-close").addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !docsEl.hidden) { docsEl.hidden = true; return; }
       if (e.key === "Escape" && !menuSettingsEl.hidden) { menuSettingsEl.hidden = true; return; }
       if (e.key === "Escape" && !logsEl.hidden) { logsEl.hidden = true; return; }
       if (e.key === "Escape" && !printerEl.hidden) return closePrinterForm();
@@ -3480,6 +3532,7 @@
         menuRules = rules;
         try { localStorage.setItem(MENU_CACHE, JSON.stringify(rules)); } catch (e) {}
         applyMenu();
+        renderAuth();
       }).catch(function () {});
     }
 
@@ -3609,6 +3662,214 @@
         applyMenu();
         setMenuStatus("Lagret. Endringen gjelder neste gang hver enkelt åpner siden.", "ok");
       }).catch(function () { setMenuStatus("Kunne ikke lagre. Prøv igjen.", "err"); });
+    });
+
+    // ---- «Dokumenter»: country documents for Arne (who may upload is checked by the Worker) ----
+    var COUNTRY_NAMES = { no: "Norge", dk: "Danmark", se: "Sverige" };
+    var PDFJS_SRC = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    var PDFJS_SRI = "sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e";
+    var PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    var docsEl = document.getElementById("docs");
+    var docsCountry = "";
+    var docsUploaders = [];
+    var docsUsers = {};
+    var pdfJsLoad = null;
+
+    function setDocsStatus(id, text, kind) {
+      var el = document.getElementById(id);
+      el.textContent = text;
+      el.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function docsGet(path) {
+      return getIdToken().then(function (token) {
+        return fetch(CHAT_API_URL + path, { headers: token ? { Authorization: "Bearer " + token } : {} });
+      }).then(function (r) {
+        if (r.status === 403) throw new Error("Du har ikke tilgang til å laste opp dokumenter.");
+        if (!r.ok) throw new Error("Kunne ikke hente (" + r.status + ").");
+        return r.json();
+      });
+    }
+
+    function docsPost(path, payload) {
+      return getIdToken().then(function (token) {
+        var headers = { "Content-Type": "application/json" };
+        if (token) headers.Authorization = "Bearer " + token;
+        return fetch(CHAT_API_URL + path, { method: "POST", headers: headers, body: JSON.stringify(payload) });
+      }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (data) {
+          if (!r.ok) throw new Error(data.error && data.error.length > 20 ? data.error : "Feil fra serveren (" + r.status + ").");
+          return data;
+        });
+      });
+    }
+
+    function renderDocs(data) {
+      docsCountry = data.country;
+      document.getElementById("docs-sub").textContent = "Gjelder brukere logget inn med recover." + data.country + " (" + COUNTRY_NAMES[data.country] + ")";
+      document.getElementById("docs-list-title").textContent = "Dokumenter for " + COUNTRY_NAMES[data.country];
+      var pct = Math.min(100, Math.round(data.total / data.limit * 100));
+      document.getElementById("docs-usage-bar").style.width = pct + "%";
+      document.getElementById("docs-usage").textContent = data.docs.length + (data.docs.length === 1 ? " dokument · " : " dokumenter · ") + data.total.toLocaleString("nb-NO") +
+        " av " + data.limit.toLocaleString("nb-NO") + " tegn brukt (" + pct + " %)";
+      var list = document.getElementById("docs-list");
+      list.innerHTML = "";
+      data.docs.slice().sort(function (a, b) { return a.name.localeCompare(b.name, "nb"); }).forEach(function (d) {
+        var item = document.createElement("div");
+        item.className = "log-item doc-item";
+        var name = document.createElement("strong"); name.textContent = d.name; item.appendChild(name);
+        var meta = document.createElement("div"); meta.className = "log-meta";
+        [new Date(d.time).toLocaleString("nb-NO"), d.by, d.chars.toLocaleString("nb-NO") + " tegn"].forEach(function (txt) {
+          var sp = document.createElement("span"); sp.textContent = txt; meta.appendChild(sp);
+        });
+        item.appendChild(meta);
+        var del = document.createElement("button");
+        del.type = "button"; del.className = "btn"; del.textContent = "Slett";
+        del.addEventListener("click", function () {
+          if (!confirm("Slette «" + d.name + "»? Arne slutter å bruke det med en gang.")) return;
+          docsPost("/docs/delete", { country: docsCountry, id: d.id }).then(renderDocs).catch(function (err) {
+            setDocsStatus("docs-status-msg", err.message, "err");
+          });
+        });
+        item.appendChild(del);
+        list.appendChild(item);
+      });
+      if (!data.docs.length) list.textContent = "Ingen dokumenter ennå.";
+    }
+
+    function loadDocs(country) {
+      setDocsStatus("docs-status-msg", "Henter …");
+      return docsGet("/docs" + (country ? "?country=" + country : "")).then(function (data) {
+        setDocsStatus("docs-status-msg", "");
+        document.getElementById("docs-country-field").hidden = !data.admin;
+        document.getElementById("docs-country").value = data.country;
+        renderDocs(data);
+      }).catch(function (err) { setDocsStatus("docs-status-msg", err.message, "err"); });
+    }
+
+    function loadPdfJs() {
+      if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+      if (!pdfJsLoad) {
+        pdfJsLoad = new Promise(function (resolve, reject) {
+          var s = document.createElement("script");
+          s.src = PDFJS_SRC;
+          s.integrity = PDFJS_SRI;
+          s.crossOrigin = "anonymous";
+          s.referrerPolicy = "no-referrer";
+          s.onload = function () {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+            resolve(window.pdfjsLib);
+          };
+          s.onerror = function () { pdfJsLoad = null; reject(new Error("Klarte ikke å laste PDF-leseren.")); };
+          document.head.appendChild(s);
+        });
+      }
+      return pdfJsLoad;
+    }
+
+    // Text of a PDF, page by page, keeping line breaks.
+    function pdfText(file) {
+      return Promise.all([loadPdfJs(), file.arrayBuffer()]).then(function (res) {
+        return res[0].getDocument({ data: res[1] }).promise;
+      }).then(function (pdf) {
+        var pages = [];
+        for (var i = 1; i <= pdf.numPages; i++) pages.push(i);
+        return Promise.all(pages.map(function (n) {
+          return pdf.getPage(n).then(function (page) { return page.getTextContent(); }).then(function (content) {
+            return content.items.map(function (it) { return it.str + (it.hasEOL ? "\n" : ""); }).join("");
+          });
+        })).then(function (texts) {
+          return texts.map(function (t, i) { return pdf.numPages > 1 ? "[Side " + (i + 1) + "]\n" + t : t; }).join("\n\n");
+        });
+      });
+    }
+
+    function fileText(file) {
+      return /\.pdf$/i.test(file.name) || file.type === "application/pdf" ? pdfText(file) : file.text();
+    }
+
+    function uploadDocs() {
+      var files = Array.prototype.slice.call(document.getElementById("docs-files").files);
+      if (!files.length) return setDocsStatus("docs-status-msg", "Velg minst ett dokument.", "err");
+      var done = 0, failed = [];
+      setDocsStatus("docs-status-msg", "Leser og laster opp …");
+      return files.reduce(function (chain, file) {
+        return chain.then(function () {
+          setDocsStatus("docs-status-msg", "Laster opp «" + file.name + "» (" + (done + failed.length + 1) + " av " + files.length + ") …");
+          return fileText(file).then(function (text) {
+            if (text.replace(/\s|\[Side \d+\]/g, "").length < 30) throw new Error("ingen tekst funnet (skannet PDF?)");
+            return docsPost("/docs/upload", { country: docsCountry, name: file.name.replace(/\.(pdf|txt|md)$/i, ""), text: text });
+          }).then(function (data) { done++; renderDocs(data); }).catch(function (err) {
+            failed.push(file.name + ": " + err.message);
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        document.getElementById("docs-files").value = "";
+        setDocsStatus("docs-status-msg", done + " av " + files.length + " lastet opp." + (failed.length ? " Feilet – " + failed.join(" · ") : ""),
+          failed.length ? "err" : "ok");
+      });
+    }
+
+    function renderDocsAccess() {
+      var byCountry = { no: [], dk: [], se: [] };
+      var emails = Object.keys(docsUsers);
+      docsUploaders.forEach(function (e) { if (emails.indexOf(e) === -1) emails.push(e); });
+      emails.forEach(function (e) {
+        var m = /@recover\.(no|dk|se)$/.exec(e);
+        if (m) byCountry[m[1]].push(e);
+      });
+      var html = "";
+      ["no", "dk", "se"].forEach(function (c) {
+        if (!byCountry[c].length) return;
+        html += '<fieldset class="opts"><legend>' + COUNTRY_NAMES[c] + "</legend>";
+        byCountry[c].sort().forEach(function (e) {
+          var name = docsUsers[e] && docsUsers[e].name ? docsUsers[e].name + " – " : "";
+          html += '<label><input type="checkbox" data-uploader value="' + escapeHtml(e) + '"' +
+            (docsUploaders.indexOf(e) !== -1 ? " checked" : "") + "> " + escapeHtml(name + e) + "</label>";
+        });
+        html += "</fieldset>";
+      });
+      document.getElementById("docs-users").innerHTML = html || '<p class="hint">Ingen har logget inn ennå.</p>';
+    }
+
+    function collectUploaders() {
+      return Array.prototype.map.call(document.querySelectorAll("[data-uploader]:checked"), function (cb) { return cb.value; });
+    }
+
+    function openDocs() {
+      docsEl.hidden = false;
+      document.getElementById("docs-access").hidden = !isAdminUser();
+      loadDocs("");
+      if (isAdminUser()) {
+        docsGet("/admin/uploaders").then(function (data) {
+          docsUploaders = data.uploaders || [];
+          docsUsers = data.users || {};
+          renderDocsAccess();
+        }).catch(function (err) { setDocsStatus("docs-access-status", err.message, "err"); });
+      }
+    }
+
+    document.getElementById("open-docs").addEventListener("click", openDocs);
+    document.getElementById("docs-close").addEventListener("click", function () { docsEl.hidden = true; });
+    document.getElementById("docs-country").addEventListener("change", function () { loadDocs(this.value); });
+    document.getElementById("docs-upload").addEventListener("click", uploadDocs);
+    document.getElementById("docs-add-user").addEventListener("click", function () {
+      var input = document.getElementById("docs-new-user");
+      var email = input.value.trim().toLowerCase();
+      if (!/@recover\.(no|dk|se)$/.test(email)) return setDocsStatus("docs-access-status", "Bare e-post på recover.no, recover.dk eller recover.se.", "err");
+      docsUploaders = collectUploaders();
+      if (docsUploaders.indexOf(email) === -1) docsUploaders.push(email);
+      input.value = "";
+      setDocsStatus("docs-access-status", "");
+      renderDocsAccess();
+    });
+    document.getElementById("docs-save-access").addEventListener("click", function () {
+      setDocsStatus("docs-access-status", "Lagrer …");
+      docsPost("/admin/uploaders", { uploaders: collectUploaders() }).then(function (data) {
+        docsUploaders = data.uploaders;
+        renderDocsAccess();
+        setDocsStatus("docs-access-status", "Lagret. " + data.uploaders.length + " personer kan laste opp.", "ok");
+      }).catch(function (err) { setDocsStatus("docs-access-status", err.message, "err"); });
     });
 
     // ---- AI log (admin only; the Worker checks the sign-in, the link is just hidden for others) ----
