@@ -79,9 +79,9 @@ Tjenestebil, bilforsikring og bilordninger (Norge):
 Videoer:
 - Noen steg i FAQ-en har en videomarkør som [[video:utlegg-app]]. Når du svarer på noe som har en slik markør, ta med markøren nøyaktig slik den står, alene på egen linje, rett etter stegene den hører til. Ikke lag nye markører og ikke skriv lenker til videoene selv.
 
-Bestilling av skriver (kun Norge):
-- Printerbestillingen gjelder foreløpig bare Norge. Skal skriveren til et annet land, eller skriver brukeren på et annet språk enn norsk og det er uklart hvilket land det gjelder, spør om landet. Gjelder det ikke Norge, si at bestilling for andre land kommer senere, og henvis til Iver support.
-- Når noen vil bestille skriver/printer, gi en kort oversikt over modellene og prisene og tilby skjemaet med markøren [[form:printer]] alene på egen linje. Vil brukeren heller at du fyller ut i chatten, gjør det.
+Bestilling av skriver (Norge og Danmark):
+- Norge og Danmark har hver sine Canon-modeller og priser (se FAQ-en). Brukere i Danmark får bare de danske modellene (dk_…) og priser i danske kroner; brukere i Norge bare de norske. Gjelder det et annet land (for eksempel Sverige), si at bestilling for det landet kommer senere, og henvis til Iver support.
+- Når noen vil bestille skriver/printer, gi en kort oversikt over modellene og prisene for brukerens land og tilby skjemaet med markøren [[form:printer]] alene på egen linje. Vil brukeren heller at du fyller ut i chatten, gjør det.
 - Samle inn det som trengs (se FAQ-en), noen få spørsmål om gangen. Start med modell og antall – hjelp brukeren å velge ut fra behov (A3 eller bare A4, volum, kortleser) og nevn månedsprisen.
 - Ikke gjett verdier. Er noe uklart, spør. Ikke spør om fakturainformasjon – den håndteres av Iver.
 - Når alt er samlet inn, vis en kort oppsummering og spør om den stemmer. Kall verktøyet lag_printerbestilling først når brukeren har bekreftet.
@@ -105,7 +105,7 @@ const nullableString = { type: ["string", "null"] };
 const PRINTER_ORDER_TOOL = {
   name: "lag_printerbestilling",
   description:
-    "Lager en ferdig utfylt printerbestilling (Canon-bestillingsskjema for Recover) som brukeren kan sende på e-post til Iver servicedesk. Kall kun når all informasjon er samlet inn og brukeren har bekreftet oppsummeringen.",
+    "Lager en ferdig utfylt printerbestilling (Canon-bestillingsskjema for Recover, Norge eller Danmark) som brukeren kan sende på e-post til Iver servicedesk. Bruk bare modellene for brukerens land, aldri norske og danske i samme bestilling. Kall kun når all informasjon er samlet inn og brukeren har bekreftet oppsummeringen.",
   strict: true,
   input_schema: {
     type: "object",
@@ -123,7 +123,8 @@ const PRINTER_ORDER_TOOL = {
           additionalProperties: false,
           required: ["modell", "antall"],
           properties: {
-            modell: { type: "string", enum: ["bordmodell", "mfp_liten_a4", "mfp_medium_a4a3", "mfp_stor_a4a3"] },
+            // Norway: bordmodell … mfp_stor_a4a3. Denmark: dk_… (never mixed in one order).
+            modell: { type: "string", enum: ["bordmodell", "mfp_liten_a4", "mfp_medium_a4a3", "mfp_stor_a4a3", "dk_c331", "dk_c3130i", "dk_c5140i", "dk_c5140i_booklet"] },
             antall: { type: "integer" },
           },
         },
