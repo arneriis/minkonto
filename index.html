@@ -1737,6 +1737,7 @@
     // ---- Spør Arne (chat) ----
     var chatHistory = [];
     var faqSections = null;
+    var faqLang = null;
     var busy = false;
     var chatSession = 0;
     var chatEl = document.getElementById("chat");
@@ -2182,10 +2183,12 @@
     }
 
     function loadFaq() {
-      if (faqSections) return Promise.resolve(faqSections);
+      // Per country (sign-in domain; for the admin the chosen language), so reload when the language changes.
+      if (faqSections && faqLang === currentLang) return Promise.resolve(faqSections);
+      faqLang = currentLang;
       // The FAQ is internal: fetched from the Worker with the user's sign-in, never published on the site.
       return getIdToken().then(function (token) {
-        return fetch(CHAT_API_URL + "/faq", { headers: token ? { Authorization: "Bearer " + token } : {} });
+        return fetch(CHAT_API_URL + "/faq?lang=" + encodeURIComponent(currentLang), { headers: token ? { Authorization: "Bearer " + token } : {} });
       }).then(function (r) {
         if (!r.ok) throw new Error("faq " + r.status);
         return r.text();
