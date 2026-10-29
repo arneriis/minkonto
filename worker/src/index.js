@@ -461,16 +461,51 @@ function docsMeta(country, docs) {
   };
 }
 
-// Same document name again replaces the old version.
+// A user's job title checked with Microsoft Graph (their own User.Read token), so documents for some
+// titles can't be reached by claiming another title. Cached for a few hours per user.
+const TITLE_TTL = 6 * 3600;
+
+async function verifiedTitle(env, user, graphToken) {
+  const email = userEmail(user);
+  if (!email) return null;
+  const cached = await env.STATS.get(`jt:${email}`, "json");
+  if (cached) return cached.title;
+  if (typeof graphToken !== "string" || !graphToken) return null;
+  const r = await fetch("https://graph.microsoft.com/v1.0/me?$select=jobTitle,userPrincipalName,mail", {
+    headers: { Authorization: `Bearer ${graphToken}` },
+  }).catch(() => null);
+  if (!r || !r.ok) return null;
+  const me = await r.json().catch(() => ({}));
+  if (![me.userPrincipalName, me.mail].some((e) => String(e || "").toLowerCase() === email)) return null;
+  const title = cleanTitle(me.jobTitle);
+  await env.STATS.put(`jt:${email}`, JSON.stringify({ title }), { expirationTtl: TITLE_TTL });
+  return title;
+}
+
+// Which job titles a document is for: ["*"] = everyone; an empty list = nobody (parked).
+function cleanDocTitles(list) {
+  if (!Array.isArray(list)) return ["*"];
+  const titles = [...new Set(list.map((t) => (t === "*" ? "*" : cleanTitle(t))))].slice(0, MAX_TITLES);
+  return titles.includes("*") ? ["*"] : titles;
+}
+
+function docForTitle(doc, title) {
+  const titles = doc.titles || ["*"];
+  return titles.includes("*") || (title !== null && titles.includes(title));
+}
+
+// Same document name again replaces the old version (and keeps who it is for).
 async function saveDoc(env, country, user, body) {
   const name = String(body.name || "").trim().replace(/\s+/g, " ").slice(0, 200);
   const text = String(body.text || "").replace(/\r\n?/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   if (!name || !text) return { error: "empty" };
   if (text.length > DOC_MAX_CHARS) return { error: "too_large", chars: text.length, max: DOC_MAX_CHARS };
-  const docs = (await readDocs(env, country)).filter((d) => d.name !== name);
+  const all = await readDocs(env, country);
+  const old = all.find((d) => d.name === name);
+  const docs = all.filter((d) => d !== old);
   const total = docs.reduce((n, d) => n + d.chars, 0) + text.length;
   if (total > COUNTRY_MAX_CHARS) return { error: "full", total, max: COUNTRY_MAX_CHARS };
-  docs.push({ id: crypto.randomUUID().slice(0, 8), name, by: userEmail(user), time: Date.now(), chars: text.length, text });
+  docs.push({ id: crypto.randomUUID().slice(0, 8), name, by: userEmail(user), time: Date.now(), chars: text.length, titles: old?.titles || ["*"], text });
   await env.STATS.put(`kdocs:${country}`, JSON.stringify(docs));
   return docsMeta(country, docs);
 }
@@ -640,7 +675,8 @@ export default {
       if (!(await canUpload(env, user))) return json({ error: "forbidden" }, 403, cors);
       const country = docsCountry(env, user, new URL(request.url).searchParams.get("country"));
       if (!country) return json({ error: "no_country" }, 403, cors);
-      return json({ ...docsMeta(country, await readDocs(env, country)), admin: isAdmin(env, user) }, 200, { ...cors, "Cache-Control": "private, no-store" });
+      const titles = Object.keys((await env.STATS.get("titles", "json")) || {});
+      return json({ ...docsMeta(country, await readDocs(env, country)), admin: isAdmin(env, user), titles }, 200, { ...cors, "Cache-Control": "private, no-store" });
     }
     if (request.method === "GET" && path === "/admin/uploaders") {
       if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
@@ -670,10 +706,18 @@ export default {
       ctx.waitUntil(Promise.all([title ? addTitles(env, [title]) : null, noteVisit(env, user, title)]).catch(() => {}));
       return json({ ...(await readMenu(env)), canUpload: await canUpload(env, user), isAdmin: isAdmin(env, user), user: userEmail(user) }, 200, cors);
     }
-    if (path === "/docs/upload" || path === "/docs/delete") {
+    if (path === "/docs/upload" || path === "/docs/delete" || path === "/docs/titles") {
       if (!(await canUpload(env, user))) return json({ error: "forbidden" }, 403, cors);
       const country = docsCountry(env, user, body.country);
       if (!country) return json({ error: "no_country" }, 403, cors);
+      if (path === "/docs/titles") {
+        const docs = await readDocs(env, country);
+        const doc = docs.find((d) => d.id === body.id);
+        if (!doc) return json({ error: "not_found" }, 404, cors);
+        doc.titles = cleanDocTitles(body.titles);
+        await env.STATS.put(`kdocs:${country}`, JSON.stringify(docs));
+        return json(docsMeta(country, docs), 200, cors);
+      }
       if (path === "/docs/delete") {
         const docs = (await readDocs(env, country)).filter((d) => d.id !== body.id);
         await env.STATS.put(`kdocs:${country}`, JSON.stringify(docs));
@@ -746,10 +790,11 @@ export default {
     const mobilityToken = typeof body.mobilityToken === "string" && body.mobilityToken ? body.mobilityToken : null;
     const confirmed = body.confirmed === true;
 
+    const jobTitle = user ? await verifiedTitle(env, user, body.graphToken).catch(() => null) : null;
     // The FAQ-heavy system prompt is identical across requests (per country and language) – cache it to cut cost per question.
     const country = knowledgeCountry(env, user, lang);
     const system = [{ type: "text", text: systemPrompt(FAQ_BY_COUNTRY[country || "none"], lang), cache_control: { type: "ephemeral" } }];
-    const countryDocs = country ? await readDocs(env, country) : [];
+    const countryDocs = country ? (await readDocs(env, country)).filter((d) => docForTitle(d, jobTitle)) : [];
     if (countryDocs.length) {
       system.push({
         type: "text",
@@ -766,7 +811,7 @@ export default {
       time: Date.now(),
       user: userEmail(user) || "ukjent",
       name: user?.name || "",
-      title: typeof body.jobTitle === "string" ? cleanTitle(body.jobTitle) : null,
+      title: jobTitle,
       lang,
       question: lastUser.slice(0, 2000),
       turns: messages.length,

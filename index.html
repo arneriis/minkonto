@@ -511,7 +511,9 @@
     .doc-list { display: grid; gap: 8px; }
     .doc-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
     .doc-item .log-meta { grid-column: 1; }
-    .doc-item button { grid-row: 1 / span 2; grid-column: 2; }
+    .doc-item > button { grid-row: 1 / span 2; grid-column: 2; }
+    .doc-item > details { grid-column: 1 / -1; }
+    .doc-item > details > summary { cursor: pointer; font-size: 13px; color: var(--navy); font-weight: 600; margin-bottom: 6px; }
     .usage-bar { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
     .usage-bar span { display: block; height: 100%; background: var(--navy); }
     .circ { display: grid; grid-template-columns: 44px 1fr 44px; gap: 4px 8px; align-items: center; font-size: 14px; }
@@ -1520,6 +1522,15 @@
         watchVideo: "Se video",
         newChat: "Ny chat",
         logout: "Logg ut",
+        docsVisibleFor: "Arne bruker dokumentet for",
+        docsAll: "Alle",
+        docsNoTitle: "(ingen stilling)",
+        docsForAll: "Alle",
+        docsForOne: "1 stilling",
+        docsForMany: "{n} stillinger",
+        docsForNone: "Ingen",
+        docsTitlesHint: "Stillingen hentes fra Entra og kontrolleres av serveren.",
+        docsTitlesSaved: "Lagret.",
         signinTitle: "Logg inn",
         signinText: "Logg inn med Recover-kontoen for å se flere snarveier og spørre Arne",
         loggedInAs: "Innlogget som",
@@ -1624,6 +1635,15 @@
         watchVideo: "Se video",
         newChat: "Ny chatt",
         logout: "Logga ut",
+        docsVisibleFor: "Arne använder dokumentet för",
+        docsAll: "Alla",
+        docsNoTitle: "(ingen befattning)",
+        docsForAll: "Alla",
+        docsForOne: "1 befattning",
+        docsForMany: "{n} befattningar",
+        docsForNone: "Ingen",
+        docsTitlesHint: "Befattningen hämtas från Entra och kontrolleras av servern.",
+        docsTitlesSaved: "Sparat.",
         signinTitle: "Logga in",
         signinText: "Logga in med ditt Recover-konto för att se fler genvägar och fråga Arne",
         loggedInAs: "Inloggad som",
@@ -1728,6 +1748,15 @@
         watchVideo: "Se video",
         newChat: "Ny chat",
         logout: "Log ud",
+        docsVisibleFor: "Arne bruger dokumentet for",
+        docsAll: "Alle",
+        docsNoTitle: "(ingen stilling)",
+        docsForAll: "Alle",
+        docsForOne: "1 stilling",
+        docsForMany: "{n} stillinger",
+        docsForNone: "Ingen",
+        docsTitlesHint: "Stillingen hentes fra Entra og kontrolleres af serveren.",
+        docsTitlesSaved: "Gemt.",
         signinTitle: "Log ind",
         signinText: "Log ind med din Recover-konto for at se flere genveje og spørge Arne",
         loggedInAs: "Logget ind som",
@@ -1832,6 +1861,15 @@
         watchVideo: "Watch video",
         newChat: "New chat",
         logout: "Sign out",
+        docsVisibleFor: "Arne uses the document for",
+        docsAll: "Everyone",
+        docsNoTitle: "(no job title)",
+        docsForAll: "Everyone",
+        docsForOne: "1 job title",
+        docsForMany: "{n} job titles",
+        docsForNone: "Nobody",
+        docsTitlesHint: "The job title comes from Entra and is checked by the server.",
+        docsTitlesSaved: "Saved.",
         signinTitle: "Sign in",
         signinText: "Sign in with your Recover account to see more shortcuts and ask Arne",
         loggedInAs: "Signed in as",
@@ -2529,13 +2567,13 @@
     }
 
     function askAi(confirmed) {
-      return Promise.all([getIdToken(), getMobilityToken()]).then(function (tokens) {
+      return Promise.all([getIdToken(), getMobilityToken(), getGraphToken()]).then(function (tokens) {
         var headers = { "Content-Type": "application/json" };
         if (tokens[0]) headers.Authorization = "Bearer " + tokens[0];
         return fetch(CHAT_API_URL, {
           method: "POST",
           headers: headers,
-          body: JSON.stringify({ messages: chatHistory, lang: currentLang, mobilityToken: tokens[1], confirmed: Boolean(confirmed), jobTitle: jobTitle })
+          body: JSON.stringify({ messages: chatHistory, lang: currentLang, mobilityToken: tokens[1], confirmed: Boolean(confirmed), graphToken: tokens[2] })
         });
       }).then(function (r) {
         if (r.status === 401) {
@@ -3727,6 +3765,13 @@
 
     function titleKey() { return "minkonto.jobtitle." + (account ? account.homeAccountId : ""); }
 
+    // The user's own Microsoft Graph token (User.Read): the Worker checks the job title with it.
+    function getGraphToken() {
+      if (!account || !msalApp) return Promise.resolve(null);
+      return msalApp.acquireTokenSilent({ scopes: ["User.Read"], account: account })
+        .then(function (r) { return r.accessToken; }).catch(function () { return null; });
+    }
+
     function fetchJobTitle() {
       if (!account) return Promise.resolve(null);
       return msalApp.acquireTokenSilent({ scopes: ["User.Read"], account: account }).then(function (r) {
@@ -4056,6 +4101,7 @@
     var docsUsers = {};
     var pdfJsLoad = null;
     var docsData = null;
+    var docsOpen = {};
 
     // A string in the chosen language with {name} placeholders filled in.
     function tf(key, vars) {
@@ -4103,6 +4149,7 @@
     }
 
     function renderDocs(data) {
+      if (!data.titles && docsData && docsData.country === data.country) data.titles = docsData.titles; // upload/delete answers leave them out
       docsData = data;
       docsCountry = data.country;
       document.getElementById("docs-sub").textContent = tf("docsSub", { cc: data.country, country: countryName(data.country) });
@@ -4125,6 +4172,7 @@
           var sp = document.createElement("span"); sp.textContent = txt; meta.appendChild(sp);
         });
         item.appendChild(meta);
+        item.appendChild(docTitlesBox(d, data.titles || []));
         var del = document.createElement("button");
         del.type = "button"; del.className = "btn"; del.textContent = t("docsDelete");
         del.addEventListener("click", function () {
@@ -4137,6 +4185,46 @@
         list.appendChild(item);
       });
       if (!data.docs.length) list.textContent = t("docsNone");
+    }
+
+    function docTitlesSummary(titles) {
+      if (titles.indexOf("*") !== -1) return t("docsForAll");
+      if (!titles.length) return t("docsForNone");
+      return titles.length === 1 ? t("docsForOne") : tf("docsForMany", { n: titles.length });
+    }
+
+    // Who Arne uses a document for: «Alle» or picked job titles (saved at once).
+    function docTitlesBox(doc, known) {
+      var titles = doc.titles || ["*"];
+      var all = titles.indexOf("*") !== -1;
+      var list = known.slice();
+      titles.forEach(function (x) { if (x !== "*" && x !== "" && list.indexOf(x) === -1) list.push(x); });
+      list.sort(function (a, b) { return a.localeCompare(b, t("locale")); });
+      var box = document.createElement("details");
+      box.open = Boolean(docsOpen[doc.id]);
+      box.addEventListener("toggle", function () { docsOpen[doc.id] = box.open; });
+      var html = "<summary>" + escapeHtml(t("docsVisibleFor")) + ": <span data-doc-summary>" + escapeHtml(docTitlesSummary(titles)) + "</span></summary>";
+      html += '<fieldset class="opts"><legend>' + escapeHtml(t("docsTitlesHint")) + "</legend>";
+      html += '<label><input type="checkbox" data-doc-all' + (all ? " checked" : "") + "> <strong>" + escapeHtml(t("docsAll")) + "</strong></label>";
+      [""].concat(list).forEach(function (x) {
+        html += '<label' + (all ? ' class="is-off"' : "") + '><input type="checkbox" data-doc-title value="' + escapeHtml(x) + '"' +
+          (titles.indexOf(x) !== -1 ? " checked" : "") + (all ? " disabled" : "") + "> " + escapeHtml(x || t("docsNoTitle")) + "</label>";
+      });
+      box.innerHTML = html + "</fieldset>";
+      box.addEventListener("change", function () {
+        var allOn = box.querySelector("[data-doc-all]").checked;
+        var picked = allOn ? ["*"] : Array.prototype.map.call(box.querySelectorAll("[data-doc-title]:checked"), function (cb) { return cb.value; });
+        box.querySelectorAll("[data-doc-title]").forEach(function (cb) {
+          cb.disabled = allOn;
+          cb.parentNode.classList.toggle("is-off", allOn);
+        });
+        box.querySelector("[data-doc-summary]").textContent = docTitlesSummary(picked);
+        docsPost("/docs/titles", { country: docsCountry, id: doc.id, titles: picked }).then(function (data) {
+          docsData = Object.assign({}, docsData, { docs: data.docs });
+          setDocsStatus("docs-status-msg", t("docsTitlesSaved"), "ok");
+        }).catch(function (err) { setDocsStatus("docs-status-msg", err.message, "err"); });
+      });
+      return box;
     }
 
     function loadDocs(country) {
