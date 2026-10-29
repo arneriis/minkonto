@@ -925,6 +925,12 @@
     <div class="sheet-body">
       <div class="sheet-inner">
         <div class="card">
+          <h3>Synlige menyvalg per land</h3>
+          <p class="hint">Kryss av menyvalgene hvert land skal se. Landet bestemmes av kontoen folk er logget inn med (recover.no, recover.dk, recover.se). Du selv ser landet til språket du har valgt, så du kan sjekke hvert land. Før innlogging vises valgene som før.</p>
+          <div id="menu-countries"></div>
+        </div>
+        <div class="card">
+          <h3>Skjul per stilling</h3>
           <p class="hint">Kryss av stillingene som <strong>ikke</strong> skal se et menyvalg. Stillingen hentes fra Entra (feltet «Job title») når noen logger inn, og listen fylles opp etter hvert som folk logger inn. Spør Arne og skjemaene han tilbyr påvirkes ikke.</p>
           <p class="hint" id="menu-own-title"></p>
           <div class="sheet-actions">
@@ -940,6 +946,17 @@
         <div class="card">
           <div class="sheet-actions"><button type="button" class="btn primary" id="menu-save">Lagre</button></div>
           <p class="status" id="menu-status" role="status"></p>
+        </div>
+        <div class="card">
+          <h3>Administratorer</h3>
+          <p class="hint">Administratorer ser AI-loggen, Menyvalg og Dokumenter, og kan endre alt her. Arne kan ikke fjernes.</p>
+          <div id="menu-admins" class="opts"></div>
+          <div class="row-add">
+            <div class="field"><label for="menu-new-admin">Legg til administrator (e-post)</label><input id="menu-new-admin" type="email" autocomplete="off" placeholder="navn@recover.no"></div>
+            <button type="button" class="btn" id="menu-add-admin">Legg til</button>
+          </div>
+          <div class="sheet-actions"><button type="button" class="btn primary" id="menu-save-admins">Lagre administratorer</button></div>
+          <p class="status" id="menu-admins-status" role="status"></p>
         </div>
       </div>
     </div>
@@ -1847,10 +1864,7 @@
       document.title = t.brand;
       document.getElementById("lang").value = lang;
       currentLang = lang;
-      // Printer ordering is only set up for Norway so far.
-      document.getElementById("order-printer").parentNode.hidden = lang !== "nb";
-      document.getElementById("order-skade").parentNode.hidden = lang !== "nb";
-      document.getElementById("order-mobile").parentNode.hidden = lang !== "nb";
+      applyMenu();
       renderChips();
       if (docsData && !docsEl.hidden) { renderDocs(docsData); renderDocsAccess(); }
     }
@@ -3672,10 +3686,27 @@
       });
     }
 
+
+    // The sign-in domain's country; the admin sees the country of the chosen language instead.
+    function menuCountry() {
+      if (!account) return null;
+      var byLang = { nb: "no", da: "dk", sv: "se" }[currentLang];
+      if (isAdminUser() && byLang) return byLang;
+      var m = /@recover\.(no|dk|se)$/.exec(String(account.username || "").toLowerCase());
+      return m ? m[1] : null;
+    }
+
+    // Signed in: the country's visible cards minus those hidden for the job title.
+    // Signed out (or no rules yet): as before – the Norway-only cards follow the language.
     function applyMenu() {
+      var rules = menuRules || { hidden: {} }; // applyLanguage runs before the rules are set up
+      var country = menuCountry();
+      var visible = country && rules.visible ? rules.visible[country] : null;
       document.querySelectorAll("[data-card]").forEach(function (li) {
-        var hiddenFor = menuRules.hidden[li.getAttribute("data-card")] || [];
-        li.classList.toggle("menu-hidden", jobTitle !== null && hiddenFor.indexOf(jobTitle) !== -1);
+        var id = li.getAttribute("data-card");
+        var hiddenFor = rules.hidden[id] || [];
+        var hide = visible ? visible.indexOf(id) === -1 : ["printer", "skade", "mobile"].indexOf(id) !== -1 && currentLang !== "nb";
+        li.classList.toggle("menu-hidden", hide || (jobTitle !== null && hiddenFor.indexOf(jobTitle) !== -1));
       });
     }
 
@@ -3710,7 +3741,48 @@
       el.className = "status" + (kind ? " " + kind : "");
     }
 
+    var COUNTRY_LABELS = { no: "Norge (recover.no)", dk: "Danmark (recover.dk)", se: "Sverige (recover.se)" };
+    var menuAdmins = [];
+    var menuPermanentAdmins = [];
+
+    function renderMenuCountries() {
+      var html = "";
+      ["no", "dk", "se"].forEach(function (c) {
+        var visible = (menuRules.visible && menuRules.visible[c]) || [];
+        html += '<fieldset class="opts"><legend>' + COUNTRY_LABELS[c] + "</legend>";
+        MENU_CARDS.forEach(function (card) {
+          html += '<label><input type="checkbox" data-menu-visible="' + c + '" value="' + card.id + '"' +
+            (visible.indexOf(card.id) !== -1 ? " checked" : "") + "> " + escapeHtml(card.label) + "</label>";
+        });
+        html += "</fieldset>";
+      });
+      document.getElementById("menu-countries").innerHTML = html;
+    }
+
+    function renderMenuAdmins() {
+      var wrap = document.getElementById("menu-admins");
+      wrap.innerHTML = "";
+      menuPermanentAdmins.concat(menuAdmins).forEach(function (email) {
+        var label = document.createElement("label");
+        var fixed = menuPermanentAdmins.indexOf(email) !== -1;
+        label.textContent = email + (fixed ? " (fast)" : "");
+        if (!fixed) {
+          var x = document.createElement("button");
+          x.type = "button"; x.className = "link-btn"; x.textContent = "Fjern";
+          x.setAttribute("aria-label", "Fjern " + email);
+          x.addEventListener("click", function () {
+            menuAdmins = menuAdmins.filter(function (e) { return e !== email; });
+            renderMenuAdmins();
+          });
+          label.appendChild(document.createTextNode(" "));
+          label.appendChild(x);
+        }
+        wrap.appendChild(label);
+      });
+    }
+
     function renderMenuSettings() {
+      renderMenuCountries();
       var own = document.getElementById("menu-own-title");
       own.textContent = jobTitle === null
         ? "Klarte ikke å hente stillingen din fra Entra" + (jobTitleError ? " (" + jobTitleError + ")" : "") + ". Trykk «Gi tilgang» under."
@@ -3740,7 +3812,16 @@
         var id = cb.getAttribute("data-menu-card");
         (hidden[id] = hidden[id] || []).push(cb.value);
       });
-      return { hidden: hidden };
+      var visible = { no: [], dk: [], se: [] };
+      document.querySelectorAll("[data-menu-visible]:checked").forEach(function (cb) {
+        visible[cb.getAttribute("data-menu-visible")].push(cb.value);
+      });
+      return { hidden: hidden, visible: visible };
+    }
+
+    // The saved rules plus this user's own flags from the last /menu answer.
+    function mergeMenuRules(rules) {
+      return { hidden: rules.hidden, visible: rules.visible, canUpload: menuRules.canUpload, isAdmin: menuRules.isAdmin, user: menuRules.user };
     }
 
     function openMenuSettings() {
@@ -3753,7 +3834,10 @@
         if (!r.ok) throw new Error("Kunne ikke hente menyvalg (" + r.status + ").");
         return r.json();
       }).then(function (data) {
-        menuRules = data.menu || { hidden: {} };
+        menuRules = mergeMenuRules(data.menu || { hidden: {} });
+        menuAdmins = data.admins || [];
+        menuPermanentAdmins = data.permanentAdmins || [];
+        renderMenuAdmins();
         menuTitles = (data.titles || []).filter(function (t) { return t !== NO_TITLE; });
         if (jobTitle && menuTitles.indexOf(jobTitle) === -1) menuTitles.push(jobTitle);
         setMenuStatus("");
@@ -3808,6 +3892,28 @@
     }
 
     document.getElementById("menu-entra-titles").addEventListener("click", fetchEntraTitles);
+    document.getElementById("menu-add-admin").addEventListener("click", function () {
+      var input = document.getElementById("menu-new-admin");
+      var email = input.value.trim().toLowerCase();
+      var status = document.getElementById("menu-admins-status");
+      if (!/@recover\.(no|dk|se)$/.test(email)) { status.textContent = "Bare e-post på recover.no, recover.dk eller recover.se."; status.className = "status err"; return; }
+      if (menuAdmins.indexOf(email) === -1 && menuPermanentAdmins.indexOf(email) === -1) menuAdmins.push(email);
+      input.value = "";
+      status.textContent = "Husk å trykke «Lagre administratorer».";
+      status.className = "status";
+      renderMenuAdmins();
+    });
+    document.getElementById("menu-save-admins").addEventListener("click", function () {
+      var status = document.getElementById("menu-admins-status");
+      status.textContent = "Lagrer …"; status.className = "status";
+      workerPost("/admin/admins", { admins: menuAdmins }).then(function (data) {
+        if (!data) throw new Error("save");
+        menuAdmins = data.admins;
+        renderMenuAdmins();
+        status.textContent = "Lagret. Endringen gjelder neste gang hver enkelt åpner siden.";
+        status.className = "status ok";
+      }).catch(function () { status.textContent = "Kunne ikke lagre. Prøv igjen."; status.className = "status err"; });
+    });
     document.getElementById("menu-add-title").addEventListener("click", function () {
       var input = document.getElementById("menu-new-title");
       var title = input.value.trim().replace(/\s+/g, " ");
@@ -3821,7 +3927,7 @@
       setMenuStatus("Lagrer …");
       workerPost("/admin/menu", collectMenuSettings()).then(function (rules) {
         if (!rules) throw new Error("save");
-        menuRules = rules;
+        menuRules = mergeMenuRules(rules);
         try { localStorage.setItem(MENU_CACHE, JSON.stringify(rules)); } catch (e) {}
         applyMenu();
         setMenuStatus("Lagret. Endringen gjelder neste gang hver enkelt åpner siden.", "ok");
@@ -4062,8 +4168,11 @@
     var logEntries = [];
     var logCursor = null;
 
+    // Permanent admins here; others the Worker marks as admin in the /menu answer (for this account only).
     function isAdminUser() {
-      return Boolean(account && ADMIN_EMAILS.indexOf(String(account.username || "").toLowerCase()) !== -1);
+      if (!account) return false;
+      var me = String(account.username || "").toLowerCase();
+      return ADMIN_EMAILS.indexOf(me) !== -1 || Boolean(menuRules && menuRules.isAdmin && menuRules.user === me);
     }
 
     function fetchLogs(more) {

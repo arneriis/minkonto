@@ -345,8 +345,16 @@ function cleanTitle(title) {
   return String(title || "").trim().replace(/\s+/g, " ").slice(0, 120);
 }
 
+// Cards each country sees (by sign-in domain) until the admin changes it.
+const DEFAULT_VISIBLE = {
+  no: ["password", "field", "company-portal", "skade"],
+  dk: ["password", "field", "company-portal"],
+  se: ["password", "field", "company-portal"],
+};
+
 async function readMenu(env) {
-  return (await env.STATS.get("menu", "json")) || { hidden: {} };
+  const menu = (await env.STATS.get("menu", "json")) || {};
+  return { hidden: menu.hidden || {}, visible: { ...DEFAULT_VISIBLE, ...menu.visible } };
 }
 
 function cleanMenu(body) {
@@ -355,7 +363,12 @@ function cleanMenu(body) {
     const list = body?.hidden?.[id];
     if (Array.isArray(list) && list.length) hidden[id] = [...new Set(list.map(cleanTitle))].slice(0, MAX_TITLES);
   }
-  return { hidden };
+  const visible = {};
+  for (const c of ["no", "dk", "se"]) {
+    const list = body?.visible?.[c];
+    visible[c] = Array.isArray(list) ? MENU_CARDS.filter((id) => list.includes(id)) : DEFAULT_VISIBLE[c];
+  }
+  return { hidden, visible };
 }
 
 // Job titles seen at sign-in or fetched from Entra by the admin, so the admin can pick from real ones.
@@ -475,9 +488,18 @@ function userEmail(user) {
   return String(user?.preferred_username || user?.email || user?.upn || "").toLowerCase();
 }
 
+// Admins in ADMIN_EMAILS are permanent; more can be added under «Menyvalg» (KV "admins").
+function permanentAdmins(env) {
+  return String(env.ADMIN_EMAILS || "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+async function readAdmins(env) {
+  return (await env.STATS.get("admins", "json")) || [];
+}
+
+// user.extraAdmin is set once per request, right after sign-in is verified.
 function isAdmin(env, user) {
-  const admins = String(env.ADMIN_EMAILS || "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
-  return admins.includes(userEmail(user));
+  return permanentAdmins(env).includes(userEmail(user)) || user?.extraAdmin === true;
 }
 
 async function writeLog(env, entry) {
@@ -584,6 +606,7 @@ export default {
     }
 
     const user = authEnabled(env) ? await verifyUser(request, env) : null;
+    if (user) user.extraAdmin = (await readAdmins(env)).includes(userEmail(user));
     if (authEnabled(env) && !user) {
       return json({ error: "unauthorized" }, 401, cors);
     }
@@ -625,7 +648,7 @@ export default {
     if (request.method === "GET" && path === "/admin/menu") {
       if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
       const titles = (await env.STATS.get("titles", "json")) || {};
-      return json({ menu: await readMenu(env), titles: Object.keys(titles) }, 200, { ...cors, "Cache-Control": "private, no-store" });
+      return json({ menu: await readMenu(env), titles: Object.keys(titles), admins: await readAdmins(env), permanentAdmins: permanentAdmins(env) }, 200, { ...cors, "Cache-Control": "private, no-store" });
     }
     if (request.method !== "POST") return json({ error: "Method not allowed" }, 405, cors);
 
@@ -639,7 +662,7 @@ export default {
     if (path === "/menu") {
       const title = typeof body.title === "string" ? cleanTitle(body.title) : null;
       ctx.waitUntil(Promise.all([title ? addTitles(env, [title]) : null, noteVisit(env, user, title)]).catch(() => {}));
-      return json({ ...(await readMenu(env)), canUpload: await canUpload(env, user) }, 200, cors);
+      return json({ ...(await readMenu(env)), canUpload: await canUpload(env, user), isAdmin: isAdmin(env, user), user: userEmail(user) }, 200, cors);
     }
     if (path === "/docs/upload" || path === "/docs/delete") {
       if (!(await canUpload(env, user))) return json({ error: "forbidden" }, 403, cors);
@@ -652,6 +675,15 @@ export default {
       }
       const result = await saveDoc(env, country, user, body);
       return json(result, result.error ? 400 : 200, cors);
+    }
+    if (path === "/admin/admins") {
+      if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
+      if (!Array.isArray(body.admins)) return json({ error: "admins" }, 400, cors);
+      const permanent = permanentAdmins(env);
+      const list = [...new Set(body.admins.map((e) => String(e).trim().toLowerCase()))]
+        .filter((e) => countryOf(e) && !permanent.includes(e)).slice(0, 50);
+      await env.STATS.put("admins", JSON.stringify(list));
+      return json({ admins: list, permanentAdmins: permanent }, 200, cors);
     }
     if (path === "/admin/uploaders") {
       if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
