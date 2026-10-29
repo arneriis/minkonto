@@ -358,12 +358,37 @@ function cleanMenu(body) {
   return { hidden };
 }
 
-// Job titles seen at sign-in, so the admin can pick from real ones. Only new titles cost a KV write.
-async function noteTitle(env, title) {
+// Job titles seen at sign-in or fetched from Entra by the admin, so the admin can pick from real ones.
+async function addTitles(env, list) {
   const titles = (await env.STATS.get("titles", "json")) || {};
-  if (title in titles || Object.keys(titles).length >= MAX_TITLES) return;
-  titles[title] = Date.now();
-  await env.STATS.put("titles", JSON.stringify(titles));
+  let changed = false;
+  for (const title of list.map(cleanTitle).filter(Boolean)) {
+    if (title in titles || Object.keys(titles).length >= MAX_TITLES) continue;
+    titles[title] = Date.now();
+    changed = true;
+  }
+  if (changed) await env.STATS.put("titles", JSON.stringify(titles));
+}
+
+// Who has signed in (once a day per user is enough), for the admin's user list.
+const MAX_USERS = 3000;
+
+async function noteVisit(env, user, title) {
+  const email = userEmail(user);
+  if (!email) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const users = (await env.STATS.get("users", "json")) || {};
+  const u = users[email];
+  if (u && u.last === today && (title === null || u.title === title)) return;
+  if (!u && Object.keys(users).length >= MAX_USERS) return;
+  users[email] = {
+    name: String(user?.name || u?.name || "").slice(0, 120),
+    title: title === null ? (u?.title ?? null) : title,
+    first: u?.first || today,
+    last: today,
+    days: (u?.days || 0) + (u?.last === today ? 0 : 1),
+  };
+  await env.STATS.put("users", JSON.stringify(users));
 }
 
 // ---- AI log (every question to Arne), readable only by the admin(s) in ADMIN_EMAILS ----
@@ -505,6 +530,10 @@ export default {
       const cursor = new URL(request.url).searchParams.get("cursor");
       return json(await readLogs(env, cursor), 200, { ...cors, "Cache-Control": "private, no-store" });
     }
+    if (request.method === "GET" && path === "/admin/users") {
+      if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
+      return json({ users: (await env.STATS.get("users", "json")) || {} }, 200, { ...cors, "Cache-Control": "private, no-store" });
+    }
     if (request.method === "GET" && path === "/admin/menu") {
       if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
       const titles = (await env.STATS.get("titles", "json")) || {};
@@ -520,8 +549,15 @@ export default {
     }
 
     if (path === "/menu") {
-      if (typeof body.title === "string") ctx.waitUntil(noteTitle(env, cleanTitle(body.title)).catch(() => {}));
+      const title = typeof body.title === "string" ? cleanTitle(body.title) : null;
+      ctx.waitUntil(Promise.all([title ? addTitles(env, [title]) : null, noteVisit(env, user, title)]).catch(() => {}));
       return json(await readMenu(env), 200, cors);
+    }
+    if (path === "/admin/titles") {
+      if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
+      if (!Array.isArray(body.titles)) return json({ error: "titles" }, 400, cors);
+      await addTitles(env, body.titles.slice(0, MAX_TITLES));
+      return json({ titles: Object.keys((await env.STATS.get("titles", "json")) || {}) }, 200, cors);
     }
     if (path === "/admin/menu") {
       if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
@@ -570,6 +606,7 @@ export default {
       time: Date.now(),
       user: userEmail(user) || "ukjent",
       name: user?.name || "",
+      title: typeof body.jobTitle === "string" ? cleanTitle(body.jobTitle) : null,
       lang,
       question: lastUser.slice(0, 2000),
       turns: messages.length,

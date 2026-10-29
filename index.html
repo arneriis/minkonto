@@ -415,6 +415,7 @@
     .usage-table th, .usage-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
     .usage-table th:first-child, .usage-table td:first-child { text-align: left; }
     .usage-table th { color: var(--muted); font-weight: 600; }
+    .usage-table.users th, .usage-table.users td { text-align: left; }
     #usage-card details summary { cursor: pointer; font-size: 13px; color: var(--navy); font-weight: 600; }
     .chat-notice { margin: 0; padding: 4px 16px 0; font-size: 11.5px; color: var(--muted); text-align: center; background: var(--surface); }
     .log-list { display: grid; gap: 10px; }
@@ -840,7 +841,16 @@
         </div>
 
         <div class="card">
-          <div class="field"><label for="logs-search">Søk i spørsmål, svar eller bruker</label><input id="logs-search" type="search" autocomplete="off"></div>
+          <h3>Brukere som har logget inn</h3>
+          <p class="hint" id="users-summary"></p>
+          <details>
+            <summary>Vis alle</summary>
+            <div class="table-wrap"><table class="usage-table users" id="users-table"></table></div>
+          </details>
+        </div>
+
+        <div class="card">
+          <div class="field"><label for="logs-search">Søk i spørsmål, svar, bruker eller stilling</label><input id="logs-search" type="search" autocomplete="off"></div>
           <div class="sheet-actions">
             <button type="button" class="btn" id="logs-refresh">Oppdater</button>
             <button type="button" class="btn" id="logs-csv">Eksporter CSV</button>
@@ -868,7 +878,10 @@
         <div class="card">
           <p class="hint">Kryss av stillingene som <strong>ikke</strong> skal se et menyvalg. Stillingen hentes fra Entra (feltet «Job title») når noen logger inn, og listen fylles opp etter hvert som folk logger inn. Spør Arne og skjemaene han tilbyr påvirkes ikke.</p>
           <p class="hint" id="menu-own-title"></p>
-          <div class="sheet-actions"><button type="button" class="btn" id="menu-consent" hidden>Gi tilgang til stilling i Entra</button></div>
+          <div class="sheet-actions">
+            <button type="button" class="btn" id="menu-consent" hidden>Gi tilgang til stilling i Entra</button>
+            <button type="button" class="btn" id="menu-entra-titles">Hent alle stillinger fra Entra</button>
+          </div>
           <div class="row-add">
             <div class="field"><label for="menu-new-title">Legg til stilling som ikke står i listen</label><input id="menu-new-title" autocomplete="off" placeholder="Skriv nøyaktig som i Entra"></div>
             <button type="button" class="btn" id="menu-add-title">Legg til</button>
@@ -2255,7 +2268,7 @@
         return fetch(CHAT_API_URL, {
           method: "POST",
           headers: headers,
-          body: JSON.stringify({ messages: chatHistory, lang: currentLang, mobilityToken: tokens[1], confirmed: Boolean(confirmed) })
+          body: JSON.stringify({ messages: chatHistory, lang: currentLang, mobilityToken: tokens[1], confirmed: Boolean(confirmed), jobTitle: jobTitle })
         });
       }).then(function (r) {
         if (r.status === 401) {
@@ -2668,6 +2681,9 @@
       resumeIntent();
       finishMobilityLogin();
       loadMenu();
+      var entraTitles = null;
+      try { entraTitles = sessionStorage.getItem(ENTRA_TITLES_INTENT); sessionStorage.removeItem(ENTRA_TITLES_INTENT); } catch (e) {}
+      if (entraTitles && isAdminUser()) openMenuSettings().then(fetchEntraTitles);
     });
     document.getElementById("ask-close").addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) {
@@ -3513,7 +3529,7 @@
     function openMenuSettings() {
       menuSettingsEl.hidden = false;
       setMenuStatus("Henter …");
-      getIdToken().then(function (token) {
+      return getIdToken().then(function (token) {
         return fetch(CHAT_API_URL + "/admin/menu", { headers: token ? { Authorization: "Bearer " + token } : {} });
       }).then(function (r) {
         if (r.status === 403) throw new Error("Du har ikke tilgang til menyvalg.");
@@ -3533,6 +3549,48 @@
     document.getElementById("menu-consent").addEventListener("click", function () {
       msalApp.acquireTokenRedirect({ scopes: ["User.Read"], account: account });
     });
+    // All job titles in Entra (Graph /users, permission User.Read.All – needs admin consent once).
+    var ENTRA_TITLES_INTENT = "minkonto.entratitles";
+
+    function fetchEntraTitles() {
+      setMenuStatus("Henter stillinger fra Entra …");
+      var scopes = ["User.Read.All"];
+      msalApp.acquireTokenSilent({ scopes: scopes, account: account }).catch(function (err) {
+        if (err instanceof msal.InteractionRequiredAuthError || /consent|interaction|login_required|invalid_grant/.test(err && err.errorCode || "")) {
+          try { sessionStorage.setItem(ENTRA_TITLES_INTENT, "1"); } catch (e) {}
+          return msalApp.acquireTokenRedirect({ scopes: scopes, account: account }).then(function () { return new Promise(function () {}); });
+        }
+        throw err;
+      }).then(function (r) {
+        var found = {};
+        function page(url) {
+          return fetch(url, { headers: { Authorization: "Bearer " + r.accessToken } }).then(function (res) {
+            if (!res.ok) throw new Error("Graph " + res.status);
+            return res.json();
+          }).then(function (data) {
+            (data.value || []).forEach(function (u) {
+              var title = String(u.jobTitle || "").trim().replace(/\s+/g, " ");
+              if (title && u.accountEnabled !== false) found[title] = (found[title] || 0) + 1;
+            });
+            return data["@odata.nextLink"] ? page(data["@odata.nextLink"]) : found;
+          });
+        }
+        return page("https://graph.microsoft.com/v1.0/users?$select=jobTitle,accountEnabled&$top=999");
+      }).then(function (found) {
+        var list = Object.keys(found);
+        return workerPost("/admin/titles", { titles: list }).then(function (saved) {
+          if (!saved) throw new Error("Kunne ikke lagre stillingene.");
+          menuRules = collectMenuSettings();
+          list.forEach(function (t) { if (menuTitles.indexOf(t) === -1) menuTitles.push(t); });
+          renderMenuSettings();
+          setMenuStatus(list.length + " stillinger hentet fra Entra.", "ok");
+        });
+      }).catch(function (err) {
+        setMenuStatus("Klarte ikke å hente stillingene fra Entra (" + (err.errorCode || err.message || err) + ").", "err");
+      });
+    }
+
+    document.getElementById("menu-entra-titles").addEventListener("click", fetchEntraTitles);
     document.getElementById("menu-add-title").addEventListener("click", function () {
       var input = document.getElementById("menu-new-title");
       var title = input.value.trim().replace(/\s+/g, " ");
@@ -3587,7 +3645,7 @@
       var list = document.getElementById("logs-list");
       list.innerHTML = "";
       var shown = logEntries.filter(function (e) {
-        return !q || [e.question, e.reply, e.user, e.name, e.error].join(" ").toLowerCase().indexOf(q) !== -1;
+        return !q || [e.question, e.reply, e.user, e.name, e.title, e.error].join(" ").toLowerCase().indexOf(q) !== -1;
       });
       shown.forEach(function (e) {
         var item = document.createElement("div");
@@ -3595,7 +3653,7 @@
         var meta = document.createElement("div");
         meta.className = "log-meta";
         var tokens = e.usage ? (e.usage.input + e.usage.cacheRead + e.usage.cacheWrite) + " inn / " + e.usage.output + " ut" : "";
-        [new Date(e.time).toLocaleString("nb-NO"), (e.name ? e.name + " – " : "") + e.user, e.lang, e.model || "", tokens ? tokens + " tokens" : ""]
+        [new Date(e.time).toLocaleString("nb-NO"), (e.name ? e.name + " – " : "") + e.user, e.title || "", e.lang, e.model || "", tokens ? tokens + " tokens" : ""]
           .filter(Boolean).forEach(function (txt) { var sp = document.createElement("span"); sp.textContent = txt; meta.appendChild(sp); });
         if (e.mobilityConnected) { var tg = document.createElement("span"); tg.className = "tag"; tg.textContent = "Mobility"; meta.appendChild(tg); }
         if (e.confirmed) { var tc = document.createElement("span"); tc.className = "tag"; tc.textContent = "Bekreftet"; meta.appendChild(tc); }
@@ -3628,9 +3686,9 @@
 
     function exportLogsCsv() {
       var cell = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
-      var rows = [["Tid", "Bruker", "Navn", "Språk", "Spørsmål", "Svar", "Verktøy", "Feil", "Tokens inn", "Tokens ut"]];
+      var rows = [["Tid", "Bruker", "Navn", "Stilling", "Språk", "Spørsmål", "Svar", "Verktøy", "Feil", "Tokens inn", "Tokens ut"]];
       logEntries.forEach(function (e) {
-        rows.push([new Date(e.time).toLocaleString("nb-NO"), e.user, e.name, e.lang, e.question, e.reply,
+        rows.push([new Date(e.time).toLocaleString("nb-NO"), e.user, e.name, e.title || "", e.lang, e.question, e.reply,
           (e.tools || []).map(function (tl) { return tl.tool + (tl.submitted ? " (sendt)" : "") + (tl.blocked ? " (blokkert)" : ""); }).join("; "),
           e.error, e.usage ? e.usage.input + e.usage.cacheRead + e.usage.cacheWrite : "", e.usage ? e.usage.output : ""]);
       });
@@ -3673,6 +3731,36 @@
     function fmtNok(usd) { return "≈ kr " + (usd * USD_TO_NOK).toLocaleString("nb-NO", { maximumFractionDigits: usd * USD_TO_NOK < 10 ? 2 : 0 }); }
     function fmtTokens(n) { return n >= 1e6 ? (n / 1e6).toLocaleString("nb-NO", { maximumFractionDigits: 1 }) + " mill." : Math.round(n / 1000).toLocaleString("nb-NO") + " k"; }
 
+    // Everyone who has signed in (recorded once a day per user by the Worker).
+    function fetchUsers() {
+      var summary = document.getElementById("users-summary");
+      var table = document.getElementById("users-table");
+      summary.textContent = "Henter …";
+      getIdToken().then(function (token) {
+        return fetch(CHAT_API_URL + "/admin/users", { headers: token ? { Authorization: "Bearer " + token } : {} });
+      }).then(function (r) {
+        if (!r.ok) throw new Error("Kunne ikke hente brukerne (" + r.status + ").");
+        return r.json();
+      }).then(function (data) {
+        var users = Object.keys(data.users || {}).map(function (email) {
+          var u = data.users[email];
+          return { email: email, name: u.name, title: u.title, first: u.first, last: u.last, days: u.days };
+        }).sort(function (a, b) { return b.last.localeCompare(a.last) || a.email.localeCompare(b.email); });
+        var today = new Date().toISOString().slice(0, 10);
+        var week = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+        summary.textContent = users.length + " brukere totalt · " +
+          users.filter(function (u) { return u.last === today; }).length + " i dag · " +
+          users.filter(function (u) { return u.last >= week; }).length + " siste 7 dager";
+        var html = "<tr><th>Navn</th><th>E-post</th><th>Stilling</th><th>Sist</th><th>Første</th><th>Dager</th></tr>";
+        users.forEach(function (u) {
+          html += "<tr><td>" + escapeHtml(u.name || "") + "</td><td>" + escapeHtml(u.email) + "</td><td>" +
+            escapeHtml(u.title === null || u.title === undefined ? "?" : u.title || "(ingen stilling)") + "</td><td>" +
+            escapeHtml(u.last) + "</td><td>" + escapeHtml(u.first) + "</td><td>" + (u.days || 0) + "</td></tr>";
+        });
+        table.innerHTML = html;
+      }).catch(function (err) { summary.textContent = err.message; });
+    }
+
     function fetchUsage() {
       getIdToken().then(function (token) {
         return fetch(CHAT_API_URL + "/admin/usage", { headers: token ? { Authorization: "Bearer " + token } : {} });
@@ -3714,7 +3802,7 @@
           " kr. Faktisk faktura ser du i console.anthropic.com. Forbruk telles fra " + (rows.length ? rows[rows.length - 1].day.split("-").reverse().join(".") : "i dag") + ".";
       }).catch(function () {});
     }
-    document.getElementById("open-logs").addEventListener("click", function () { logsEl.hidden = false; fetchLogs(false); fetchUsage(); });
+    document.getElementById("open-logs").addEventListener("click", function () { logsEl.hidden = false; fetchLogs(false); fetchUsage(); fetchUsers(); });
     document.getElementById("logs-close").addEventListener("click", function () { logsEl.hidden = true; });
     document.getElementById("logs-refresh").addEventListener("click", function () { fetchLogs(false); fetchUsage(); });
     document.getElementById("logs-more").addEventListener("click", function () { fetchLogs(true); });
