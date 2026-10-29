@@ -317,8 +317,17 @@ async function exchangeMobilityToken(env, body) {
     body: form,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.access_token) return null;
+  if (!res.ok || !data.access_token) {
+    lastMobilityError = `${res.status} ${data.error || ""} ${data.error_description || data.message || ""}`.trim().slice(0, 300);
+    return null;
+  }
   return { access_token: data.access_token, refresh_token: data.refresh_token || null, expires_in: data.expires_in || 0 };
+}
+let lastMobilityError = "";
+
+// Each step of connecting to Mobility goes in the AI log, so the admin can see where it stops for someone.
+async function logMobility(env, user, step, error) {
+  await writeLog(env, { time: Date.now(), user: user || "ukjent", name: "", question: `[Mobility-tilkobling: ${step}]`, error: error || undefined, tools: [] });
 }
 
 // Mobility login held by the Worker, so it also works from a home-screen app: on iOS the login opens in a
@@ -328,13 +337,25 @@ const MOBILITY_LOGIN_TTL = 600;
 const STATE_RE = /^[A-Za-z0-9_-]{16,64}$/;
 
 async function mobilityCallback(env, body) {
-  if (!STATE_RE.test(String(body.state || "")) || !body.code) return false;
+  if (!STATE_RE.test(String(body.state || "")) || !(body.code || body.error)) return false;
   const pending = await env.STATS.get(`mobpkce:${body.state}`, "json");
-  if (!pending) return false;
+  if (!pending) {
+    await logMobility(env, null, "tilbake fra Mobility", "ukjent eller utløpt innlogging (over 10 min?)");
+    return false;
+  }
   await env.STATS.delete(`mobpkce:${body.state}`);
+  // Mobility sent the user back with an error instead of a code (e.g. no access).
+  if (!body.code) {
+    await logMobility(env, pending.user, "avvist av Mobility", `${body.error} ${body.error_description || ""}`.trim().slice(0, 300));
+    return false;
+  }
   const token = await exchangeMobilityToken(env, { code: body.code, code_verifier: pending.verifier, redirect_uri: pending.redirect });
-  if (!token) return false;
+  if (!token) {
+    await logMobility(env, pending.user, "token fra Mobility", lastMobilityError || "ukjent feil");
+    return false;
+  }
   await env.STATS.put(`mobtok:${body.state}`, JSON.stringify({ user: pending.user, token }), { expirationTtl: MOBILITY_LOGIN_TTL });
+  await logMobility(env, pending.user, "innlogget hos Mobility");
   return true;
 }
 
@@ -517,6 +538,35 @@ function docsCountry(env, user, wanted) {
   return countryOf(userEmail(user));
 }
 
+// ---- Questions per user per month: a cap on cost; an admin can reset someone who hits it ----
+const MONTHLY_LIMIT = 100;
+
+function quotaKey(email) {
+  return `quota:${new Date().toISOString().slice(0, 7)}:${email}`;
+}
+
+async function readQuota(env, email) {
+  return Number(await env.STATS.get(quotaKey(email))) || 0;
+}
+
+async function addQuota(env, email) {
+  const n = (await readQuota(env, email)) + 1;
+  // The count is also kept as metadata, so the admin's user list gets all counts from one listing.
+  await env.STATS.put(quotaKey(email), String(n), { expirationTtl: 40 * 24 * 3600, metadata: { n } });
+}
+
+async function quotaCounts(env) {
+  const prefix = `quota:${new Date().toISOString().slice(0, 7)}:`;
+  const counts = {};
+  let cursor;
+  do {
+    const list = await env.STATS.list({ prefix, cursor });
+    for (const k of list.keys) counts[k.name.slice(prefix.length)] = k.metadata?.n || 0;
+    cursor = list.list_complete ? null : list.cursor;
+  } while (cursor);
+  return counts;
+}
+
 // ---- AI log (every question to Arne), readable only by the admin(s) in ADMIN_EMAILS ----
 const LOG_TTL_SECONDS = 90 * 24 * 3600;
 const LOG_PAGE = 50;
@@ -686,7 +736,7 @@ export default {
     }
     if (request.method === "GET" && path === "/admin/users") {
       if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
-      return json({ users: (await env.STATS.get("users", "json")) || {} }, 200, { ...cors, "Cache-Control": "private, no-store" });
+      return json({ users: (await env.STATS.get("users", "json")) || {}, questions: await quotaCounts(env), limit: MONTHLY_LIMIT }, 200, { ...cors, "Cache-Control": "private, no-store" });
     }
     if (request.method === "GET" && path === "/admin/menu") {
       if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
@@ -703,7 +753,8 @@ export default {
     }
 
     if (path === "/menu") {
-      const title = typeof body.title === "string" ? cleanTitle(body.title) : null;
+      // Only a title checked with Graph is stored, so nobody can fill the title list or claim another title.
+      const title = await verifiedTitle(env, user, body.graphToken).catch(() => null);
       ctx.waitUntil(Promise.all([title ? addTitles(env, [title]) : null, noteVisit(env, user, title)]).catch(() => {}));
       return json({ ...(await readMenu(env)), canUpload: await canUpload(env, user), isAdmin: isAdmin(env, user), user: userEmail(user) }, 200, cors);
     }
@@ -735,6 +786,11 @@ export default {
         .filter((e) => countryOf(e) && !permanent.includes(e)).slice(0, 50);
       await env.STATS.put("admins", JSON.stringify(list));
       return json({ admins: list, permanentAdmins: permanent }, 200, cors);
+    }
+    if (path === "/admin/quota/reset") {
+      if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
+      await env.STATS.delete(quotaKey(String(body.email || "").trim().toLowerCase()));
+      return json({ questions: await quotaCounts(env), limit: MONTHLY_LIMIT }, 200, cors);
     }
     if (path === "/admin/uploaders") {
       if (!isAdmin(env, user)) return json({ error: "forbidden" }, 403, cors);
@@ -768,6 +824,7 @@ export default {
       if (!STATE_RE.test(String(body.state || "")) || !body.verifier || !body.redirect) return json({ error: "invalid" }, 400, cors);
       const pending = { verifier: String(body.verifier), redirect: String(body.redirect), user: userEmail(user) };
       await env.STATS.put(`mobpkce:${body.state}`, JSON.stringify(pending), { expirationTtl: MOBILITY_LOGIN_TTL });
+      ctx.waitUntil(logMobility(env, pending.user, "startet").catch(() => {}));
       return json({ ok: true }, 200, cors);
     }
     if (path === "/mobility/claim") {
@@ -775,6 +832,7 @@ export default {
       const done = await env.STATS.get(`mobtok:${body.state}`, "json");
       if (!done || done.user !== userEmail(user)) return json({ pending: true }, 200, cors);
       await env.STATS.delete(`mobtok:${body.state}`);
+      ctx.waitUntil(logMobility(env, done.user, "koblet til").catch(() => {}));
       return json(done.token, 200, cors);
     }
 
@@ -786,6 +844,12 @@ export default {
 
     const messages = cleanMessages(body.messages);
     if (!messages) return json({ error: "Invalid messages" }, 400, cors);
+    // Admins have no cap; everyone else gets MONTHLY_LIMIT questions per calendar month.
+    const quotaUser = user && !isAdmin(env, user) ? userEmail(user) : null;
+    if (quotaUser) {
+      if ((await readQuota(env, quotaUser)) >= MONTHLY_LIMIT) return json({ error: "quota", limit: MONTHLY_LIMIT }, 429, cors);
+      ctx.waitUntil(addQuota(env, quotaUser).catch((e) => console.error("quota", e)));
+    }
     const lang = LANG_NAMES[body.lang] ? body.lang : "nb";
 
     const mobilityToken = typeof body.mobilityToken === "string" && body.mobilityToken ? body.mobilityToken : null;

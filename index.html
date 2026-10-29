@@ -1518,6 +1518,7 @@
         locale: "nb-NO",
         mobilityFailed: "Kunne ikke koble til Mobility. Prøv igjen.",
         mobilityExpired: "Mobility-innloggingen din har gått ut. Koble til på nytt:",
+        quotaReached: "Du har brukt opp {limit} spørsmål til Arne denne måneden. Kontakt en administrator hvis du trenger flere, eller prøv igjen neste måned.",
         mobilityDisconnect: "Koble fra Mobility",
         videoInFolder: "Åpner videomappen – velg",
         watchVideo: "Se video",
@@ -1631,6 +1632,7 @@
         locale: "sv-SE",
         mobilityFailed: "Kunde inte ansluta Mobility. Försök igen.",
         mobilityExpired: "Din Mobility-inloggning har gått ut. Anslut igen:",
+        quotaReached: "Du har använt alla {limit} frågor till Arne den här månaden. Kontakta en administratör om du behöver fler, eller försök igen nästa månad.",
         mobilityDisconnect: "Koppla från Mobility",
         videoInFolder: "Öppnar videomappen – välj",
         watchVideo: "Se video",
@@ -1744,6 +1746,7 @@
         locale: "da-DK",
         mobilityFailed: "Kunne ikke forbinde Mobility. Prøv igen.",
         mobilityExpired: "Dit Mobility-login er udløbet. Forbind igen:",
+        quotaReached: "Du har brugt alle {limit} spørgsmål til Arne denne måned. Kontakt en administrator, hvis du har brug for flere, eller prøv igen næste måned.",
         mobilityDisconnect: "Afbryd Mobility",
         videoInFolder: "Åbner videomappen – vælg",
         watchVideo: "Se video",
@@ -1857,6 +1860,7 @@
         locale: "en-GB",
         mobilityFailed: "Could not connect Mobility. Please try again.",
         mobilityExpired: "Your Mobility sign-in has expired. Connect again:",
+        quotaReached: "You have used all {limit} questions to Arne this month. Contact an administrator if you need more, or try again next month.",
         mobilityDisconnect: "Disconnect Mobility",
         videoInFolder: "Opens the video folder – choose",
         watchVideo: "Watch video",
@@ -2591,6 +2595,12 @@
             throw authError();
           });
         }
+        if (r.status === 429) {
+          return r.json().catch(function () { return {}; }).then(function (e) {
+            if (e.error === "quota") return { reply: tf("quotaReached", { limit: e.limit }) };
+            throw new Error("chat 429");
+          });
+        }
         if (!r.ok) throw new Error("chat " + r.status);
         return r.json();
       }).then(function (data) {
@@ -2838,17 +2848,18 @@
       }).catch(function () { addMessage("bot", t("mobilityFailed")); });
     }
 
-    // Back from Mobility with ?code=…&state=…: hand the code to the Worker straight away (no sign-in needed).
+    // Back from Mobility with ?code=…&state=… (or ?error=… when Mobility refused): hand it to the Worker
+    // straight away (no sign-in needed); a refusal is only logged there.
     var mobilityReturn = (function () {
       var q = new URLSearchParams(location.search);
-      if (!q.get("code") || !q.get("state")) return null;
+      if (!(q.get("code") || q.get("error")) || !q.get("state")) return null;
       history.replaceState(null, "", location.pathname + location.hash);
       var pending = readPending();
       return {
         own: Boolean(pending && pending.state === q.get("state")),
         done: fetch(CHAT_API_URL + "/mobility/callback", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ state: q.get("state"), code: q.get("code") })
+          body: JSON.stringify({ state: q.get("state"), code: q.get("code"), error: q.get("error"), error_description: q.get("error_description") })
         }).then(function (r) { return r.ok; }).catch(function () { return false; })
       };
     })();
@@ -3849,9 +3860,10 @@
         if (cached !== null) jobTitle = cached;
       } catch (e) {}
       applyMenu();
-      fetchJobTitle().then(function (title) {
-        if (title !== null) jobTitle = title;
-        return workerPost("/menu", title !== null ? { title: title } : {});
+      Promise.all([fetchJobTitle(), getGraphToken()]).then(function (res) {
+        if (res[0] !== null) jobTitle = res[0];
+        // The Worker checks the title with Graph itself; it never trusts a title sent from the page.
+        return workerPost("/menu", res[1] ? { graphToken: res[1] } : {});
       }).then(function (rules) {
         if (!rules) return;
         menuRules = rules;
@@ -4286,7 +4298,8 @@
     // Text of a PDF, page by page, keeping line breaks.
     function pdfText(file) {
       return Promise.all([loadPdfJs(), file.arrayBuffer()]).then(function (res) {
-        return res[0].getDocument({ data: res[1] }).promise;
+        // No eval: guards against malicious PDFs (CVE-2024-4367 in pdf.js before 4.2.67).
+        return res[0].getDocument({ data: res[1], isEvalSupported: false }).promise;
       }).then(function (pdf) {
         var pages = [];
         for (var i = 1; i <= pdf.numPages; i++) pages.push(i);
@@ -4464,7 +4477,8 @@
     }
 
     function exportLogsCsv() {
-      var cell = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
+      // A leading = + - @ would make Excel run the cell as a formula; a ' in front keeps it text.
+      var cell = function (v) { return '"' + String(v == null ? "" : v).replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""') + '"'; };
       var rows = [["Tid", "Bruker", "Navn", "Stilling", "Språk", "Spørsmål", "Svar", "Verktøy", "Feil", "Tokens inn", "Tokens ut"]];
       logEntries.forEach(function (e) {
         rows.push([new Date(e.time).toLocaleString("nb-NO"), e.user, e.name, e.title || "", e.lang, e.question, e.reply,
@@ -4523,22 +4537,37 @@
       }).then(function (data) {
         var users = Object.keys(data.users || {}).map(function (email) {
           var u = data.users[email];
-          return { email: email, name: u.name, title: u.title, first: u.first, last: u.last, days: u.days };
+          return { email: email, name: u.name, title: u.title, first: u.first, last: u.last, days: u.days, asked: (data.questions || {})[email] || 0 };
         }).sort(function (a, b) { return b.last.localeCompare(a.last) || a.email.localeCompare(b.email); });
         var today = new Date().toISOString().slice(0, 10);
         var week = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
         summary.textContent = users.length + " brukere totalt · " +
           users.filter(function (u) { return u.last === today; }).length + " i dag · " +
           users.filter(function (u) { return u.last >= week; }).length + " siste 7 dager";
-        var html = "<tr><th>Navn</th><th>E-post</th><th>Stilling</th><th>Sist</th><th>Første</th><th>Dager</th></tr>";
+        var full = users.filter(function (u) { return u.asked >= data.limit; }).length;
+        if (full) summary.textContent += " · " + full + " har nådd grensen på " + data.limit + " spørsmål";
+        var html = "<tr><th>Navn</th><th>E-post</th><th>Stilling</th><th>Sist</th><th>Første</th><th>Dager</th><th>Spørsmål denne måneden</th></tr>";
         users.forEach(function (u) {
           html += "<tr><td>" + escapeHtml(u.name || "") + "</td><td>" + escapeHtml(u.email) + "</td><td>" +
             escapeHtml(u.title === null || u.title === undefined ? "?" : u.title || "(ingen stilling)") + "</td><td>" +
-            escapeHtml(u.last) + "</td><td>" + escapeHtml(u.first) + "</td><td>" + (u.days || 0) + "</td></tr>";
+            escapeHtml(u.last) + "</td><td>" + escapeHtml(u.first) + "</td><td>" + (u.days || 0) + "</td><td>" +
+            (u.asked >= data.limit ? "<strong>" + u.asked + " / " + data.limit + "</strong>" : u.asked + " / " + data.limit) +
+            (u.asked ? ' <button type="button" class="link-btn" data-quota-reset="' + escapeHtml(u.email) + '">Nullstill</button>' : "") + "</td></tr>";
         });
         table.innerHTML = html;
       }).catch(function (err) { summary.textContent = err.message; });
     }
+
+    // «Nullstill»: the user gets the full monthly number of questions again.
+    document.getElementById("users-table").addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-quota-reset]");
+      if (!btn) return;
+      btn.disabled = true;
+      workerPost("/admin/quota/reset", { email: btn.getAttribute("data-quota-reset") }).then(function (r) {
+        if (!r) throw new Error("reset");
+        fetchUsers();
+      }).catch(function () { btn.disabled = false; btn.textContent = "Feilet – prøv igjen"; });
+    });
 
     function fetchUsage() {
       getIdToken().then(function (token) {
