@@ -4,6 +4,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 // Internal knowledge – bundled into the Worker, never published (knowledge/ is git-ignored).
 import FAQ from "../knowledge/faq.md";
+// Recover Danmark's QHSE roles and procedures – only for Danish users (Danish chosen or a recover.dk account).
+import QHSE_DK from "../knowledge/qhse-dk.md";
 // Price snapshot from Recover's Mobility shop (sku → price); refreshed in KV whenever Mobility shows a price.
 import PRICE_SNAPSHOT from "../knowledge/prices.json";
 
@@ -601,6 +603,17 @@ export default {
     const mobilityToken = typeof body.mobilityToken === "string" && body.mobilityToken ? body.mobilityToken : null;
     const confirmed = body.confirmed === true;
 
+    const danish = lang === "da" || userEmail(user).endsWith("@recover.dk");
+    // The FAQ-heavy system prompt is identical across requests – cache it to cut cost per question.
+    const system = [{ type: "text", text: systemPrompt(FAQ, lang), cache_control: { type: "ephemeral" } }];
+    if (danish) {
+      system.push({
+        type: "text",
+        text: "Brugeren arbejder i Recover Danmark. Spørgsmål om roller, procedurer, arbejdsmiljø, kemi, asbest, PCB, bly og krybekældre besvares ud fra QHSE-dokumenterne nedenfor (de gælder kun Danmark), med samme regler som for FAQ-en.\n\n" + QHSE_DK,
+        cache_control: { type: "ephemeral" },
+      });
+    }
+
     const lastUser = messages[messages.length - 1]?.content || "";
     const log = {
       time: Date.now(),
@@ -659,8 +672,7 @@ export default {
           // Short chat answers on a public endpoint – cap output to keep cost bounded.
           max_tokens: 2000,
           output_config: { effort: "low" },
-          // The FAQ-heavy system prompt is identical across requests – cache it to cut cost per question.
-          system: [{ type: "text", text: systemPrompt(FAQ, lang), cache_control: { type: "ephemeral" } }],
+          system,
           tools,
           messages: convo,
         });
