@@ -30,6 +30,7 @@ async function verifyUser(request, env) {
     const { payload } = await jwtVerify(token, jwks, {
       issuer: `https://login.microsoftonline.com/${env.AZURE_TENANT_ID}/v2.0`,
       audience: env.AZURE_CLIENT_ID,
+      clockTolerance: 60, // phones with a clock a little off
     });
     return payload;
   } catch {

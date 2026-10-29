@@ -2532,8 +2532,13 @@
     function getIdToken() {
       if (!authEnabled()) return Promise.resolve(null);
       if (!account) return Promise.reject(authError());
-      return msalApp.acquireTokenSilent({ scopes: LOGIN_SCOPES, account: account })
-        .then(function (r) { return r.idToken; })
+      // MSAL can hand back a cached, already expired ID token (it only looks at the access token's
+      // lifetime), so renew it when it has less than five minutes left.
+      return msalApp.acquireTokenSilent({ scopes: LOGIN_SCOPES, account: account }).then(function (r) {
+        var exp = r.idTokenClaims && r.idTokenClaims.exp;
+        if (exp && exp * 1000 - Date.now() > 5 * 60 * 1000) return r;
+        return msalApp.acquireTokenSilent({ scopes: LOGIN_SCOPES, account: account, forceRefresh: true });
+      }).then(function (r) { return r.idToken; })
         .catch(function () { throw authError(); });
     }
 
