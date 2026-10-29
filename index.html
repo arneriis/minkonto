@@ -474,6 +474,11 @@
     .sigpad span { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
     .sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .actions li.menu-hidden { display: none; }
+    /* While a saved sign-in is being restored, don't flash the signed-out menu. */
+    body.auth-pending .actions { visibility: hidden; }
+    .signin { display: none; margin-top: 12px; }
+    body.locked .signin { display: block; }
+    .signin .action { width: 100%; border: 2px solid var(--navy); font: inherit; text-align: left; cursor: pointer; }
     .btn[hidden] { display: none; }
     .row-add { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
     #menu-cards { padding: 0; }
@@ -786,6 +791,22 @@
         </a>
       </li>
     </ul>
+    <div class="signin">
+      <button type="button" class="action" id="signin">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <path d="m10 17 5-5-5-5" />
+            <path d="M15 12H3" />
+          </svg>
+        </span>
+        <span class="label">
+          <strong data-i18n="signinTitle">Logg inn</strong>
+          <small data-i18n="signinText">Logg inn med Recover-kontoen for å se flere snarveier og spørre Arne</small>
+        </span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+      </button>
+    </div>
   </main>
 
   <footer>
@@ -1491,6 +1512,8 @@
         watchVideo: "Se video",
         newChat: "Ny chat",
         logout: "Logg ut",
+        signinTitle: "Logg inn",
+        signinText: "Logg inn med Recover-kontoen for å se flere snarveier og spørre Arne",
         loggedInAs: "Innlogget som",
         loginAgain: "Innloggingen din har gått ut. Lukk chatten og trykk «Spør Arne» for å logge inn igjen.",
         send: "Send",
@@ -1593,6 +1616,8 @@
         watchVideo: "Se video",
         newChat: "Ny chatt",
         logout: "Logga ut",
+        signinTitle: "Logga in",
+        signinText: "Logga in med ditt Recover-konto för att se fler genvägar och fråga Arne",
         loggedInAs: "Inloggad som",
         loginAgain: "Din inloggning har gått ut. Stäng chatten och tryck «Fråga Arne» för att logga in igen.",
         send: "Skicka",
@@ -1695,6 +1720,8 @@
         watchVideo: "Se video",
         newChat: "Ny chat",
         logout: "Log ud",
+        signinTitle: "Log ind",
+        signinText: "Log ind med din Recover-konto for at se flere genveje og spørge Arne",
         loggedInAs: "Logget ind som",
         loginAgain: "Dit login er udløbet. Luk chatten og tryk «Spørg Arne» for at logge ind igen.",
         send: "Send",
@@ -1797,6 +1824,8 @@
         watchVideo: "Watch video",
         newChat: "New chat",
         logout: "Sign out",
+        signinTitle: "Sign in",
+        signinText: "Sign in with your Recover account to see more shortcuts and ask Arne",
         loggedInAs: "Signed in as",
         loginAgain: "Your sign-in has expired. Close the chat and tap «Ask Arne» to sign in again.",
         send: "Send",
@@ -2466,6 +2495,7 @@
 
     function renderAuth() {
       document.body.classList.toggle("locked", isLocked());
+      applyMenu();
       var status = document.getElementById("auth-status");
       status.hidden = !(authEnabled() && account);
       var as = document.getElementById("admin-status");
@@ -2483,7 +2513,7 @@
     function resumeIntent() {
       var intent = null;
       try { intent = sessionStorage.getItem(INTENT_KEY); sessionStorage.removeItem(INTENT_KEY); } catch (e) {}
-      if (!account || !intent) return;
+      if (!account || !intent || intent === "signin") return;
       if (intent === "printer") return openPrinterForm();
       if (intent === "skade") return openSkadeForm();
       openChat();
@@ -2905,7 +2935,24 @@
       msalApp.logoutRedirect({ account: account });
     });
 
+    // A saved sign-in is restored in a moment: hide the cards until then instead of flashing the signed-out set.
+    function hasSavedSignIn() {
+      try {
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (/account\.keys$/.test(key) && (JSON.parse(localStorage.getItem(key)) || []).length) return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+    if (authEnabled() && hasSavedSignIn()) {
+      document.body.classList.add("auth-pending");
+      setTimeout(function () { document.body.classList.remove("auth-pending"); }, 3000);
+    }
+    document.getElementById("signin").addEventListener("click", function () { login("signin"); });
+
     initAuth().then(function () {
+      document.body.classList.remove("auth-pending");
       renderAuth();
       resumeIntent();
       finishMobilityLogin();
@@ -3696,12 +3743,14 @@
       return m ? m[1] : null;
     }
 
-    // Signed in: the country's visible cards minus those hidden for the job title.
-    // Signed out (or no rules yet): as before – the Norway-only cards follow the language.
+    // Signed out: only «Glemt passord» and «Oppsett av mobilen».
+    // Signed in: the country's visible cards minus those hidden for the job title
+    // (until the country is known, the Norway-only cards follow the language).
     function applyMenu() {
       var rules = menuRules || { hidden: {} }; // applyLanguage runs before the rules are set up
       var country = menuCountry();
       var visible = country && rules.visible ? rules.visible[country] : null;
+      if (!account && window.msal) visible = ["password", "company-portal"]; // signed out
       document.querySelectorAll("[data-card]").forEach(function (li) {
         var id = li.getAttribute("data-card");
         var hiddenFor = rules.hidden[id] || [];
