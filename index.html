@@ -2856,6 +2856,8 @@
       renderAuth(); // Android finishes the login in a browser tab that shares storage with the app
       watchMobilityLogin();
       checkForUpdate();
+      // Access and menus the admin changed meanwhile apply without reloading the page.
+      if (Date.now() - lastMenuLoad > 60000) loadMenu();
     });
 
     // The home-screen app keeps an old copy of the page for a long time. When it comes back to the front,
@@ -3761,8 +3763,11 @@
     }
 
     // Cached rules and title first (no flicker), then fresh ones from Entra and the Worker.
+    var lastMenuLoad = 0;
+
     function loadMenu() {
       if (!account) return;
+      lastMenuLoad = Date.now();
       try {
         menuRules = JSON.parse(localStorage.getItem(MENU_CACHE) || "null") || menuRules;
         var cached = localStorage.getItem(titleKey());
