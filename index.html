@@ -792,7 +792,7 @@
     <span class="auth-status" id="auth-status" hidden>
       <span id="auth-name"></span>
       · <button type="button" class="link-btn" id="logout" data-i18n="logout">Logg ut</button>
-      <span id="docs-status" hidden> · <button type="button" class="link-btn" id="open-docs">Dokumenter</button></span><span id="admin-status" hidden> · <button type="button" class="link-btn" id="open-logs">AI-logg</button> · <button type="button" class="link-btn" id="open-menu-settings">Menyvalg</button></span>
+      <span id="docs-status" hidden> · <button type="button" class="link-btn" id="open-docs" data-i18n="docsLink">Dokumenter</button></span><span id="admin-status" hidden> · <button type="button" class="link-btn" id="open-logs">AI-logg</button> · <button type="button" class="link-btn" id="open-menu-settings">Menyvalg</button></span>
       <span id="mobility-status" hidden> · <button type="button" class="link-btn" id="mobility-disconnect" data-i18n="mobilityDisconnect">Koble fra Mobility</button></span>
     </span>
     minkonto.riis.cc
@@ -872,23 +872,23 @@
   <section class="sheet" id="docs" role="dialog" aria-modal="true" aria-labelledby="docs-title" hidden>
     <div class="chat-head">
       <div class="chat-title">
-        <strong id="docs-title">Dokumenter for Spør Arne</strong>
+        <strong id="docs-title" data-i18n="docsTitle">Dokumenter for Spør Arne</strong>
         <small id="docs-sub">Gjelder brukere i ditt land</small>
       </div>
-      <button type="button" class="icon-btn" id="docs-close" aria-label="Lukk">
+      <button type="button" class="icon-btn" id="docs-close" data-i18n-label="close" aria-label="Lukk">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
       </button>
     </div>
     <div class="sheet-body">
       <div class="sheet-inner">
         <div class="card">
-          <p class="hint">Arne bruker dokumentene når han svarer brukere i samme land. Landet bestemmes av kontoen de er logget inn med (recover.no = Norge, recover.dk = Danmark, recover.se = Sverige), ikke av valgt språk. Last opp PDF eller tekstfiler. Skannede PDF-er uten tekst kan ikke leses. Et dokument med samme navn erstatter det gamle.</p>
+          <p class="hint" data-i18n="docsHint">Arne bruker dokumentene når han svarer brukere i samme land. Landet bestemmes av kontoen de er logget inn med (recover.no = Norge, recover.dk = Danmark, recover.se = Sverige), ikke av valgt språk. Last opp PDF eller tekstfiler. Skannede PDF-er uten tekst kan ikke leses. Et dokument med samme navn erstatter det gamle.</p>
           <div class="field" id="docs-country-field" hidden>
-            <label for="docs-country">Land</label>
-            <select id="docs-country"><option value="no">Norge (recover.no)</option><option value="dk">Danmark (recover.dk)</option><option value="se">Sverige (recover.se)</option></select>
+            <label for="docs-country" data-i18n="docsCountryLabel">Land</label>
+            <select id="docs-country"><option value="no">recover.no</option><option value="dk">recover.dk</option><option value="se">recover.se</option></select>
           </div>
-          <div class="field"><label for="docs-files">Velg dokumenter</label><input id="docs-files" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain" multiple></div>
-          <div class="sheet-actions"><button type="button" class="btn primary" id="docs-upload">Last opp</button></div>
+          <div class="field"><label for="docs-files" data-i18n="docsFilesLabel">Velg dokumenter</label><input id="docs-files" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain" multiple></div>
+          <div class="sheet-actions"><button type="button" class="btn primary" id="docs-upload" data-i18n="docsUpload">Last opp</button></div>
           <p class="status" id="docs-status-msg" role="status"></p>
         </div>
         <div class="card">
@@ -898,14 +898,14 @@
           <div class="doc-list" id="docs-list"></div>
         </div>
         <div class="card" id="docs-access" hidden>
-          <h3>Hvem kan laste opp</h3>
-          <p class="hint">Kryss av dem som skal kunne laste opp dokumenter. Hver person laster opp for landet til kontoen sin. Ingen har tilgang før du krysser av. Listen viser alle som har logget inn på siden.</p>
+          <h3 data-i18n="docsAccessTitle">Hvem kan laste opp</h3>
+          <p class="hint" data-i18n="docsAccessHint">Kryss av dem som skal kunne laste opp dokumenter. Hver person laster opp for landet til kontoen sin. Ingen har tilgang før du krysser av. Listen viser alle som har logget inn på siden.</p>
           <div id="docs-users"></div>
           <div class="row-add">
-            <div class="field"><label for="docs-new-user">Legg til e-post som ikke står i listen</label><input id="docs-new-user" type="email" autocomplete="off" placeholder="navn@recover.dk"></div>
-            <button type="button" class="btn" id="docs-add-user">Legg til</button>
+            <div class="field"><label for="docs-new-user" data-i18n="docsAddUserLabel">Legg til e-post som ikke står i listen</label><input id="docs-new-user" type="email" autocomplete="off" placeholder="navn@recover.dk"></div>
+            <button type="button" class="btn" id="docs-add-user" data-i18n="docsAddUser">Legg til</button>
           </div>
-          <div class="sheet-actions"><button type="button" class="btn primary" id="docs-save-access">Lagre tilgang</button></div>
+          <div class="sheet-actions"><button type="button" class="btn primary" id="docs-save-access" data-i18n="docsSaveAccess">Lagre tilgang</button></div>
           <p class="status" id="docs-access-status" role="status"></p>
         </div>
       </div>
@@ -1427,6 +1427,46 @@
         mobilityConnect: "Koble til Mobility",
         mobilityConnected: "Mobility er koblet til ✓ Hva vil du bestille?",
         mobilityReturnApp: "Mobility er koblet til ✓ Lukk dette vinduet og gå tilbake til Min konto-appen.",
+        docsLink: "Dokumenter",
+        docsTitle: "Dokumenter for Spør Arne",
+        docsSub: "Gjelder brukere logget inn med recover.{cc} ({country})",
+        docsHint: "Arne bruker dokumentene når han svarer brukere i samme land. Landet bestemmes av kontoen de er logget inn med (recover.no = Norge, recover.dk = Danmark, recover.se = Sverige), ikke av valgt språk. Last opp PDF eller tekstfiler. Skannede PDF-er uten tekst kan ikke leses. Et dokument med samme navn erstatter det gamle.",
+        docsCountryLabel: "Land",
+        docsFilesLabel: "Velg dokumenter",
+        docsUpload: "Last opp",
+        docsListTitle: "Dokumenter for {country}",
+        docsUsageOne: "1 dokument · {used} av {limit} tegn brukt ({pct} %)",
+        docsUsageMany: "{n} dokumenter · {used} av {limit} tegn brukt ({pct} %)",
+        docsChars: "{n} tegn",
+        docsNone: "Ingen dokumenter ennå.",
+        docsDelete: "Slett",
+        docsDeleteConfirm: "Slette «{name}»? Arne slutter å bruke det med en gang.",
+        docsLoading: "Henter …",
+        docsNoAccess: "Du har ikke tilgang til å laste opp dokumenter.",
+        docsFetchFailed: "Kunne ikke hente ({status}).",
+        docsServerError: "Feil fra serveren ({status}).",
+        docsPickFiles: "Velg minst ett dokument.",
+        docsUploading: "Laster opp «{name}» ({i} av {n}) …",
+        docsUploaded: "{done} av {n} lastet opp.",
+        docsFailed: "Feilet – {list}",
+        docsNoText: "ingen tekst funnet (skannet PDF?)",
+        docsPdfLoadFailed: "Klarte ikke å laste PDF-leseren.",
+        docsEmpty: "dokumentet er tomt",
+        docsTooLarge: "dokumentet er for stort ({chars} tegn, maks {max})",
+        docsFull: "ikke plass til mer for dette landet ({total} av {max} tegn) – slett noe først",
+        docsAccessTitle: "Hvem kan laste opp",
+        docsAccessHint: "Kryss av dem som skal kunne laste opp dokumenter. Hver person laster opp for landet til kontoen sin. Ingen har tilgang før du krysser av. Listen viser alle som har logget inn på siden.",
+        docsAddUserLabel: "Legg til e-post som ikke står i listen",
+        docsAddUser: "Legg til",
+        docsSaveAccess: "Lagre tilgang",
+        docsNoUsers: "Ingen har logget inn ennå.",
+        docsBadEmail: "Bare e-post på recover.no, recover.dk eller recover.se.",
+        docsSaving: "Lagrer …",
+        docsSaved: "Lagret. {n} personer kan laste opp.",
+        countryNo: "Norge",
+        countryDk: "Danmark",
+        countrySe: "Sverige",
+        locale: "nb-NO",
         mobilityFailed: "Kunne ikke koble til Mobility. Prøv igjen.",
         mobilityExpired: "Mobility-innloggingen din har gått ut. Koble til på nytt:",
         mobilityDisconnect: "Koble fra Mobility",
@@ -1489,6 +1529,46 @@
         mobilityConnect: "Anslut Mobility",
         mobilityConnected: "Mobility är anslutet ✓ Vad vill du beställa?",
         mobilityReturnApp: "Mobility är anslutet ✓ Stäng det här fönstret och gå tillbaka till Mitt konto-appen.",
+        docsLink: "Dokument",
+        docsTitle: "Dokument för Fråga Arne",
+        docsSub: "Gäller användare inloggade med recover.{cc} ({country})",
+        docsHint: "Arne använder dokumenten när han svarar användare i samma land. Landet bestäms av kontot de är inloggade med (recover.no = Norge, recover.dk = Danmark, recover.se = Sverige), inte av valt språk. Ladda upp PDF- eller textfiler. Skannade PDF:er utan text kan inte läsas. Ett dokument med samma namn ersätter det gamla.",
+        docsCountryLabel: "Land",
+        docsFilesLabel: "Välj dokument",
+        docsUpload: "Ladda upp",
+        docsListTitle: "Dokument för {country}",
+        docsUsageOne: "1 dokument · {used} av {limit} tecken använda ({pct} %)",
+        docsUsageMany: "{n} dokument · {used} av {limit} tecken använda ({pct} %)",
+        docsChars: "{n} tecken",
+        docsNone: "Inga dokument ännu.",
+        docsDelete: "Ta bort",
+        docsDeleteConfirm: "Ta bort ”{name}”? Arne slutar använda det direkt.",
+        docsLoading: "Hämtar …",
+        docsNoAccess: "Du har inte behörighet att ladda upp dokument.",
+        docsFetchFailed: "Kunde inte hämta ({status}).",
+        docsServerError: "Fel från servern ({status}).",
+        docsPickFiles: "Välj minst ett dokument.",
+        docsUploading: "Laddar upp ”{name}” ({i} av {n}) …",
+        docsUploaded: "{done} av {n} uppladdade.",
+        docsFailed: "Misslyckades – {list}",
+        docsNoText: "ingen text hittades (skannad PDF?)",
+        docsPdfLoadFailed: "Kunde inte ladda PDF-läsaren.",
+        docsEmpty: "dokumentet är tomt",
+        docsTooLarge: "dokumentet är för stort ({chars} tecken, max {max})",
+        docsFull: "inte plats för mer för det här landet ({total} av {max} tecken) – ta bort något först",
+        docsAccessTitle: "Vem kan ladda upp",
+        docsAccessHint: "Kryssa för dem som ska kunna ladda upp dokument. Varje person laddar upp för sitt kontos land. Ingen har behörighet förrän du kryssar för. Listan visar alla som har loggat in på sidan.",
+        docsAddUserLabel: "Lägg till e-post som inte finns i listan",
+        docsAddUser: "Lägg till",
+        docsSaveAccess: "Spara behörighet",
+        docsNoUsers: "Ingen har loggat in ännu.",
+        docsBadEmail: "Endast e-post på recover.no, recover.dk eller recover.se.",
+        docsSaving: "Sparar …",
+        docsSaved: "Sparat. {n} personer kan ladda upp.",
+        countryNo: "Norge",
+        countryDk: "Danmark",
+        countrySe: "Sverige",
+        locale: "sv-SE",
         mobilityFailed: "Kunde inte ansluta Mobility. Försök igen.",
         mobilityExpired: "Din Mobility-inloggning har gått ut. Anslut igen:",
         mobilityDisconnect: "Koppla från Mobility",
@@ -1551,6 +1631,46 @@
         mobilityConnect: "Forbind Mobility",
         mobilityConnected: "Mobility er forbundet ✓ Hvad vil du bestille?",
         mobilityReturnApp: "Mobility er forbundet ✓ Luk dette vindue og gå tilbage til Min konto-appen.",
+        docsLink: "Dokumenter",
+        docsTitle: "Dokumenter til Spørg Arne",
+        docsSub: "Gælder brugere logget ind med recover.{cc} ({country})",
+        docsHint: "Arne bruger dokumenterne, når han svarer brugere i samme land. Landet bestemmes af den konto, de er logget ind med (recover.no = Norge, recover.dk = Danmark, recover.se = Sverige), ikke af det valgte sprog. Upload PDF- eller tekstfiler. Scannede PDF'er uden tekst kan ikke læses. Et dokument med samme navn erstatter det gamle.",
+        docsCountryLabel: "Land",
+        docsFilesLabel: "Vælg dokumenter",
+        docsUpload: "Upload",
+        docsListTitle: "Dokumenter for {country}",
+        docsUsageOne: "1 dokument · {used} af {limit} tegn brugt ({pct} %)",
+        docsUsageMany: "{n} dokumenter · {used} af {limit} tegn brugt ({pct} %)",
+        docsChars: "{n} tegn",
+        docsNone: "Ingen dokumenter endnu.",
+        docsDelete: "Slet",
+        docsDeleteConfirm: "Slette »{name}«? Arne holder op med at bruge det med det samme.",
+        docsLoading: "Henter …",
+        docsNoAccess: "Du har ikke adgang til at uploade dokumenter.",
+        docsFetchFailed: "Kunne ikke hente ({status}).",
+        docsServerError: "Fejl fra serveren ({status}).",
+        docsPickFiles: "Vælg mindst ét dokument.",
+        docsUploading: "Uploader »{name}« ({i} af {n}) …",
+        docsUploaded: "{done} af {n} uploadet.",
+        docsFailed: "Mislykkedes – {list}",
+        docsNoText: "ingen tekst fundet (scannet PDF?)",
+        docsPdfLoadFailed: "Kunne ikke indlæse PDF-læseren.",
+        docsEmpty: "dokumentet er tomt",
+        docsTooLarge: "dokumentet er for stort ({chars} tegn, maks. {max})",
+        docsFull: "ikke plads til mere for dette land ({total} af {max} tegn) – slet noget først",
+        docsAccessTitle: "Hvem kan uploade",
+        docsAccessHint: "Sæt kryds ved dem, der skal kunne uploade dokumenter. Hver person uploader for sin kontos land. Ingen har adgang, før du sætter kryds. Listen viser alle, der har logget ind på siden.",
+        docsAddUserLabel: "Tilføj e-mail, der ikke står på listen",
+        docsAddUser: "Tilføj",
+        docsSaveAccess: "Gem adgang",
+        docsNoUsers: "Ingen har logget ind endnu.",
+        docsBadEmail: "Kun e-mail på recover.no, recover.dk eller recover.se.",
+        docsSaving: "Gemmer …",
+        docsSaved: "Gemt. {n} personer kan uploade.",
+        countryNo: "Norge",
+        countryDk: "Danmark",
+        countrySe: "Sverige",
+        locale: "da-DK",
         mobilityFailed: "Kunne ikke forbinde Mobility. Prøv igen.",
         mobilityExpired: "Dit Mobility-login er udløbet. Forbind igen:",
         mobilityDisconnect: "Afbryd Mobility",
@@ -1613,6 +1733,46 @@
         mobilityConnect: "Connect Mobility",
         mobilityConnected: "Mobility is connected ✓ What would you like to order?",
         mobilityReturnApp: "Mobility is connected ✓ Close this window and go back to the My account app.",
+        docsLink: "Documents",
+        docsTitle: "Documents for Ask Arne",
+        docsSub: "For users signed in with recover.{cc} ({country})",
+        docsHint: "Arne uses the documents when answering users in the same country. The country is set by the account they sign in with (recover.no = Norway, recover.dk = Denmark, recover.se = Sweden), not by the chosen language. Upload PDF or text files. Scanned PDFs without text can't be read. A document with the same name replaces the old one.",
+        docsCountryLabel: "Country",
+        docsFilesLabel: "Choose documents",
+        docsUpload: "Upload",
+        docsListTitle: "Documents for {country}",
+        docsUsageOne: "1 document · {used} of {limit} characters used ({pct} %)",
+        docsUsageMany: "{n} documents · {used} of {limit} characters used ({pct} %)",
+        docsChars: "{n} characters",
+        docsNone: "No documents yet.",
+        docsDelete: "Delete",
+        docsDeleteConfirm: "Delete “{name}”? Arne stops using it right away.",
+        docsLoading: "Loading …",
+        docsNoAccess: "You don't have access to upload documents.",
+        docsFetchFailed: "Couldn't load ({status}).",
+        docsServerError: "Server error ({status}).",
+        docsPickFiles: "Choose at least one document.",
+        docsUploading: "Uploading “{name}” ({i} of {n}) …",
+        docsUploaded: "{done} of {n} uploaded.",
+        docsFailed: "Failed – {list}",
+        docsNoText: "no text found (scanned PDF?)",
+        docsPdfLoadFailed: "Couldn't load the PDF reader.",
+        docsEmpty: "the document is empty",
+        docsTooLarge: "the document is too large ({chars} characters, max {max})",
+        docsFull: "no room for more for this country ({total} of {max} characters) – delete something first",
+        docsAccessTitle: "Who can upload",
+        docsAccessHint: "Tick the people who should be able to upload documents. Each person uploads for their own account's country. Nobody has access until you tick them. The list shows everyone who has signed in to the page.",
+        docsAddUserLabel: "Add an email that isn't in the list",
+        docsAddUser: "Add",
+        docsSaveAccess: "Save access",
+        docsNoUsers: "Nobody has signed in yet.",
+        docsBadEmail: "Only email on recover.no, recover.dk or recover.se.",
+        docsSaving: "Saving …",
+        docsSaved: "Saved. {n} people can upload.",
+        countryNo: "Norway",
+        countryDk: "Denmark",
+        countrySe: "Sweden",
+        locale: "en-GB",
         mobilityFailed: "Could not connect Mobility. Please try again.",
         mobilityExpired: "Your Mobility sign-in has expired. Connect again:",
         mobilityDisconnect: "Disconnect Mobility",
@@ -1692,6 +1852,7 @@
       document.getElementById("order-skade").parentNode.hidden = lang !== "nb";
       document.getElementById("order-mobile").parentNode.hidden = lang !== "nb";
       renderChips();
+      if (docsData && !docsEl.hidden) { renderDocs(docsData); renderDocsAccess(); }
     }
 
     var currentLang = "nb";
@@ -3668,7 +3829,7 @@
     });
 
     // ---- «Dokumenter»: country documents for Arne (who may upload is checked by the Worker) ----
-    var COUNTRY_NAMES = { no: "Norge", dk: "Danmark", se: "Sverige" };
+    var COUNTRY_KEYS = { no: "countryNo", dk: "countryDk", se: "countrySe" };
     var PDFJS_SRC = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
     var PDFJS_SRI = "sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e";
     var PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -3677,6 +3838,23 @@
     var docsUploaders = [];
     var docsUsers = {};
     var pdfJsLoad = null;
+    var docsData = null;
+
+    // A string in the chosen language with {name} placeholders filled in.
+    function tf(key, vars) {
+      return t(key).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+    }
+    function countryName(c) { return t(COUNTRY_KEYS[c]); }
+    function fmtNum(n) { return Number(n).toLocaleString(t("locale")); }
+
+    // The Worker answers with error codes; the message is shown in the chosen language.
+    function docsError(data, status) {
+      if (data.error === "empty") return t("docsEmpty");
+      if (data.error === "too_large") return tf("docsTooLarge", { chars: fmtNum(data.chars), max: fmtNum(data.max) });
+      if (data.error === "full") return tf("docsFull", { total: fmtNum(data.total), max: fmtNum(data.max) });
+      if (status === 403) return t("docsNoAccess");
+      return tf("docsServerError", { status: status });
+    }
 
     function setDocsStatus(id, text, kind) {
       var el = document.getElementById(id);
@@ -3688,8 +3866,8 @@
       return getIdToken().then(function (token) {
         return fetch(CHAT_API_URL + path, { headers: token ? { Authorization: "Bearer " + token } : {} });
       }).then(function (r) {
-        if (r.status === 403) throw new Error("Du har ikke tilgang til å laste opp dokumenter.");
-        if (!r.ok) throw new Error("Kunne ikke hente (" + r.status + ").");
+        if (r.status === 403) throw new Error(t("docsNoAccess"));
+        if (!r.ok) throw new Error(tf("docsFetchFailed", { status: r.status }));
         return r.json();
       });
     }
@@ -3701,35 +3879,39 @@
         return fetch(CHAT_API_URL + path, { method: "POST", headers: headers, body: JSON.stringify(payload) });
       }).then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (data) {
-          if (!r.ok) throw new Error(data.error && data.error.length > 20 ? data.error : "Feil fra serveren (" + r.status + ").");
+          if (!r.ok) throw new Error(docsError(data, r.status));
           return data;
         });
       });
     }
 
     function renderDocs(data) {
+      docsData = data;
       docsCountry = data.country;
-      document.getElementById("docs-sub").textContent = "Gjelder brukere logget inn med recover." + data.country + " (" + COUNTRY_NAMES[data.country] + ")";
-      document.getElementById("docs-list-title").textContent = "Dokumenter for " + COUNTRY_NAMES[data.country];
+      document.getElementById("docs-sub").textContent = tf("docsSub", { cc: data.country, country: countryName(data.country) });
+      document.getElementById("docs-list-title").textContent = tf("docsListTitle", { country: countryName(data.country) });
       var pct = Math.min(100, Math.round(data.total / data.limit * 100));
       document.getElementById("docs-usage-bar").style.width = pct + "%";
-      document.getElementById("docs-usage").textContent = data.docs.length + (data.docs.length === 1 ? " dokument · " : " dokumenter · ") + data.total.toLocaleString("nb-NO") +
-        " av " + data.limit.toLocaleString("nb-NO") + " tegn brukt (" + pct + " %)";
+      document.getElementById("docs-usage").textContent = tf(data.docs.length === 1 ? "docsUsageOne" : "docsUsageMany",
+        { n: data.docs.length, used: fmtNum(data.total), limit: fmtNum(data.limit), pct: pct });
+      Array.prototype.forEach.call(document.getElementById("docs-country").options, function (o) {
+        o.textContent = countryName(o.value) + " (recover." + o.value + ")";
+      });
       var list = document.getElementById("docs-list");
       list.innerHTML = "";
-      data.docs.slice().sort(function (a, b) { return a.name.localeCompare(b.name, "nb"); }).forEach(function (d) {
+      data.docs.slice().sort(function (a, b) { return a.name.localeCompare(b.name, t("locale")); }).forEach(function (d) {
         var item = document.createElement("div");
         item.className = "log-item doc-item";
         var name = document.createElement("strong"); name.textContent = d.name; item.appendChild(name);
         var meta = document.createElement("div"); meta.className = "log-meta";
-        [new Date(d.time).toLocaleString("nb-NO"), d.by, d.chars.toLocaleString("nb-NO") + " tegn"].forEach(function (txt) {
+        [new Date(d.time).toLocaleString(t("locale")), d.by, tf("docsChars", { n: fmtNum(d.chars) })].forEach(function (txt) {
           var sp = document.createElement("span"); sp.textContent = txt; meta.appendChild(sp);
         });
         item.appendChild(meta);
         var del = document.createElement("button");
-        del.type = "button"; del.className = "btn"; del.textContent = "Slett";
+        del.type = "button"; del.className = "btn"; del.textContent = t("docsDelete");
         del.addEventListener("click", function () {
-          if (!confirm("Slette «" + d.name + "»? Arne slutter å bruke det med en gang.")) return;
+          if (!confirm(tf("docsDeleteConfirm", { name: d.name }))) return;
           docsPost("/docs/delete", { country: docsCountry, id: d.id }).then(renderDocs).catch(function (err) {
             setDocsStatus("docs-status-msg", err.message, "err");
           });
@@ -3737,11 +3919,11 @@
         item.appendChild(del);
         list.appendChild(item);
       });
-      if (!data.docs.length) list.textContent = "Ingen dokumenter ennå.";
+      if (!data.docs.length) list.textContent = t("docsNone");
     }
 
     function loadDocs(country) {
-      setDocsStatus("docs-status-msg", "Henter …");
+      setDocsStatus("docs-status-msg", t("docsLoading"));
       return docsGet("/docs" + (country ? "?country=" + country : "")).then(function (data) {
         setDocsStatus("docs-status-msg", "");
         document.getElementById("docs-country-field").hidden = !data.admin;
@@ -3763,7 +3945,7 @@
             window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
             resolve(window.pdfjsLib);
           };
-          s.onerror = function () { pdfJsLoad = null; reject(new Error("Klarte ikke å laste PDF-leseren.")); };
+          s.onerror = function () { pdfJsLoad = null; reject(new Error(t("docsPdfLoadFailed"))); };
           document.head.appendChild(s);
         });
       }
@@ -3793,14 +3975,13 @@
 
     function uploadDocs() {
       var files = Array.prototype.slice.call(document.getElementById("docs-files").files);
-      if (!files.length) return setDocsStatus("docs-status-msg", "Velg minst ett dokument.", "err");
+      if (!files.length) return setDocsStatus("docs-status-msg", t("docsPickFiles"), "err");
       var done = 0, failed = [];
-      setDocsStatus("docs-status-msg", "Leser og laster opp …");
       return files.reduce(function (chain, file) {
         return chain.then(function () {
-          setDocsStatus("docs-status-msg", "Laster opp «" + file.name + "» (" + (done + failed.length + 1) + " av " + files.length + ") …");
+          setDocsStatus("docs-status-msg", tf("docsUploading", { name: file.name, i: done + failed.length + 1, n: files.length }));
           return fileText(file).then(function (text) {
-            if (text.replace(/\s|\[Side \d+\]/g, "").length < 30) throw new Error("ingen tekst funnet (skannet PDF?)");
+            if (text.replace(/\s|\[Side \d+\]/g, "").length < 30) throw new Error(t("docsNoText"));
             return docsPost("/docs/upload", { country: docsCountry, name: file.name.replace(/\.(pdf|txt|md)$/i, ""), text: text });
           }).then(function (data) { done++; renderDocs(data); }).catch(function (err) {
             failed.push(file.name + ": " + err.message);
@@ -3808,7 +3989,7 @@
         });
       }, Promise.resolve()).then(function () {
         document.getElementById("docs-files").value = "";
-        setDocsStatus("docs-status-msg", done + " av " + files.length + " lastet opp." + (failed.length ? " Feilet – " + failed.join(" · ") : ""),
+        setDocsStatus("docs-status-msg", tf("docsUploaded", { done: done, n: files.length }) + (failed.length ? " " + tf("docsFailed", { list: failed.join(" · ") }) : ""),
           failed.length ? "err" : "ok");
       });
     }
@@ -3824,7 +4005,7 @@
       var html = "";
       ["no", "dk", "se"].forEach(function (c) {
         if (!byCountry[c].length) return;
-        html += '<fieldset class="opts"><legend>' + COUNTRY_NAMES[c] + "</legend>";
+        html += '<fieldset class="opts"><legend>' + escapeHtml(countryName(c)) + "</legend>";
         byCountry[c].sort().forEach(function (e) {
           var name = docsUsers[e] && docsUsers[e].name ? docsUsers[e].name + " – " : "";
           html += '<label><input type="checkbox" data-uploader value="' + escapeHtml(e) + '"' +
@@ -3832,7 +4013,7 @@
         });
         html += "</fieldset>";
       });
-      document.getElementById("docs-users").innerHTML = html || '<p class="hint">Ingen har logget inn ennå.</p>';
+      document.getElementById("docs-users").innerHTML = html || '<p class="hint">' + escapeHtml(t("docsNoUsers")) + "</p>";
     }
 
     function collectUploaders() {
@@ -3859,7 +4040,7 @@
     document.getElementById("docs-add-user").addEventListener("click", function () {
       var input = document.getElementById("docs-new-user");
       var email = input.value.trim().toLowerCase();
-      if (!/@recover\.(no|dk|se)$/.test(email)) return setDocsStatus("docs-access-status", "Bare e-post på recover.no, recover.dk eller recover.se.", "err");
+      if (!/@recover\.(no|dk|se)$/.test(email)) return setDocsStatus("docs-access-status", t("docsBadEmail"), "err");
       docsUploaders = collectUploaders();
       if (docsUploaders.indexOf(email) === -1) docsUploaders.push(email);
       input.value = "";
@@ -3867,11 +4048,11 @@
       renderDocsAccess();
     });
     document.getElementById("docs-save-access").addEventListener("click", function () {
-      setDocsStatus("docs-access-status", "Lagrer …");
+      setDocsStatus("docs-access-status", t("docsSaving"));
       docsPost("/admin/uploaders", { uploaders: collectUploaders() }).then(function (data) {
         docsUploaders = data.uploaders;
         renderDocsAccess();
-        setDocsStatus("docs-access-status", "Lagret. " + data.uploaders.length + " personer kan laste opp.", "ok");
+        setDocsStatus("docs-access-status", tf("docsSaved", { n: data.uploaders.length }), "ok");
       }).catch(function (err) { setDocsStatus("docs-access-status", err.message, "err"); });
     });
 

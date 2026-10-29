@@ -451,11 +451,11 @@ function docsMeta(country, docs) {
 async function saveDoc(env, country, user, body) {
   const name = String(body.name || "").trim().replace(/\s+/g, " ").slice(0, 200);
   const text = String(body.text || "").replace(/\r\n?/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-  if (!name || !text) return { error: "Dokumentet er tomt." };
-  if (text.length > DOC_MAX_CHARS) return { error: `Dokumentet er for stort (${text.length} tegn, maks ${DOC_MAX_CHARS}).` };
+  if (!name || !text) return { error: "empty" };
+  if (text.length > DOC_MAX_CHARS) return { error: "too_large", chars: text.length, max: DOC_MAX_CHARS };
   const docs = (await readDocs(env, country)).filter((d) => d.name !== name);
   const total = docs.reduce((n, d) => n + d.chars, 0) + text.length;
-  if (total > COUNTRY_MAX_CHARS) return { error: `Det er ikke plass til mer for ${COUNTRIES[country]} (${total} av ${COUNTRY_MAX_CHARS} tegn). Slett noe først.` };
+  if (total > COUNTRY_MAX_CHARS) return { error: "full", total, max: COUNTRY_MAX_CHARS };
   docs.push({ id: crypto.randomUUID().slice(0, 8), name, by: userEmail(user), time: Date.now(), chars: text.length, text });
   await env.STATS.put(`kdocs:${country}`, JSON.stringify(docs));
   return docsMeta(country, docs);
