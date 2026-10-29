@@ -513,7 +513,7 @@
     .doc-item .log-meta { grid-column: 1; }
     .doc-item > button { grid-row: 1 / span 2; grid-column: 2; }
     .doc-item > details { grid-column: 1 / -1; }
-    .doc-item > details > summary { cursor: pointer; font-size: 13px; color: var(--navy); font-weight: 600; margin-bottom: 6px; }
+    .doc-item > details > summary, #docs-upload-for summary { cursor: pointer; font-size: 13px; color: var(--navy); font-weight: 600; margin-bottom: 6px; }
     .usage-bar { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
     .usage-bar span { display: block; height: 100%; background: var(--navy); }
     .circ { display: grid; grid-template-columns: 44px 1fr 44px; gap: 4px 8px; align-items: center; font-size: 14px; }
@@ -919,6 +919,7 @@
             <select id="docs-country"><option value="no">recover.no</option><option value="dk">recover.dk</option><option value="se">recover.se</option></select>
           </div>
           <div class="field"><label for="docs-files" data-i18n="docsFilesLabel">Velg dokumenter</label><input id="docs-files" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain" multiple></div>
+          <div id="docs-upload-for"></div>
           <div class="sheet-actions"><button type="button" class="btn primary" id="docs-upload" data-i18n="docsUpload">Last opp</button></div>
           <p class="status" id="docs-status-msg" role="status"></p>
         </div>
@@ -4107,6 +4108,8 @@
     var pdfJsLoad = null;
     var docsData = null;
     var docsOpen = {};
+    var uploadTitles = ["*"];
+    var uploadTitlesOpen = false;
 
     // A string in the chosen language with {name} placeholders filled in.
     function tf(key, vars) {
@@ -4190,6 +4193,7 @@
         list.appendChild(item);
       });
       if (!data.docs.length) list.textContent = t("docsNone");
+      renderUploadTitles();
     }
 
     function docTitlesSummary(titles) {
@@ -4198,16 +4202,15 @@
       return titles.length === 1 ? t("docsForOne") : tf("docsForMany", { n: titles.length });
     }
 
-    // Who Arne uses a document for: «Alle» or picked job titles (saved at once).
-    function docTitlesBox(doc, known) {
-      var titles = doc.titles || ["*"];
+    // Who Arne uses a document for: «Alle» or picked job titles. onPick gets the new list on every change.
+    function titlesPicker(titles, known, open, onToggle, onPick) {
       var all = titles.indexOf("*") !== -1;
       var list = known.slice();
       titles.forEach(function (x) { if (x !== "*" && x !== "" && list.indexOf(x) === -1) list.push(x); });
       list.sort(function (a, b) { return a.localeCompare(b, t("locale")); });
       var box = document.createElement("details");
-      box.open = Boolean(docsOpen[doc.id]);
-      box.addEventListener("toggle", function () { docsOpen[doc.id] = box.open; });
+      box.open = open;
+      box.addEventListener("toggle", function () { onToggle(box.open); });
       var html = "<summary>" + escapeHtml(t("docsVisibleFor")) + ": <span data-doc-summary>" + escapeHtml(docTitlesSummary(titles)) + "</span></summary>";
       html += '<fieldset class="opts"><legend>' + escapeHtml(t("docsTitlesHint")) + "</legend>";
       html += '<label><input type="checkbox" data-doc-all' + (all ? " checked" : "") + "> <strong>" + escapeHtml(t("docsAll")) + "</strong></label>";
@@ -4224,12 +4227,30 @@
           cb.parentNode.classList.toggle("is-off", allOn);
         });
         box.querySelector("[data-doc-summary]").textContent = docTitlesSummary(picked);
-        docsPost("/docs/titles", { country: docsCountry, id: doc.id, titles: picked }).then(function (data) {
-          docsData = Object.assign({}, docsData, { docs: data.docs });
-          setDocsStatus("docs-status-msg", t("docsTitlesSaved"), "ok");
-        }).catch(function (err) { setDocsStatus("docs-status-msg", err.message, "err"); });
+        onPick(picked);
       });
       return box;
+    }
+
+    // Saved at once for a document in the list.
+    function docTitlesBox(doc, known) {
+      return titlesPicker(doc.titles || ["*"], known, Boolean(docsOpen[doc.id]),
+        function (open) { docsOpen[doc.id] = open; },
+        function (picked) {
+          docsPost("/docs/titles", { country: docsCountry, id: doc.id, titles: picked }).then(function (data) {
+            docsData = Object.assign({}, docsData, { docs: data.docs });
+            setDocsStatus("docs-status-msg", t("docsTitlesSaved"), "ok");
+          }).catch(function (err) { setDocsStatus("docs-status-msg", err.message, "err"); });
+        });
+    }
+
+    // For the documents about to be uploaded.
+    function renderUploadTitles() {
+      var wrap = document.getElementById("docs-upload-for");
+      wrap.innerHTML = "";
+      wrap.appendChild(titlesPicker(uploadTitles, (docsData && docsData.titles) || [], uploadTitlesOpen,
+        function (open) { uploadTitlesOpen = open; },
+        function (picked) { uploadTitles = picked; }));
     }
 
     function loadDocs(country) {
@@ -4292,7 +4313,7 @@
           setDocsStatus("docs-status-msg", tf("docsUploading", { name: file.name, i: done + failed.length + 1, n: files.length }));
           return fileText(file).then(function (text) {
             if (text.replace(/\s|\[Side \d+\]/g, "").length < 30) throw new Error(t("docsNoText"));
-            return docsPost("/docs/upload", { country: docsCountry, name: file.name.replace(/\.(pdf|txt|md)$/i, ""), text: text });
+            return docsPost("/docs/upload", { country: docsCountry, name: file.name.replace(/\.(pdf|txt|md)$/i, ""), text: text, titles: uploadTitles });
           }).then(function (data) { done++; renderDocs(data); }).catch(function (err) {
             failed.push(file.name + ": " + err.message);
           });

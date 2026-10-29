@@ -506,7 +506,7 @@ async function saveDoc(env, country, user, body) {
   const docs = all.filter((d) => d !== old);
   const total = docs.reduce((n, d) => n + d.chars, 0) + text.length;
   if (total > COUNTRY_MAX_CHARS) return { error: "full", total, max: COUNTRY_MAX_CHARS };
-  docs.push({ id: crypto.randomUUID().slice(0, 8), name, by: userEmail(user), time: Date.now(), chars: text.length, titles: old?.titles || ["*"], text });
+  docs.push({ id: crypto.randomUUID().slice(0, 8), name, by: userEmail(user), time: Date.now(), chars: text.length, titles: Array.isArray(body.titles) ? cleanDocTitles(body.titles) : old?.titles || ["*"], text });
   await env.STATS.put(`kdocs:${country}`, JSON.stringify(docs));
   return docsMeta(country, docs);
 }
