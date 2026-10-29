@@ -345,8 +345,9 @@ function cleanTitle(title) {
   return String(title || "").trim().replace(/\s+/g, " ").slice(0, 120);
 }
 
-// Cards each country sees (by sign-in domain) until the admin changes it.
+// Cards each country sees (by sign-in domain), and "out" before signing in, until the admin changes it.
 const DEFAULT_VISIBLE = {
+  out: ["password", "company-portal"],
   no: ["password", "field", "company-portal", "skade"],
   dk: ["password", "field", "company-portal"],
   se: ["password", "field", "company-portal"],
@@ -364,7 +365,7 @@ function cleanMenu(body) {
     if (Array.isArray(list) && list.length) shown[id] = [...new Set(list.map(cleanTitle))].slice(0, MAX_TITLES);
   }
   const visible = {};
-  for (const c of ["no", "dk", "se"]) {
+  for (const c of ["out", "no", "dk", "se"]) {
     const list = body?.visible?.[c];
     visible[c] = Array.isArray(list) ? MENU_CARDS.filter((id) => list.includes(id)) : DEFAULT_VISIBLE[c];
   }
@@ -603,6 +604,11 @@ export default {
     if (request.method === "POST" && path === "/mobility/callback") {
       const body = await request.json().catch(() => ({}));
       return (await mobilityCallback(env, body)) ? json({ ok: true }, 200, cors) : json({ error: "mobility_callback_failed" }, 400, cors);
+    }
+
+    // The cards shown before signing in – public, the page needs them before anyone has signed in.
+    if (request.method === "GET" && path === "/menu/public") {
+      return json({ visible: (await readMenu(env)).visible.out }, 200, { ...cors, "Cache-Control": "public, max-age=60" });
     }
 
     const user = authEnabled(env) ? await verifyUser(request, env) : null;

@@ -955,7 +955,7 @@
       <div class="sheet-inner">
         <div class="card">
           <h3>Synlige menyvalg per land</h3>
-          <p class="hint">Kryss av menyvalgene hvert land skal se. Landet bestemmes av kontoen folk er logget inn med (recover.no, recover.dk, recover.se). Du selv ser landet til språket du har valgt, så du kan sjekke hvert land. Før innlogging vises valgene som før.</p>
+          <p class="hint">Kryss av menyvalgene hvert land skal se. Landet bestemmes av kontoen folk er logget inn med (recover.no, recover.dk, recover.se). Du selv ser landet til språket du har valgt, så du kan sjekke hvert land. «Før innlogging» er det alle ser før de har logget inn – menyvalg som krever innlogging ber da om innlogging når de trykkes.</p>
           <div id="menu-countries"></div>
         </div>
         <div class="card">
@@ -2963,6 +2963,7 @@
 
     initAuth().then(function () {
       document.body.classList.remove("auth-pending");
+      if (!account) loadPublicMenu();
       renderAuth();
       resumeIntent();
       finishMobilityLogin();
@@ -3754,14 +3755,14 @@
       return m ? m[1] : null;
     }
 
-    // Signed out: only «Glemt passord» and «Oppsett av mobilen».
+    // Signed out: the admin's «Før innlogging» cards (by default «Glemt passord» and «Oppsett av mobilen»).
     // Signed in: the country's visible cards plus those shown for the job title
     // (until the country is known, the Norway-only cards follow the language).
     function applyMenu() {
       var rules = menuRules || { shown: {} }; // applyLanguage runs before the rules are set up
       var country = menuCountry();
       var visible = country && rules.visible ? rules.visible[country] : null;
-      if (!account && window.msal) visible = ["password", "company-portal"]; // signed out
+      if (!account && window.msal) visible = publicMenu() || ["password", "company-portal"]; // signed out
       document.querySelectorAll("[data-card]").forEach(function (li) {
         var id = li.getAttribute("data-card");
         var shownFor = (rules.shown && rules.shown[id]) || [];
@@ -3773,6 +3774,20 @@
 
     // Cached rules and title first (no flicker), then fresh ones from Entra and the Worker.
     var lastMenuLoad = 0;
+    var PUBLIC_MENU_CACHE = "minkonto.menu.public";
+
+    function publicMenu() {
+      try { return JSON.parse(localStorage.getItem("minkonto.menu.public") || "null"); } catch (e) { return null; }
+    }
+
+    // The signed-out cards need no sign-in to fetch; cached so the next visit shows them at once.
+    function loadPublicMenu() {
+      fetch(CHAT_API_URL + "/menu/public").then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
+        if (!data || !Array.isArray(data.visible)) return;
+        try { localStorage.setItem(PUBLIC_MENU_CACHE, JSON.stringify(data.visible)); } catch (e) {}
+        applyMenu();
+      }).catch(function () {});
+    }
 
     function loadMenu() {
       if (!account) return;
@@ -3789,7 +3804,10 @@
       }).then(function (rules) {
         if (!rules) return;
         menuRules = rules;
-        try { localStorage.setItem(MENU_CACHE, JSON.stringify(rules)); } catch (e) {}
+        try {
+          localStorage.setItem(MENU_CACHE, JSON.stringify(rules));
+          if (rules.visible && rules.visible.out) localStorage.setItem(PUBLIC_MENU_CACHE, JSON.stringify(rules.visible.out));
+        } catch (e) {}
         applyMenu();
         renderAuth();
       }).catch(function () {});
@@ -3805,13 +3823,13 @@
       el.className = "status" + (kind ? " " + kind : "");
     }
 
-    var COUNTRY_LABELS = { no: "Norge (recover.no)", dk: "Danmark (recover.dk)", se: "Sverige (recover.se)" };
+    var COUNTRY_LABELS = { out: "Før innlogging (alle)", no: "Norge (recover.no)", dk: "Danmark (recover.dk)", se: "Sverige (recover.se)" };
     var menuAdmins = [];
     var menuPermanentAdmins = [];
 
     function renderMenuCountries() {
       var html = "";
-      ["no", "dk", "se"].forEach(function (c) {
+      ["out", "no", "dk", "se"].forEach(function (c) {
         var visible = (menuRules.visible && menuRules.visible[c]) || [];
         html += '<fieldset class="opts"><legend>' + COUNTRY_LABELS[c] + "</legend>";
         MENU_CARDS.forEach(function (card) {
@@ -3901,7 +3919,7 @@
       document.querySelectorAll("[data-menu-all]:checked").forEach(function (cb) {
         shown[cb.getAttribute("data-menu-all")] = [ALL_TITLES];
       });
-      var visible = { no: [], dk: [], se: [] };
+      var visible = { out: [], no: [], dk: [], se: [] };
       document.querySelectorAll("[data-menu-visible]:checked").forEach(function (cb) {
         visible[cb.getAttribute("data-menu-visible")].push(cb.value);
       });
