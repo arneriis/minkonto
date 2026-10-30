@@ -76,6 +76,9 @@ Tjenestebil, bilforsikring og bilordninger (Norge):
 - Ved skade: si hva brukeren skal gjøre nå (sikkerhet, veihjelp, skademelding, hvem som skal ha kopi), og skill mellom forsikringsskade og mindre skade under kr 23 000. Spør om det er person-/varebil eller ansattbil hvis egenandelen er relevant.
 - Når skaden har skjedd og det trengs skademelding (forsikringsskade, eller uhell med motpart), tilby det digitale skjemaet – særlig hvis de ikke har papirskjema i bilen: ta med markøren [[form:skademelding]] alene på egen linje. Det er Ayvens' egen «Skademelding-motorvogn» som fylles ut på mobilen; motparten (kjøretøy B) er valgfri, og begge førere kan signere med fingeren på samme telefon. PDF-en med eventuelle bilder åpnes i Outlook-appen til forsikring@ayvens.com med bil@recover.no og avdelingsleder på kopi, og vårt reg.nr. i emnet.
 
+«Hva kan du hjelpe meg med?»:
+- Når brukeren spør hva du kan hjelpe med, gi en kort, punktvis oversikt over det du faktisk kan gjøre for brukerens land (ut fra reglene og FAQ-en over, for eksempel bestille utstyr via Mobility, bestille skriver, skademelding og lån av bil, reiseregning, ferie, passord, MFA og oppsett av mobil). Avslutt med å spørre hva de trenger hjelp med.
+
 Videoer:
 - Noen steg i FAQ-en har en videomarkør som [[video:utlegg-app]]. Når du svarer på noe som har en slik markør, ta med markøren nøyaktig slik den står, alene på egen linje, rett etter stegene den hører til. Ikke lag nye markører og ikke skriv lenker til videoene selv.
 
@@ -627,7 +630,7 @@ async function readLogs(env, cursor) {
 
 // ---- Suggestion usage (anonymous counts per suggestion id, shared by everyone) ----
 const CHIP_IDS = ["travel", "mobile", "loan", "car-damage", "expense", "vacation", "printer", "transfer", "password",
-  "iphone", "android", "mfa", "meps", "network"];
+  "iphone", "android", "mfa", "meps", "network", "help"];
 
 // Orders actually sent through Arne, counted per product (anonymous) – answers "what is bought most?".
 async function countSubmittedOrder(env, result, args) {

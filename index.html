@@ -565,6 +565,7 @@
     .picker button.is-chosen:disabled, .option-list button.is-chosen:disabled, .confirm-bar button.is-chosen:disabled { opacity: 1; }
     .chip-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
     .chip-chosen { outline: 2px solid var(--focus); }
+    .chip.chip-help { border-style: dashed; font-weight: 600; }
     .chip:disabled { opacity: .55; cursor: default; }
     .chips[hidden] { display: none; }
 
@@ -1555,6 +1556,7 @@
         transferPdf: "Husk å legge ved signert overdragelsesskjema (PDF) fra tidligere eier.",
         transferDone: "Overdragelsen er klar. Trykk på knappen for å åpne e-posten, fyll inn fødselsdato og send den.",
         chipIds: ["travel", "mobile", "loan", "car-damage", "expense", "vacation", "printer", "transfer", "password", "iphone", "android", "mfa", "meps", "network"],
+        chipHelp: "Hva kan du hjelpe meg med?",
         chips: ["E-post i utlandet", "Bestille mobil, nettbrett eller PC", "Låne bil privat", "Skade på tjenestebil", "Reiseregning og utlegg", "Søke om ferie", "Bestille skriver", "Overføre mobilnummer", "Jeg har glemt passordet", "Sette opp ny iPhone", "Sette opp ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med nettverket"],
         fromFaq: "Dette fant jeg i FAQ-en:",
         notFound: "Jeg fant dessverre ikke noe om det i FAQ-en. Prøv å spørre på en annen måte, eller kontakt Iver support.",
@@ -1669,6 +1671,7 @@
         transferPdf: "Kom ihåg att bifoga signerat överlåtelseformulär (PDF) från tidigare ägare.",
         transferDone: "Överlåtelsen är klar. Tryck på knappen för att öppna e-posten, fyll i födelsedatum och skicka den.",
         chipIds: ["travel", "vacation", "transfer", "password", "iphone", "android", "mfa", "meps", "network"],
+        chipHelp: "Vad kan du hjälpa mig med?",
         chips: ["E-post utomlands", "Ansöka om semester", "Flytta mobilnummer (Norge)", "Jag har glömt lösenordet", "Konfigurera ny iPhone", "Konfigurera ny Android", "Authenticator på ny mobil", "Meps fungerar inte", "Problem med nätverket"],
         fromFaq: "Det här hittade jag i FAQ:n (på norska):",
         notFound: "Jag hittade tyvärr inget om det i FAQ:n. Försök fråga på ett annat sätt, eller kontakta Iver support.",
@@ -1783,6 +1786,7 @@
         transferPdf: "Husk at vedhæfte underskrevet overdragelsesskema (PDF) fra tidligere ejer.",
         transferDone: "Overdragelsen er klar. Tryk på knappen for at åbne e-mailen, udfyld fødselsdato og send den.",
         chipIds: ["travel", "vacation", "transfer", "password", "iphone", "android", "mfa", "meps", "network"],
+        chipHelp: "Hvad kan du hjælpe mig med?",
         chips: ["E-mail i udlandet", "Søg om ferie", "Overfør mobilnummer (Norge)", "Jeg har glemt min adgangskode", "Opsæt ny iPhone", "Opsæt ny Android", "Authenticator på ny mobil", "Meps virker ikke", "Problemer med netværket"],
         fromFaq: "Det her fandt jeg i FAQ'en (på norsk):",
         notFound: "Jeg fandt desværre ikke noget om det i FAQ'en. Prøv at spørge på en anden måde, eller kontakt Iver support.",
@@ -1897,6 +1901,7 @@
         transferPdf: "Remember to attach the signed transfer form (PDF) from the previous owner.",
         transferDone: "Your transfer is ready. Press the button to open the e-mail, fill in the date of birth and send it.",
         chipIds: ["travel", "vacation", "transfer", "password", "iphone", "android", "mfa", "meps", "network"],
+        chipHelp: "What can you help me with?",
         chips: ["E-mail abroad", "Request vacation", "Transfer a mobile number (Norway)", "I forgot my password", "Set up a new iPhone", "Set up a new Android", "Authenticator on a new phone", "Meps isn't working", "Network problems"],
         fromFaq: "Here's what I found in the FAQ (in Norwegian):",
         notFound: "Sorry, I couldn't find anything about that in the FAQ. Try asking another way, or contact Iver support.",
@@ -2418,12 +2423,15 @@
       if (started) return;
       var labels = t("chips"), ids = t("chipIds") || [];
       var counts = chipCounts || {};
+      // The three most used suggestions, then always «What can you help me with?».
       labels.map(function (label, i) { return { label: label, id: ids[i], i: i }; })
         .sort(function (a, b) { return ((counts[b.id] || 0) - (counts[a.id] || 0)) || (a.i - b.i); })
+        .slice(0, 3)
+        .concat([{ label: t("chipHelp"), id: "help", help: true }])
         .forEach(function (c) {
           var b = document.createElement("button");
           b.type = "button";
-          b.className = "chip";
+          b.className = "chip" + (c.help ? " chip-help" : "");
           b.textContent = c.label;
           b.addEventListener("click", function () { countChip(c.id); send(c.label); });
           chipsEl.appendChild(b);
