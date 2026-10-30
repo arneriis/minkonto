@@ -481,6 +481,14 @@
     .sigpad canvas { width: 100%; height: 100%; display: block; border-radius: 12px; }
     .sigpad span { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
     .sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .org-tree details, .org-tree .org-leaf { margin-left: 12px; padding-left: 10px; border-left: 1px solid var(--border); }
+    .org-tree > details, .org-tree > .org-leaf { margin-left: 0; padding-left: 0; border-left: 0; }
+    .org-tree summary, .org-tree .org-leaf { padding: 5px 0; line-height: 1.35; }
+    .org-tree summary { cursor: pointer; }
+    .org-tree small, #org-loose-box small { color: var(--muted); font-size: 12.5px; }
+    .org-people { margin: 0 0 4px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .org-tree mark { background: #fff3a8; color: inherit; border-radius: 3px; }
+    .org-loose { color: var(--muted); font-size: 13px; line-height: 1.5; }
     .actions li.menu-hidden { display: none; }
     /* While a saved sign-in is being restored, don't flash the signed-out menu. */
     body.auth-pending .actions { visibility: hidden; }
@@ -824,7 +832,7 @@
     <span class="auth-status" id="auth-status" hidden>
       <span id="auth-name"></span>
       · <button type="button" class="link-btn" id="logout" data-i18n="logout">Logg ut</button>
-      <span id="docs-status" hidden> · <button type="button" class="link-btn" id="open-docs" data-i18n="docsLink">Dokumenter</button></span><span id="admin-status" hidden> · <button type="button" class="link-btn" id="open-logs">AI-logg</button> · <button type="button" class="link-btn" id="open-menu-settings">Menyvalg</button></span>
+      <span id="docs-status" hidden> · <button type="button" class="link-btn" id="open-docs" data-i18n="docsLink">Dokumenter</button></span><span id="admin-status" hidden> · <button type="button" class="link-btn" id="open-logs">AI-logg</button> · <button type="button" class="link-btn" id="open-menu-settings">Menyvalg</button> · <button type="button" class="link-btn" id="open-org">Stillinger</button></span>
       <span id="mobility-status" hidden> · <button type="button" class="link-btn" id="mobility-disconnect" data-i18n="mobilityDisconnect">Koble fra Mobility</button></span>
     </span>
     minkonto.riis.cc
@@ -941,6 +949,39 @@
           <div class="sheet-actions"><button type="button" class="btn primary" id="docs-save-access" data-i18n="docsSaveAccess">Lagre tilgang</button></div>
           <p class="status" id="docs-access-status" role="status"></p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet" id="org" role="dialog" aria-modal="true" aria-labelledby="org-title" hidden>
+    <div class="chat-head">
+      <div class="chat-title">
+        <strong id="org-title">Stillingshierarki</strong>
+        <small>Fra Entra: hvem som er leder for hvem · kun for administrator</small>
+      </div>
+      <button type="button" class="icon-btn" id="org-close" aria-label="Lukk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="sheet-inner">
+        <div class="card">
+          <p class="hint">Bygget fra «Leder» (manager) og «Stilling» (jobTitle) på hver aktive bruker i Entra. Under hver stilling står stillingene til dem som rapporterer dit. Ser noe feil ut, rettes det på brukeren i Entra – siden endrer ingenting.</p>
+          <div class="row2">
+            <div class="field"><label for="org-view">Vis</label>
+              <select id="org-view"><option value="titles">Stillinger</option><option value="people">Personer</option></select></div>
+            <div class="field"><label for="org-search">Søk</label><input id="org-search" type="search" placeholder="Stilling eller navn"></div>
+          </div>
+          <div class="sheet-actions"><button type="button" class="btn" id="org-reload">Hent på nytt fra Entra</button></div>
+          <p class="status" id="org-status" role="status"></p>
+          <p class="hint" id="org-summary"></p>
+        </div>
+        <div class="card"><div class="org-tree" id="org-tree"></div></div>
+        <details class="card" id="org-loose-box" hidden>
+          <summary><strong>Utenfor hierarkiet</strong> <small id="org-loose-count"></small></summary>
+          <p class="hint">Aktive brukere uten leder, uten ansatte og uten stilling – ofte fellespostkasser, tjenestekontoer eller brukere som mangler oppsett.</p>
+          <div class="org-loose" id="org-loose"></div>
+        </details>
       </div>
     </div>
   </section>
@@ -3084,11 +3125,15 @@
       var entraTitles = null;
       try { entraTitles = sessionStorage.getItem(ENTRA_TITLES_INTENT); sessionStorage.removeItem(ENTRA_TITLES_INTENT); } catch (e) {}
       if (entraTitles && isAdminUser()) openMenuSettings().then(fetchEntraTitles);
+      var orgIntent = null;
+      try { orgIntent = sessionStorage.getItem(ORG_INTENT); sessionStorage.removeItem(ORG_INTENT); } catch (e) {}
+      if (orgIntent && isAdminUser()) openOrg();
     });
     document.getElementById("ask-close").addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !docsEl.hidden) { docsEl.hidden = true; return; }
       if (e.key === "Escape" && !menuSettingsEl.hidden) { menuSettingsEl.hidden = true; return; }
+      if (e.key === "Escape" && !orgEl.hidden) { orgEl.hidden = true; return; }
       if (e.key === "Escape" && !logsEl.hidden) { logsEl.hidden = true; return; }
       if (e.key === "Escape" && !printerEl.hidden) return closePrinterForm();
       if (e.key === "Escape" && !loanEl.hidden) return closeLoanForm();
@@ -4138,6 +4183,170 @@
     }
 
     document.getElementById("menu-entra-titles").addEventListener("click", fetchEntraTitles);
+
+    // ---- «Stillinger»: the job-title hierarchy from Entra (manager → direct reports), for the admin to check ----
+    // Read-only: Graph /users with manager, permission User.Read.All (same consent as the title fetch above).
+    var orgEl = document.getElementById("org");
+    var ORG_INTENT = "minkonto.orgchart";
+    var orgUsers = null;
+
+    function setOrgStatus(text, kind) {
+      var el = document.getElementById("org-status");
+      el.textContent = text;
+      el.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function fetchOrg() {
+      setOrgStatus("Henter ansatte og ledere fra Entra …");
+      var scopes = ["User.Read.All"];
+      msalApp.acquireTokenSilent({ scopes: scopes, account: account }).catch(function (err) {
+        if (err instanceof msal.InteractionRequiredAuthError || /consent|interaction|login_required|invalid_grant/.test(err && err.errorCode || "")) {
+          try { sessionStorage.setItem(ORG_INTENT, "1"); } catch (e) {}
+          return msalApp.acquireTokenRedirect({ scopes: scopes, account: account }).then(function () { return new Promise(function () {}); });
+        }
+        throw err;
+      }).then(function (r) {
+        var users = [];
+        function page(url) {
+          return fetch(url, { headers: { Authorization: "Bearer " + r.accessToken } }).then(function (res) {
+            if (!res.ok) throw new Error("Graph " + res.status);
+            return res.json();
+          }).then(function (data) {
+            (data.value || []).forEach(function (u) {
+              if (u.accountEnabled === false || u.userType === "Guest") return;
+              users.push({
+                id: u.id, name: u.displayName || u.userPrincipalName || "?",
+                title: String(u.jobTitle || "").trim().replace(/\s+/g, " "),
+                email: String(u.mail || u.userPrincipalName || "").toLowerCase(),
+                manager: u.manager && u.manager.id || null
+              });
+            });
+            return data["@odata.nextLink"] ? page(data["@odata.nextLink"]) : users;
+          });
+        }
+        return page("https://graph.microsoft.com/v1.0/users?$select=id,displayName,jobTitle,mail,userPrincipalName,accountEnabled,userType&$expand=manager($select=id)&$top=100");
+      }).then(function (users) {
+        orgUsers = users;
+        setOrgStatus("");
+        renderOrg();
+      }).catch(function (err) {
+        setOrgStatus("Klarte ikke å hente fra Entra (" + (err.errorCode || err.message || err) + ").", "err");
+      });
+    }
+
+    function byName(a, b) { return a.name.localeCompare(b.name, "nb"); }
+
+    // Who reports to whom; the top is everyone whose manager is missing (or not an active user).
+    function orgIndex(users) {
+      var byId = {}, reports = {};
+      users.forEach(function (u) { byId[u.id] = u; });
+      users.forEach(function (u) { if (u.manager && byId[u.manager]) (reports[u.manager] = reports[u.manager] || []).push(u); });
+      var top = users.filter(function (u) { return !(u.manager && byId[u.manager]); });
+      return {
+        reports: reports,
+        roots: top.filter(function (u) { return u.title || reports[u.id]; }),
+        loose: top.filter(function (u) { return !(u.title || reports[u.id]); })
+      };
+    }
+
+    // People grouped by title; under each title, the titles of everyone reporting to those people.
+    function titleTree(people, org, seen) {
+      var groups = {}, order = [];
+      people.filter(function (u) { return !seen[u.id]; }).forEach(function (u) {
+        seen[u.id] = true;
+        if (!groups[u.title]) { groups[u.title] = { title: u.title, people: [] }; order.push(u.title); }
+        groups[u.title].people.push(u);
+      });
+      return order.map(function (key) {
+        var g = groups[key], below = [];
+        g.people.sort(byName).forEach(function (u) { below = below.concat(org.reports[u.id] || []); });
+        g.children = titleTree(below, org, seen);
+        g.total = g.people.length + g.children.reduce(function (n, c) { return n + c.total; }, 0);
+        return g;
+      }).sort(function (a, b) { return b.total - a.total || a.title.localeCompare(b.title, "nb"); });
+    }
+
+    function personTree(u, org, seen) {
+      seen[u.id] = true;
+      var kids = (org.reports[u.id] || []).filter(function (k) { return !seen[k.id]; }).sort(byName);
+      var node = { person: u, children: kids.map(function (k) { return personTree(k, org, seen); }) };
+      node.total = 1 + node.children.reduce(function (n, c) { return n + c.total; }, 0);
+      return node;
+    }
+
+    function orgMark(text, q) {
+      var safe = escapeHtml(text);
+      if (!q) return safe;
+      var i = text.toLowerCase().indexOf(q);
+      return i === -1 ? safe : escapeHtml(text.slice(0, i)) + "<mark>" + escapeHtml(text.slice(i, i + q.length)) + "</mark>" + escapeHtml(text.slice(i + q.length));
+    }
+
+    function orgNodeText(node) {
+      return node.person ? node.person.name + " " + node.person.title : node.title + " " + node.people.map(function (u) { return u.name; }).join(" ");
+    }
+
+    function orgMatches(node, q) {
+      return !q || orgNodeText(node).toLowerCase().indexOf(q) !== -1 || node.children.some(function (c) { return orgMatches(c, q); });
+    }
+
+    function orgNodeHtml(node, depth, q) {
+      if (!orgMatches(node, q)) return "";
+      var head, body = "";
+      var under = node.total - (node.person ? 1 : node.people.length);
+      if (node.person) {
+        head = "<strong>" + orgMark(node.person.name, q) + "</strong> <small>" + orgMark(node.person.title || "(ingen stilling)", q) +
+          (under ? " · " + under + " under" : "") + "</small>";
+      } else {
+        head = "<strong>" + orgMark(node.title || "(ingen stilling)", q) + "</strong> <small>" + node.people.length +
+          (node.people.length === 1 ? " person" : " personer") + (under ? " · " + under + " under" : "") + "</small>";
+        body = '<p class="org-people">' + node.people.map(function (u) { return '<span title="' + escapeHtml(u.email) + '">' + orgMark(u.name, q) + "</span>"; }).join(", ") + "</p>";
+      }
+      var kids = node.children.map(function (c) { return orgNodeHtml(c, depth + 1, q); }).join("");
+      if (!kids && !body) return '<div class="org-leaf">' + head + "</div>";
+      return "<details" + (q || depth < 2 ? " open" : "") + "><summary>" + head + "</summary>" + body + kids + "</details>";
+    }
+
+    function renderOrg() {
+      if (!orgUsers) return;
+      var q = document.getElementById("org-search").value.trim().toLowerCase();
+      var view = document.getElementById("org-view").value;
+      var org = orgIndex(orgUsers), seen = {};
+      var nodes = view === "people"
+        ? org.roots.sort(byName).map(function (u) { return personTree(u, org, seen); }).sort(function (a, b) { return b.total - a.total; })
+        : titleTree(org.roots, org, seen);
+      // Managers pointing in a ring (A → B → A) have no top; show them last so nobody goes missing.
+      var ring = orgUsers.filter(function (u) { return !seen[u.id] && org.loose.indexOf(u) === -1; }).sort(byName);
+      if (ring.length) {
+        nodes = nodes.concat(view === "people"
+          ? ring.map(function (u) { return seen[u.id] ? null : personTree(u, org, seen); }).filter(Boolean)
+          : titleTree(ring, org, seen));
+      }
+      var html = nodes.map(function (n) { return orgNodeHtml(n, 0, q); }).join("");
+      document.getElementById("org-tree").innerHTML = html || '<p class="hint">Ingen treff.</p>';
+
+      var titles = {};
+      orgUsers.forEach(function (u) { if (u.title) titles[u.title] = true; });
+      var noTitle = orgUsers.filter(function (u) { return !u.title && org.loose.indexOf(u) === -1; }).length;
+      document.getElementById("org-summary").textContent = orgUsers.length + " aktive brukere · " + Object.keys(titles).length + " stillinger · " +
+        org.roots.length + " øverst (uten leder i Entra)" + (noTitle ? " · " + noTitle + " i hierarkiet uten stilling" : "") +
+        (org.loose.length ? " · " + org.loose.length + " utenfor hierarkiet" : "") +
+        (ring.length ? " · " + ring.length + " med ledere i ring (" + ring.map(function (u) { return u.name; }).join(", ") + ") – vist nederst" : "");
+      var looseBox = document.getElementById("org-loose-box");
+      looseBox.hidden = !org.loose.length;
+      document.getElementById("org-loose-count").textContent = org.loose.length + " brukere";
+      document.getElementById("org-loose").textContent = org.loose.sort(byName).map(function (u) { return u.name + " (" + u.email + ")"; }).join(", ");
+    }
+
+    function openOrg() {
+      orgEl.hidden = false;
+      if (!orgUsers) fetchOrg();
+    }
+
+    document.getElementById("open-org").addEventListener("click", openOrg);
+    document.getElementById("org-close").addEventListener("click", function () { orgEl.hidden = true; });
+    document.getElementById("org-reload").addEventListener("click", fetchOrg);
+    document.getElementById("org-view").addEventListener("change", renderOrg);
+    document.getElementById("org-search").addEventListener("input", renderOrg);
     document.getElementById("menu-add-admin").addEventListener("click", function () {
       var input = document.getElementById("menu-new-admin");
       var email = input.value.trim().toLowerCase();
